@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Gérer Accidents & Incidents - <%= supermarket.name %></title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+</head>
+<body class="bg-light">
+  <div class="container mt-5">
+    <h1 class="text-center">Gérer les Accidents & Incidents</h1>
+    <h2 class="text-center mb-4"><%= supermarket.name %></h2>
+
+    <!-- Accidents de Travail -->
+    <div class="card p-4 mb-4">
+      <h3>Accidents de Travail</h3>
+      <% if (accidents && accidents.length > 0) { %>
+        <table class="table table-bordered mt-3">
+          <thead class="table-dark">
+            <tr>
+              <th>Numéro</th>
+              <th>Déclaré ?</th>
+              <th>Jours d'arrêt</th>
+              <th>Cause</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% accidents.forEach(a => { %>
+              <tr>
+                <td><%= a.numeroAccident %></td>
+                <td><%= a.estDeclare ? 'Oui' : 'Non' %></td>
+                <td><%= a.nombreJoursArret %></td>
+                <td><%= a.cause %></td>
+                <td><%= a.dateAccident.toLocaleDateString('fr-FR') %></td>
+                <td>
+                  <!-- Modifier -->
+                  <a
+                    href="/supermarket/<%= supermarket._id %>/accidents/travail/<%= a._id %>/edit"
+                    class="btn btn-warning btn-sm"
+                  >
+                    Modifier
+                  </a>
+                  <!-- Supprimer -->
+                  <form
+                    action="/supermarket/<%= supermarket._id %>/accidents/travail/<%= a._id %>/delete"
+                    method="POST"
+                    style="display:inline-block;"
+                  >
+                    <button
+                      type="submit"
+                      class="btn btn-danger btn-sm"
+                      onclick="return confirm('Voulez-vous vraiment supprimer cet accident de travail ?');"
+                    >
+                      Supprimer
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } else { %>
+        <p>Aucun accident de travail enregistré.</p>
+      <% } %>
+
+      <hr>
+      <h4>Ajouter un Accident de Travail</h4>
+      <form action="/supermarket/<%= supermarket._id %>/accidents/travail" method="POST">
+        <div class="mb-3">
+          <label class="form-label">Numéro :</label>
+          <input type="number" name="numeroAccident" class="form-control" value="1" min="1">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Accident déclaré ?</label>
+          <input type="checkbox" name="estDeclare">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Nombre de jours d'arrêt :</label>
+          <input type="number" name="nombreJoursArret" class="form-control" value="0" min="0">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Cause :</label>
+          <input type="text" name="cause" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Date de l'accident :</label>
+          <input
+            type="date"
+            name="dateAccident"
+            class="form-control"
+            value="<%= new Date().toISOString().split('T')[0] %>"
+          >
+        </div>
+        <button type="submit" class="btn btn-primary">Ajouter</button>
+      </form>
+    </div>
+
+    <!-- Autres Incidents -->
+    <div class="card p-4 mb-4">
+      <h3>Autres Incidents</h3>
+      <% if (incidents && incidents.length > 0) { %>
+        <table class="table table-bordered mt-3">
+          <thead class="table-dark">
+            <tr>
+              <th>Numéro</th>
+              <th>Type</th>
+              <th>Date</th>
+              <th>Détails</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% incidents.forEach(i => { %>
+              <tr>
+                <td><%= i.numeroIncident %></td>
+                <td><%= i.typeIncident %></td>
+                <td><%= i.dateIncident.toLocaleDateString('fr-FR') %></td>
+                <td><%= i.details %></td>
+                <td>
+                  <!-- Modifier -->
+                  <a
+                    href="/supermarket/<%= supermarket._id %>/accidents/incident/<%= i._id %>/edit"
+                    class="btn btn-warning btn-sm"
+                  >
+                    Modifier
+                  </a>
+                  <!-- Supprimer -->
+                  <form
+                    action="/supermarket/<%= supermarket._id %>/accidents/incident/<%= i._id %>/delete"
+                    method="POST"
+                    style="display:inline-block;"
+                  >
+                    <button
+                      type="submit"
+                      class="btn btn-danger btn-sm"
+                      onclick="return confirm('Voulez-vous vraiment supprimer cet incident ?');"
+                    >
+                      Supprimer
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } else { %>
+        <p>Aucun incident enregistré.</p>
+      <% } %>
+
+      <hr>
+      <h4>Ajouter un Autre Incident</h4>
+      <form action="/supermarket/<%= supermarket._id %>/accidents/incident" method="POST">
+        <div class="mb-3">
+          <label class="form-label">Numéro :</label>
+          <input type="number" name="numeroIncident" class="form-control" value="1" min="1">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Type d'incident :</label>
+          <select name="typeIncident" class="form-select" required>
+            <option value="Départ de feu">Départ de feu</option>
+            <option value="Agression envers le personnel">Agression envers le personnel</option>
+            <option value="Passage des autorités">Passage des autorités</option>
+            <option value="Sinistre déclaré par un client">Sinistre déclaré par un client</option>
+            <option value="Acte de secourisme">Acte de secourisme</option>
+            <option value="Autre">Autre</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Date de l'incident :</label>
+          <input
+            type="date"
+            name="dateIncident"
+            class="form-control"
+            value="<%= new Date().toISOString().split('T')[0] %>"
+          >
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Détails :</label>
+          <textarea name="details" class="form-control"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Ajouter</button>
+      </form>
+    </div>
+
+    <a href="/supermarket/<%= supermarket._id %>" class="btn btn-secondary">Retour</a>
+  </div>
+</body>
+</html>

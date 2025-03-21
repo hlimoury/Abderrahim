@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Gérer les Interpellations - <%= supermarket.name %></title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+</head>
+<body class="bg-light">
+  <div class="container mt-5">
+    <h1 class="text-center">Gérer les Interpellations</h1>
+    <h2 class="text-center mb-4"><%= supermarket.name %></h2>
+
+    <!-- Liste des Interpellations existantes -->
+    <h3>Liste des Interpellations</h3>
+    <% if (interpellations && interpellations.length > 0) { %>
+      <table class="table table-bordered mt-3">
+        <thead class="table-dark">
+          <tr>
+            <th>Type de personne</th>
+            <th>Nombre</th>
+            <th>Poursuites (nombre)</th>
+            <th>Valeur (€)</th>
+            <th>Rayon</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% interpellations.forEach(inter => { %>
+            <tr>
+              <td><%= inter.typePersonne %></td>
+              <td><%= inter.nombrePersonnes %></td>
+              <td><%= inter.poursuitesJudiciaires %></td>
+              <td><%= inter.valeurMarchandiseRecuperee %></td>
+              <td><%= inter.rayonConcerne %></td>
+              <td><%= inter.dateInterpellation.toLocaleDateString('fr-FR') %></td>
+              <td>
+                <!-- Modifier -->
+                <a
+                  href="/supermarket/<%= supermarket._id %>/interpellations/<%= inter._id %>/edit"
+                  class="btn btn-warning btn-sm"
+                >
+                  Modifier
+                </a>
+                <!-- Supprimer -->
+                <form
+                  action="/supermarket/<%= supermarket._id %>/interpellations/<%= inter._id %>/delete"
+                  method="POST"
+                  style="display:inline-block;"
+                >
+                  <button
+                    type="submit"
+                    class="btn btn-danger btn-sm"
+                    onclick="return confirm('Voulez-vous vraiment supprimer cette interpellation ?');"
+                  >
+                    Supprimer
+                  </button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } else { %>
+      <p>Aucune interpellation enregistrée.</p>
+    <% } %>
+
+    <hr>
+
+    <!-- Formulaire d'ajout d'une nouvelle Interpellation -->
+    <h3>Ajouter une Interpellation</h3>
+    <form action="/supermarket/<%= supermarket._id %>/interpellations" method="POST" class="card p-4 shadow">
+      <div class="mb-3">
+        <label class="form-label">Type de personne :</label>
+        <select name="typePersonne" class="form-select" required>
+          <option value="client">Client</option>
+          <option value="personnel">Personnel</option>
+          <option value="prestataire">Prestataire</option>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Nombre de personnes :</label>
+        <input type="number" name="nombrePersonnes" class="form-control" value="1" min="1">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Poursuites judiciaires (nombre) :</label>
+        <input type="number" name="poursuitesJudiciaires" class="form-control" value="0" min="0">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Valeur marchandise récupérée (€) :</label>
+        <input type="number" step="0.01" name="valeurMarchandiseRecuperee" class="form-control" value="0">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Rayon concerné :</label>
+        <input type="text" name="rayonConcerne" class="form-control">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Date de l'interpellation :</label>
+        <input
+          type="date"
+          name="dateInterpellation"
+          class="form-control"
+          value="<%= new Date().toISOString().split('T')[0] %>"
+        >
+      </div>
+
+      <button type="submit" class="btn btn-primary">Ajouter</button>
+      <a href="/supermarket/<%= supermarket._id %>" class="btn btn-secondary">Retour</a>
+    </form>
+  </div>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Modifier un Incident</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+</head>
+<body class="bg-light">
+  <div class="container mt-5">
+    <h1 class="text-center">Modifier l'Incident</h1>
+    <h2 class="text-center mb-4"><%= supermarket.name %></h2>
+
+    <form
+      action="/supermarket/<%= supermarket._id %>/accidents/incident/<%= incident._id %>/edit"
+      method="POST"
+      class="card p-4 shadow"
+    >
+      <div class="mb-3">
+        <label class="form-label">Numéro :</label>
+        <input
+          type="number"
+          name="numeroIncident"
+          class="form-control"
+          value="<%= incident.numeroIncident %>"
+          min="1"
+        >
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Type d'incident :</label>
+        <select name="typeIncident" class="form-select" required>
+          <option value="Départ de feu" <%= incident.typeIncident === 'Départ de feu' ? 'selected' : '' %>>
+            Départ de feu
+          </option>
+          <option value="Agression envers le personnel" <%= incident.typeIncident === 'Agression envers le personnel' ? 'selected' : '' %>>
+            Agression envers le personnel
+          </option>
+          <option value="Passage des autorités" <%= incident.typeIncident === 'Passage des autorités' ? 'selected' : '' %>>
+            Passage des autorités
+          </option>
+          <option value="Sinistre déclaré par un client" <%= incident.typeIncident === 'Sinistre déclaré par un client' ? 'selected' : '' %>>
+            Sinistre déclaré par un client
+          </option>
+          <option value="Acte de secourisme" <%= incident.typeIncident === 'Acte de secourisme' ? 'selected' : '' %>>
+            Acte de secourisme
+          </option>
+          <option value="Autre" <%= incident.typeIncident === 'Autre' ? 'selected' : '' %>>
+            Autre
+          </option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Date de l'incident :</label>
+        <input
+          type="date"
+          name="dateIncident"
+          class="form-control"
+          value="<%= incident.dateIncident.toISOString().split('T')[0] %>"
+        >
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Détails :</label>
+        <textarea name="details" class="form-control"><%= incident.details %></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Mettre à jour</button>
+      <a href="/supermarket/<%= supermarket._id %>/accidents" class="btn btn-secondary">Retour</a>
+    </form>
+  </div>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Modifier le Supermarché</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+  <div class="container mt-5">
+    <h1 class="text-center">Modifier <%= supermarket.name %></h1>
+    <div class="card p-4 shadow">
+      <form action="/supermarket/<%= supermarket._id %>/edit" method="POST">
+        <div class="mb-3">
+          <label class="form-label">Nom :</label>
+          <input type="text" name="name" class="form-control" required value="<%= supermarket.name %>">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Adresse :</label>
+          <input type="text" name="address" class="form-control" value="<%= supermarket.address %>">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Ville :</label>
+          <input type="text" name="city" class="form-control" value="<%= supermarket.city %>">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Code Postal :</label>
+          <input type="text" name="postalCode" class="form-control" value="<%= supermarket.postalCode %>">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Téléphone :</label>
+          <input type="text" name="phone" class="form-control" value="<%= supermarket.phone %>">
+        </div>
+        <button type="submit" class="btn btn-primary">Mettre à jour</button>
+        <a href="/" class="btn btn-secondary">Retour</a>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
