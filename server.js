@@ -9,7 +9,7 @@ mongoose.set('strictQuery', false);
 
 // Check if MONGO_URI is provided
 if (!process.env.MONGO_URI) {
-  console.error('Avertissement: MONGO_URI n\'est pas défini dans .env');
+  console.error("Avertissement: MONGO_URI n'est pas défini dans .env");
 }
 
 // Connect to MongoDB (Atlas or local) via MONGO_URI from .env
