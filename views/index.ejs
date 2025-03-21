@@ -21,7 +21,7 @@
       >
       <button type="submit" class="btn btn-primary">Rechercher</button>
     </form>
-    
+
     <!-- Button to add a new supermarket -->
     <a href="/add" class="btn btn-primary mb-3">Ajouter un Magasin</a>
 
@@ -58,7 +58,12 @@
     <% } else { %>
       <p>Aucun Magasin enregistré.</p>
     <% } %>
-    <a href="/totals" class="btn btn-info">Voir les Totaux</a>
+
+    <!-- Buttons for Totals -->
+    <div class="d-flex gap-2 mt-3">
+      <a href="/totals/supermarkets" class="btn btn-info">Totaux par Magasin</a>
+      <a href="/totals/global" class="btn btn-info">Totaux Globaux</a>
+    </div>
   </div>
 </body>
 </html>

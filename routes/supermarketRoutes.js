@@ -493,24 +493,15 @@ router.post('/supermarket/:id/formations', async (req, res) => {
 // Totals Route
 // ---------------------
 
-router.get('/totals', async (req, res) => {
+// Totaux par Magasin (per-store totals) with search functionality
+router.get('/totals/supermarkets', async (req, res) => {
   try {
-    // 1) Get the search query from req.query
-    const search = req.query.search || '';
+    // Read the search query (if any) from the URL query parameters
+    const search = req.query.search || "";
 
-    // 2) Fetch all supermarkets
+    // Fetch all supermarkets
     const supermarkets = await Supermarket.find({});
     const totalSupermarkets = supermarkets.length;
-
-    // Prepare grand totals
-    let grandTotalInterpellations = 0;
-    let grandTotalClients = 0;
-    let grandTotalPersonnel = 0;
-    let grandTotalPrestataire = 0;
-    let grandTotalRecoveredValue = 0;
-    let grandTotalFormations = 0;
-    let grandTotalAccidents = 0;
-    let grandTotalIncidents = 0;
 
     // Array for per-supermarket totals
     let supermarketTotals = [];
@@ -542,17 +533,6 @@ router.get('/totals', async (req, res) => {
       const totalAccidents = accidents.length;
       const totalIncidents = incidents.length;
 
-      // Update grand totals
-      grandTotalInterpellations += totalInterpellations;
-      grandTotalClients += clientsCount;
-      grandTotalPersonnel += personnelCount;
-      grandTotalPrestataire += prestataireCount;
-      grandTotalRecoveredValue += recoveredValue;
-      grandTotalFormations += totalFormations;
-      grandTotalAccidents += totalAccidents;
-      grandTotalIncidents += totalIncidents;
-
-      // Build the supermarket's totals object
       supermarketTotals.push({
         name: sm.name,
         totalInterpellations,
@@ -566,7 +546,7 @@ router.get('/totals', async (req, res) => {
       });
     }
 
-    // 3) Filter per-supermarket totals by search (case-insensitive)
+    // Filter the supermarketTotals by search term (if provided)
     let filteredSupermarketTotals = supermarketTotals;
     if (search) {
       filteredSupermarketTotals = supermarketTotals.filter(st =>
@@ -574,16 +554,67 @@ router.get('/totals', async (req, res) => {
       );
     }
 
-    // 4) Render the totals page
-    //    Pass the search string and the filtered array
-    res.render('totals', {
-      // Search string to keep in the input
-      search,
-      // Filtered supermarkets
+    res.render('totalsSupermarkets', {
       supermarketTotals: filteredSupermarketTotals,
-
-      // Grand totals remain the same
       totalSupermarkets,
+      search
+    });
+  } catch (err) {
+    console.error(err);
+    res.send("Erreur lors du calcul des totaux par magasin");
+  }
+});
+
+
+// Totaux Globaux (global totals)
+router.get('/totals/global', async (req, res) => {
+  try {
+    // Fetch all supermarkets
+    const supermarkets = await Supermarket.find({});
+
+    let grandTotalInterpellations = 0;
+    let grandTotalClients = 0;
+    let grandTotalPersonnel = 0;
+    let grandTotalPrestataire = 0;
+    let grandTotalRecoveredValue = 0;
+    let grandTotalFormations = 0;
+    let grandTotalAccidents = 0;
+    let grandTotalIncidents = 0;
+
+    for (let sm of supermarkets) {
+      const interpellations = await Interpellation.find({ supermarket: sm._id });
+      const formations = await Formation.find({ supermarket: sm._id });
+      const accidents = await AccidentTravail.find({ supermarket: sm._id });
+      const incidents = await AutreIncident.find({ supermarket: sm._id });
+
+      const totalInterpellations = interpellations.length;
+      let clientsCount = 0;
+      let personnelCount = 0;
+      let prestataireCount = 0;
+      let recoveredValue = 0;
+
+      for (let i of interpellations) {
+        recoveredValue += i.valeurMarchandiseRecuperee;
+        if (i.typePersonne === 'client') {
+          clientsCount += i.nombrePersonnes;
+        } else if (i.typePersonne === 'personnel') {
+          personnelCount += i.nombrePersonnes;
+        } else if (i.typePersonne === 'prestataire') {
+          prestataireCount += i.nombrePersonnes;
+        }
+      }
+
+      grandTotalInterpellations += totalInterpellations;
+      grandTotalClients += clientsCount;
+      grandTotalPersonnel += personnelCount;
+      grandTotalPrestataire += prestataireCount;
+      grandTotalRecoveredValue += recoveredValue;
+      grandTotalFormations += formations.length;
+      grandTotalAccidents += accidents.length;
+      grandTotalIncidents += incidents.length;
+    }
+
+    res.render('totalsGlobal', {
       grandTotalInterpellations,
       grandTotalClients,
       grandTotalPersonnel,
@@ -595,9 +626,8 @@ router.get('/totals', async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.send("Erreur lors du calcul des totaux");
+    res.send("Erreur lors du calcul des totaux globaux");
   }
 });
-
 
 module.exports = router;
