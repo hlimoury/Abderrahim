@@ -10,7 +10,7 @@
 </head>
 <body class="bg-light">
   <div class="container mt-5">
-    <h1 class="text-center">Totaux des Supermarchés</h1>
+    <h1 class="text-center">Totaux des Magasins</h1>
 
     <!-- Totals per supermarket -->
     <% if (supermarketTotals.length > 0) { %>
@@ -21,26 +21,26 @@
           <p><strong>Interpellations - Clients :</strong> <%= s.clientsCount %></p>
           <p><strong>Interpellations - Personnel :</strong> <%= s.personnelCount %></p>
           <p><strong>Interpellations - Prestataire :</strong> <%= s.prestataireCount %></p>
-          <p><strong>Valeur marchandise récupérée (€) :</strong> <%= s.recoveredValue.toFixed(2) %></p>
+          <p><strong>Valeur marchandise récupérée (DH) :</strong> <%= s.recoveredValue.toFixed(2) %></p>
           <p><strong>Formations :</strong> <%= s.totalFormations %></p>
           <p><strong>Accidents de travail :</strong> <%= s.totalAccidents %></p>
           <p><strong>Autres incidents :</strong> <%= s.totalIncidents %></p>
         </div>
       <% }) %>
     <% } else { %>
-      <p>Aucun supermarché enregistré.</p>
+      <p>Aucun magasin enregistré.</p>
     <% } %>
 
     <!-- Grand Totals -->
     <div class="card p-4 shadow mt-5">
       <h2 class="text-center">Totaux Globaux</h2>
-      <p><strong>Total des supermarchés :</strong> <%= totalSupermarkets %></p>
+      <p><strong>Total des magasins :</strong> <%= totalSupermarkets %></p>
 
       <p><strong>Total des interpellations (enregistrements) :</strong> <%= grandTotalInterpellations %></p>
       <p><strong>Interpellations - Clients (global) :</strong> <%= grandTotalClients %></p>
       <p><strong>Interpellations - Personnel (global) :</strong> <%= grandTotalPersonnel %></p>
       <p><strong>Interpellations - Prestataire (global) :</strong> <%= grandTotalPrestataire %></p>
-      <p><strong>Valeur totale marchandise récupérée (€) :</strong> <%= grandTotalRecoveredValue.toFixed(2) %></p>
+      <p><strong>Valeur totale marchandise récupérée (DH) :</strong> <%= grandTotalRecoveredValue.toFixed(2) %></p>
 
       <p><strong>Total des formations :</strong> <%= grandTotalFormations %></p>
       <p><strong>Total des accidents de travail :</strong> <%= grandTotalAccidents %></p>

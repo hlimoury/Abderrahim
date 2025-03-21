@@ -7,8 +7,8 @@
 </head>
 <body class="bg-light">
   <div class="container mt-5">
-    <h1 class="text-center mb-4">Liste des Supermarchés</h1>
-    <a href="/add" class="btn btn-primary mb-3">Ajouter un Supermarché</a>
+    <h1 class="text-center mb-4">Liste des Magasins</h1>
+    <a href="/add" class="btn btn-primary mb-3">Ajouter un Magasin</a>
 
     <% if (supermarkets.length > 0) { %>
       <div class="table-responsive">
@@ -38,7 +38,7 @@
         </table>
       </div>
     <% } else { %>
-      <p>Aucun supermarché enregistré.</p>
+      <p>Aucun Magasin enregistré.</p>
     <% } %>
     <a href="/totals" class="btn btn-info">Voir les Totaux</a>
 
