@@ -3,13 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <title>Liste des Supermarchés</title>
+  <!-- Bootstrap CSS via CDN -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
   <div class="container mt-5">
     <h1 class="text-center mb-4">Liste des Magasins</h1>
+    
+    <!-- Search Form -->
+    <form action="/" method="GET" class="mb-3 d-flex gap-2">
+      <input 
+        type="text" 
+        name="search" 
+        class="form-control" 
+        placeholder="Rechercher un magasin..." 
+        value="<%= typeof search !== 'undefined' ? search : '' %>"
+      >
+      <button type="submit" class="btn btn-primary">Rechercher</button>
+    </form>
+    
+    <!-- Button to add a new supermarket -->
     <a href="/add" class="btn btn-primary mb-3">Ajouter un Magasin</a>
 
+    <!-- Supermarkets Table -->
     <% if (supermarkets.length > 0) { %>
       <div class="table-responsive">
         <table class="table table-bordered table-striped">
@@ -29,7 +45,9 @@
                   <a href="/supermarket/<%= sm._id %>" class="btn btn-success btn-sm">Voir</a>
                   <a href="/supermarket/<%= sm._id %>/edit" class="btn btn-warning btn-sm">Modifier</a>
                   <form action="/supermarket/<%= sm._id %>/delete" method="POST" style="display:inline-block;">
-                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Voulez-vous vraiment supprimer ce supermarché ?');">Supprimer</button>
+                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Voulez-vous vraiment supprimer ce supermarché ?');">
+                      Supprimer
+                    </button>
                   </form>
                 </td>
               </tr>
@@ -41,7 +59,6 @@
       <p>Aucun Magasin enregistré.</p>
     <% } %>
     <a href="/totals" class="btn btn-info">Voir les Totaux</a>
-
   </div>
 </body>
 </html>

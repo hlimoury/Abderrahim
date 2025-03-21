@@ -15,15 +15,26 @@ const Formation = require('../models/formation');
 // ---------------------
 
 // List all supermarkets
+// List all supermarkets with search functionality
 router.get('/', async (req, res) => {
   try {
-    const supermarkets = await Supermarket.find({}).sort({ _id: -1 });
-    res.render('index', { supermarkets });
+    // Get search query from URL, default to empty string if not provided
+    const search = req.query.search || "";
+    let query = {};
+
+    // If a search term is provided, perform a case-insensitive search on the name field
+    if (search) {
+      query.name = { $regex: search, $options: "i" };
+    }
+
+    const supermarkets = await Supermarket.find(query).sort({ _id: -1 });
+    res.render('index', { supermarkets, search });
   } catch (err) {
     console.error(err);
     res.send("Erreur lors de la récupération des supermarchés");
   }
 });
+
 
 // Add a new supermarket (GET & POST)
 router.get('/add', (req, res) => {
@@ -484,7 +495,10 @@ router.post('/supermarket/:id/formations', async (req, res) => {
 
 router.get('/totals', async (req, res) => {
   try {
-    // Fetch all supermarkets
+    // 1) Get the search query from req.query
+    const search = req.query.search || '';
+
+    // 2) Fetch all supermarkets
     const supermarkets = await Supermarket.find({});
     const totalSupermarkets = supermarkets.length;
 
@@ -528,6 +542,7 @@ router.get('/totals', async (req, res) => {
       const totalAccidents = accidents.length;
       const totalIncidents = incidents.length;
 
+      // Update grand totals
       grandTotalInterpellations += totalInterpellations;
       grandTotalClients += clientsCount;
       grandTotalPersonnel += personnelCount;
@@ -537,6 +552,7 @@ router.get('/totals', async (req, res) => {
       grandTotalAccidents += totalAccidents;
       grandTotalIncidents += totalIncidents;
 
+      // Build the supermarket's totals object
       supermarketTotals.push({
         name: sm.name,
         totalInterpellations,
@@ -550,8 +566,23 @@ router.get('/totals', async (req, res) => {
       });
     }
 
+    // 3) Filter per-supermarket totals by search (case-insensitive)
+    let filteredSupermarketTotals = supermarketTotals;
+    if (search) {
+      filteredSupermarketTotals = supermarketTotals.filter(st =>
+        st.name.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    // 4) Render the totals page
+    //    Pass the search string and the filtered array
     res.render('totals', {
-      supermarketTotals,
+      // Search string to keep in the input
+      search,
+      // Filtered supermarkets
+      supermarketTotals: filteredSupermarketTotals,
+
+      // Grand totals remain the same
       totalSupermarkets,
       grandTotalInterpellations,
       grandTotalClients,
@@ -567,5 +598,6 @@ router.get('/totals', async (req, res) => {
     res.send("Erreur lors du calcul des totaux");
   }
 });
+
 
 module.exports = router;

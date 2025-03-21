@@ -12,6 +12,18 @@
   <div class="container mt-5">
     <h1 class="text-center">Totaux des Magasins</h1>
 
+    <!-- Search Form -->
+    <form action="/totals" method="GET" class="mb-3 d-flex" style="gap:10px;">
+      <input
+        type="text"
+        name="search"
+        class="form-control"
+        placeholder="Rechercher un magasin..."
+        value="<%= search %>"
+      >
+      <button type="submit" class="btn btn-primary">Rechercher</button>
+    </form>
+
     <!-- Totals per supermarket -->
     <% if (supermarketTotals.length > 0) { %>
       <% supermarketTotals.forEach(s => { %>
@@ -28,7 +40,7 @@
         </div>
       <% }) %>
     <% } else { %>
-      <p>Aucun magasin enregistré.</p>
+      <p>Aucun magasin trouvé.</p>
     <% } %>
 
     <!-- Grand Totals -->
