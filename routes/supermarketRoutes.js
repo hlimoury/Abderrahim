@@ -8,7 +8,7 @@ const EquipementSurete = require('../models/EquipementSurete');
 const Interpellation = require('../models/Interpellation');
 const AccidentTravail = require('../models/AccidentTravail');
 const AutreIncident = require('../models/AutreIncident');
-const Formation = require('../models/Formation');
+const Formation = require('../models/formation');
 
 // ---------------------
 // Supermarket Routes
