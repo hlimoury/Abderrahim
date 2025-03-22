@@ -453,16 +453,13 @@ router.post('/supermarket/:id/accidents/incident/:incidentId/delete', async (req
   }
 });
 
-// ---------------------
-// Formation Routes
-// ---------------------
-
+// Display all formations
 router.get('/supermarket/:id/formations', async (req, res) => {
   try {
     const { id } = req.params;
     const supermarket = await Supermarket.findById(id);
     if (!supermarket) return res.send("Supermarché introuvable");
-    
+
     const formations = await Formation.find({ supermarket: id }).sort({ dateFormation: -1 });
     res.render('manageFormation', { supermarket, formations });
   } catch (err) {
@@ -471,6 +468,7 @@ router.get('/supermarket/:id/formations', async (req, res) => {
   }
 });
 
+// Add a new formation
 router.post('/supermarket/:id/formations', async (req, res) => {
   try {
     const { id } = req.params;
@@ -522,7 +520,7 @@ router.post('/supermarket/:id/formations/:formationId/edit', async (req, res) =>
   }
 });
 
-// Delete Formation
+// Delete formation
 router.post('/supermarket/:id/formations/:formationId/delete', async (req, res) => {
   try {
     const { id, formationId } = req.params;
@@ -533,6 +531,7 @@ router.post('/supermarket/:id/formations/:formationId/delete', async (req, res) 
     res.send("Erreur lors de la suppression de la formation");
   }
 });
+
 
 // ---------------------
 // Totals Routes
