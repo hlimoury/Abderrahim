@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Modifier Scoring</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+  <h1 class="text-center">Modifier Scoring</h1>
+  <form action="/supermarket/<%= supermarket._id %>/scoring/<%= scoringRow._id %>/edit" method="POST" class="card p-4 shadow">
+    <div class="mb-3">
+      <label class="form-label">Sous-indicateur :</label>
+      <input
+        type="text"
+        name="indicatorName"
+        class="form-control"
+        value="<%= scoringRow.indicatorName %>"
+        required
+      >
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Niveau (%) :</label>
+      <input
+        type="number"
+        step="0.01"
+        name="niveau"
+        class="form-control"
+        value="<%= scoringRow.niveau %>"
+      >
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Objectif (%) :</label>
+      <input
+        type="number"
+        step="0.01"
+        name="objectif"
+        class="form-control"
+        value="<%= scoringRow.objectif %>"
+      >
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/supermarket/<%= supermarket._id %>/scoring" class="btn btn-secondary">Annuler</a>
+  </form>
+</div>
+</body>
+</html>

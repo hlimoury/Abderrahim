@@ -8,13 +8,13 @@ const EquipementSurete = require('../models/EquipementSurete');
 const Interpellation = require('../models/Interpellation');
 const AccidentTravail = require('../models/AccidentTravail');
 const AutreIncident = require('../models/AutreIncident');
-const Formation = require('../models/formation');
+const Formation = require('../models/Formation');  // Changed: capital F
+const Scoring = require('../models/Scoring'); 
 
 // ---------------------
 // Supermarket Routes
 // ---------------------
 
-// List all supermarkets
 // List all supermarkets with search functionality
 router.get('/', async (req, res) => {
   try {
@@ -34,7 +34,6 @@ router.get('/', async (req, res) => {
     res.send("Erreur lors de la récupération des supermarchés");
   }
 });
-
 
 // Add a new supermarket (GET & POST)
 router.get('/add', (req, res) => {
@@ -489,8 +488,54 @@ router.post('/supermarket/:id/formations', async (req, res) => {
   }
 });
 
+// Edit Formation page (GET)
+router.get('/supermarket/:id/formations/:formationId/edit', async (req, res) => {
+  try {
+    const { id, formationId } = req.params;
+    const supermarket = await Supermarket.findById(id);
+    if (!supermarket) return res.send("Supermarché introuvable");
+
+    const formation = await Formation.findById(formationId);
+    if (!formation) return res.send("Formation introuvable");
+
+    res.render('editFormation', { supermarket, formation });
+  } catch (err) {
+    console.error(err);
+    res.send("Erreur lors de la récupération de la formation");
+  }
+});
+
+// Update Formation (POST)
+router.post('/supermarket/:id/formations/:formationId/edit', async (req, res) => {
+  try {
+    const { id, formationId } = req.params;
+    const { nombreFormation, typeFormation, dateFormation } = req.body;
+    await Formation.findByIdAndUpdate(formationId, {
+      nombreFormation: parseInt(nombreFormation) || 1,
+      typeFormation,
+      dateFormation: dateFormation || new Date()
+    });
+    res.redirect(`/supermarket/${id}/formations`);
+  } catch (err) {
+    console.error(err);
+    res.send("Erreur lors de la mise à jour de la formation");
+  }
+});
+
+// Delete Formation
+router.post('/supermarket/:id/formations/:formationId/delete', async (req, res) => {
+  try {
+    const { id, formationId } = req.params;
+    await Formation.findByIdAndDelete(formationId);
+    res.redirect(`/supermarket/${id}/formations`);
+  } catch (err) {
+    console.error(err);
+    res.send("Erreur lors de la suppression de la formation");
+  }
+});
+
 // ---------------------
-// Totals Route
+// Totals Routes
 // ---------------------
 
 // Totaux par Magasin (per-store totals) with search functionality
@@ -565,7 +610,6 @@ router.get('/totals/supermarkets', async (req, res) => {
   }
 });
 
-
 // Totaux Globaux (global totals)
 router.get('/totals/global', async (req, res) => {
   try {
@@ -627,6 +671,145 @@ router.get('/totals/global', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.send("Erreur lors du calcul des totaux globaux");
+  }
+});
+
+// ---------------------
+// Scoring Routes
+// ---------------------
+
+// Display the scoring page (averages for each section + global)
+router.get('/supermarket/:id/scoring', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const supermarket = await Supermarket.findById(id);
+    if (!supermarket) return res.send("Supermarché introuvable");
+
+    // Fetch all scoring rows for this supermarket
+    const allRows = await Scoring.find({ supermarketId: id });
+
+    // Separate them by section
+    const incendieRows = allRows.filter(r => r.sectionType === 'incendie');
+    const sstRows = allRows.filter(r => r.sectionType === 'sst');
+    const sureteRows = allRows.filter(r => r.sectionType === 'surete');
+
+    // A helper to compute average of .niveau or .objectif in an array of rows
+    function computeAverage(rows, field) {
+      if (rows.length === 0) return 0; // avoid divide-by-zero
+      const sum = rows.reduce((acc, r) => acc + r[field], 0);
+      return sum / rows.length;
+    }
+
+    // 1) Per-section averages
+    const incendieNiveau = computeAverage(incendieRows, 'niveau');
+    const incendieObjectif = computeAverage(incendieRows, 'objectif');
+
+    const sstNiveau = computeAverage(sstRows, 'niveau');
+    const sstObjectif = computeAverage(sstRows, 'objectif');
+
+    const sureteNiveau = computeAverage(sureteRows, 'niveau');
+    const sureteObjectif = computeAverage(sureteRows, 'objectif');
+
+    // 2) Global average across all sub-indicators
+    const allCount = allRows.length;
+    let globalNiveau = 0;
+    let globalObjectif = 0;
+    if (allCount > 0) {
+      globalNiveau = allRows.reduce((acc, r) => acc + r.niveau, 0) / allCount;
+      globalObjectif = allRows.reduce((acc, r) => acc + r.objectif, 0) / allCount;
+    }
+
+    res.render('scoring', {
+      supermarket,
+      // pass the sub-indicator rows for display
+      incendieRows,
+      sstRows,
+      sureteRows,
+      // pass each section's average
+      incendieNiveau,
+      incendieObjectif,
+      sstNiveau,
+      sstObjectif,
+      sureteNiveau,
+      sureteObjectif,
+      // pass the global average
+      globalNiveau,
+      globalObjectif
+    });
+  } catch (err) {
+    console.error(err);
+    res.send("Erreur lors de l'affichage de la page scoring");
+  }
+});
+
+
+// Add a new sub-indicator row
+router.post('/supermarket/:id/scoring/add', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { sectionType, indicatorName, niveau, objectif } = req.body;
+
+    await Scoring.create({
+      supermarketId: id,
+      sectionType,
+      indicatorName,
+      niveau: parseFloat(niveau) || 0,
+      objectif: parseFloat(objectif) || 0
+    });
+
+    // Redirect back to the scoring page
+    res.redirect(`/supermarket/${id}/scoring`);
+  } catch (err) {
+    console.error(err);
+    res.send("Erreur lors de l'ajout du scoring");
+  }
+});
+
+// Show edit form for a specific scoring row
+router.get('/supermarket/:id/scoring/:scoringId/edit', async (req, res) => {
+  try {
+    const { id, scoringId } = req.params;
+    const supermarket = await Supermarket.findById(id);
+    if (!supermarket) return res.send("Supermarché introuvable");
+
+    const scoringRow = await Scoring.findById(scoringId);
+    if (!scoringRow) return res.send("Scoring row introuvable");
+
+    res.render('editScoring', { supermarket, scoringRow });
+  } catch (err) {
+    console.error(err);
+    res.send("Erreur lors de l'édition du scoring");
+  }
+});
+
+// Update a scoring row
+router.post('/supermarket/:id/scoring/:scoringId/edit', async (req, res) => {
+  try {
+    const { id, scoringId } = req.params;
+    const { indicatorName, niveau, objectif } = req.body;
+
+    await Scoring.findByIdAndUpdate(scoringId, {
+      indicatorName,
+      niveau: parseFloat(niveau) || 0,
+      objectif: parseFloat(objectif) || 0
+    });
+
+    res.redirect(`/supermarket/${id}/scoring`);
+  } catch (err) {
+    console.error(err);
+    res.send("Erreur lors de la mise à jour du scoring");
+  }
+});
+
+// Delete a scoring row
+router.post('/supermarket/:id/scoring/:scoringId/delete', async (req, res) => {
+  try {
+    const { id, scoringId } = req.params;
+    await Scoring.findByIdAndDelete(scoringId);
+    res.redirect(`/supermarket/${id}/scoring`);
+  } catch (err) {
+    console.error(err);
+    res.send("Erreur lors de la suppression du scoring");
   }
 });
 
