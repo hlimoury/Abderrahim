@@ -76,11 +76,11 @@ const InstanceSchema = new Schema({
   scoring: ScoringSchema
 });
 
-// Update SupermarketSchema to include "ville"
 const SupermarketSchema = new Schema({
   nom: { type: String, required: true },
-  ville: { type: String, required: true },  // Make sure this field exists!
+  ville: { type: String, required: true, default: 'Inconnue' },
   instances: [InstanceSchema]
 });
+
 
 module.exports = mongoose.model('Supermarket', SupermarketSchema);
