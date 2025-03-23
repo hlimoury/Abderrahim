@@ -1,39 +1,36 @@
-// server.js
-require('dotenv').config();
 const express = require('express');
+const expressLayouts = require('express-ejs-layouts');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
-
-// (Optional) Disable strict query mode in Mongoose 7+
-mongoose.set('strictQuery', false);
-
-// Check if MONGO_URI is provided
-if (!process.env.MONGO_URI) {
-  console.error("Avertissement: MONGO_URI n'est pas défini dans .env");
-}
-
-// Connect to MongoDB (Atlas or local) via MONGO_URI from .env
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log('MongoDB connecté'))
-.catch(err => console.error('Erreur de connexion MongoDB:', err));
+const path = require('path');
 
 const app = express();
 
-// Set EJS as the view engine
+// Connexion à MongoDB (adapter la chaîne de connexion si nécessaire)
+mongoose.connect('mongodb://localhost:27017/supermarket-platform', { 
+  useNewUrlParser: true, 
+  useUnifiedTopology: true 
+})
+.then(() => console.log('MongoDB connecté'))
+.catch(err => console.log(err));
+
+// Middleware
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Configuration d'Express-EJS-Layouts
+app.use(expressLayouts);
+app.set('layout', 'layout'); // Utilise views/layout.ejs comme layout par défaut
 app.set('view engine', 'ejs');
 
-// Use body-parser middleware
-app.use(bodyParser.urlencoded({ extended: true }));
+// Routes
+const indexRoutes       = require('./routes/index');
+const supermarketRoutes = require('./routes/supermarkets');
+const totalsRoutes      = require('./routes/totals');
 
-// Import your routes
-const supermarketRoutes = require('./routes/supermarketRoutes');
-app.use('/', supermarketRoutes);
+app.use('/', indexRoutes);
+app.use('/supermarkets', supermarketRoutes);
+app.use('/totals', totalsRoutes);
 
-// Start the server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Serveur démarré sur http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`Serveur démarré sur le port ${PORT}`));

@@ -1,0 +1,38 @@
+
+<h1>Modifier Sous-Indicateur</h1>
+<a href="/supermarkets/<%= supermarketId %>/instance/<%= instanceId %>/scoring" class="btn btn-secondary mb-3">Retour</a>
+
+<% 
+  // Set dropdown options based on the category
+  let options = [];
+  if (category === 'securiteIncendie') { 
+    options = ["Risque Incendie", "Extincteurs+RIA", "Désenfumage+Évacuation"];
+  } else if (category === 'sst') { 
+    options = ["Organisation Sécurité", "Risque Électrique", "RM+Réserve+Frigos+Labos", "Mise en Rayon+Caisse", "Locaux Sociaux"];
+  } else if (category === 'surete') { 
+    options = ["Vidéosurveillance+Intrusion", "Flux des biens et des personnes", "Registres Sécurité", "Sûreté et Sécurité Station Service", "Sécurité des Fonds"];
+  }
+%>
+
+<form action="/supermarkets/<%= supermarketId %>/instance/<%= instanceId %>/scoring/<%= category %>/editer/<%= scoringItem._id %>" method="POST">
+  <div class="form-group">
+    <label for="nom">Sous-Indicateur</label>
+    <select class="form-control" id="nom" name="nom" required>
+      <% options.forEach(function(opt) { %>
+        <option value="<%= opt %>" <%= scoringItem.nom === opt ? 'selected' : '' %>><%= opt %></option>
+      <% }); %>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="niveau">Niveau</label>
+    <input type="number" step="0.01" class="form-control" id="niveau" name="niveau" value="<%= scoringItem.niveau %>">
+  </div>
+
+  <div class="form-group">
+    <label for="objectif">Objectif</label>
+    <input type="number" step="0.01" class="form-control" id="objectif" name="objectif" value="<%= scoringItem.objectif %>">
+  </div>
+
+  <button type="submit" class="btn btn-primary">Mettre à jour</button>
+</form>

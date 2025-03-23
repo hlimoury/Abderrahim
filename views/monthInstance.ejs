@@ -1,0 +1,13 @@
+
+<h1>Ajouter une Instance pour le Supermarché</h1>
+<form action="/supermarkets/<%= supermarketId %>/ajouter-instance" method="POST">
+  <div class="form-group">
+    <label for="mois">Mois</label>
+    <input type="number" class="form-control" id="mois" name="mois" required min="1" max="12">
+  </div>
+  <div class="form-group">
+    <label for="annee">Année</label>
+    <input type="number" class="form-control" id="annee" name="annee" required>
+  </div>
+  <button type="submit" class="btn btn-primary">Ajouter Instance</button>
+</form>

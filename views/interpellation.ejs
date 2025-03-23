@@ -1,0 +1,52 @@
+
+<h1>Interpellations - Instance du Mois</h1>
+<a href="/supermarkets/<%= supermarketId %>" class="btn btn-secondary mb-3">Retour</a>
+
+<h2>Ajouter une Interpellation</h2>
+<form action="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/interpellations/ajouter" method="POST">
+  <div class="form-group">
+    <label>Type de personne</label>
+    <select class="form-control" name="typePersonne">
+      <option value="Client">Client</option>
+      <option value="Personnel">Personnel</option>
+      <option value="Prestataire">Prestataire</option>
+    </select>
+  </div>
+  <input type="number" class="form-control mb-2" name="nombrePersonnes" placeholder="Nombre de personnes" required>
+  <input type="number" class="form-control mb-2" name="poursuites" placeholder="Poursuites judiciaires" required>
+  <input type="number" class="form-control mb-2" name="valeurMarchandise" placeholder="Valeur marchandise récupérée (DH)" required>
+  <input type="text" class="form-control mb-2" name="rayon" placeholder="Rayon concerné" required>
+  <input type="date" class="form-control mb-2" name="date" required>
+  <button class="btn btn-primary">Ajouter</button>
+</form>
+
+<h2 class="mt-4">Liste des Interpellations</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Nombre</th>
+      <th>Poursuites</th>
+      <th>Valeur</th>
+      <th>Rayon</th>
+      <th>Date</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% instance.interpellations.forEach(function(inter) { %>
+      <tr>
+        <td><%= inter.typePersonne %></td>
+        <td><%= inter.nombrePersonnes %></td>
+        <td><%= inter.poursuites %></td>
+        <td><%= inter.valeurMarchandise %></td>
+        <td><%= inter.rayon %></td>
+        <td><%= inter.date.toISOString().split("T")[0] %></td>
+        <td>
+          <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/interpellations/editer/<%= inter._id %>" class="btn btn-warning btn-sm">Éditer</a>
+          <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/interpellations/supprimer/<%= inter._id %>" class="btn btn-danger btn-sm" onclick="return confirm('Supprimer cette interpellation ?');">Supprimer</a>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>

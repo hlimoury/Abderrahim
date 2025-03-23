@@ -1,0 +1,70 @@
+
+<h1>Supermarché: <%= supermarket.nom %></h1>
+<a href="/supermarkets/<%= supermarket._id %>/ajouter-instance" class="btn btn-primary mb-3">
+  Ajouter Instance (Mois/Année)
+</a>
+
+<h2>Instances</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Mois</th>
+      <th>Année</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% supermarket.instances.forEach(function(instance) { %>
+      <tr>
+        <td><%= instance.mois %></td>
+        <td><%= instance.annee %></td>
+        <td>
+          <!-- Formation -->
+          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/formation" class="btn btn-info btn-sm">
+            Formation
+          </a>
+          <!-- Accidents -->
+          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/accidents" class="btn btn-warning btn-sm">
+            Accidents
+          </a>
+          <!-- Autres Incidents -->
+          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/incidents" class="btn btn-danger btn-sm">
+            Autres Incidents
+          </a>
+          <!-- Interpellations -->
+          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/interpellations" class="btn btn-success btn-sm">
+            Interpellations
+          </a>
+          <!-- Équipements -->
+          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/equipements" class="btn btn-secondary btn-sm">
+            Équipements
+          </a>
+
+          <a 
+            href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/scoring" 
+            class="btn btn-dark btn-sm"
+          >
+            Scoring
+          </a>
+
+          <!-- New: Modifier Instance -->
+          <a 
+            href="/supermarkets/<%= supermarket._id %>/instance/editer/<%= instance._id %>" 
+            class="btn btn-primary btn-sm"
+          >
+            Modifier
+          </a>
+
+          <!-- New: Supprimer Instance -->
+          <a 
+            href="/supermarkets/<%= supermarket._id %>/instance/supprimer/<%= instance._id %>" 
+            class="btn btn-danger btn-sm"
+            onclick="return confirm('Voulez-vous vraiment supprimer cette instance ?');"
+          >
+            Supprimer
+          </a>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>

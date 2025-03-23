@@ -1,0 +1,17 @@
+
+<h1>Éditer Formation</h1>
+<form action="/supermarkets/<%= supermarketId %>/instance/<%= instanceId %>/formation/editer/<%= formationItem._id %>" method="POST">
+  <div class="form-group">
+    <label for="nombrePersonnes">Nombre de personnes</label>
+    <input type="number" class="form-control" id="nombrePersonnes" name="nombrePersonnes" value="<%= formationItem.nombrePersonnes %>" required>
+  </div>
+  <div class="form-group">
+    <label for="type">Type de Formation</label>
+    <select class="form-control" id="type" name="type">
+      <option value="Incendie" <%= formationItem.type === 'Incendie' ? 'selected' : '' %>>Incendie</option>
+      <option value="SST" <%= formationItem.type === 'SST' ? 'selected' : '' %>>SST</option>
+      <option value="Intégration" <%= formationItem.type === 'Intégration' ? 'selected' : '' %>>Intégration</option>
+    </select>
+  </div>
+  <button type="submit" class="btn btn-primary">Mettre à jour</button>
+</form>

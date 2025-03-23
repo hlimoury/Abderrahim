@@ -1,0 +1,11 @@
+
+<h1>Totaux & Reporting</h1>
+<div class="card">
+  <div class="card-body">
+    <h3>Totaux Globaux</h3>
+    <p>Formation: <%= totals.formation %> personnes</p>
+    <p>Accidents: <%= totals.accidents.count %> accidents, <%= totals.accidents.jours %> jours d'arrêt</p>
+    <p>Autres Incidents: <%= totals.incidents %></p>
+    <p>Interpellations: <%= totals.interpellations.personnes %> personnes, <%= totals.interpellations.poursuites %> poursuites, <%= totals.interpellations.valeur %> DH récupérés</p>
+  </div>
+</div>

@@ -1,0 +1,70 @@
+
+<h1>Modifier Accident</h1>
+<a href="/supermarkets/<%= supermarketId %>/instance/<%= instanceId %>/accidents" class="btn btn-secondary mb-3">
+  Retour
+</a>
+
+<form 
+  action="/supermarkets/<%= supermarketId %>/instance/<%= instanceId %>/accidents/editer/<%= accidentItem._id %>" 
+  method="POST"
+>
+  <div class="form-group">
+    <label for="nombreAccidents">Nombre d'accidents</label>
+    <input
+      type="number"
+      class="form-control"
+      id="nombreAccidents"
+      name="nombreAccidents"
+      value="<%= accidentItem.nombreAccidents %>"
+      required
+    >
+  </div>
+
+  <div class="form-group">
+    <label for="joursArret">Nombre de jours d'arrêt de travail</label>
+    <input
+      type="number"
+      class="form-control"
+      id="joursArret"
+      name="joursArret"
+      value="<%= accidentItem.joursArret %>"
+      required
+    >
+  </div>
+
+  <div class="form-check mb-2">
+    <input
+      type="checkbox"
+      class="form-check-input"
+      id="accidentDeclare"
+      name="accidentDeclare"
+      <%= accidentItem.accidentDeclare ? 'checked' : '' %>
+    >
+    <label class="form-check-label" for="accidentDeclare">Accident déclaré ?</label>
+  </div>
+
+  <div class="form-group">
+    <label for="cause">Cause</label>
+    <input
+      type="text"
+      class="form-control"
+      id="cause"
+      name="cause"
+      value="<%= accidentItem.cause %>"
+    >
+  </div>
+
+  <div class="form-group">
+    <label for="date">Date</label>
+    <input
+      type="date"
+      class="form-control"
+      id="date"
+      name="date"
+      value="<%= accidentItem.date ? accidentItem.date.toISOString().split('T')[0] : '' %>"
+      required
+    >
+  </div>
+
+  <button type="submit" class="btn btn-primary">Mettre à jour</button>
+</form>

@@ -1,0 +1,43 @@
+
+<h1>Formation - Instance du Mois</h1>
+<a href="/supermarkets/<%= supermarketId %>" class="btn btn-secondary mb-3">Retour</a>
+
+<h2>Ajouter une Formation</h2>
+<form action="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/formation/ajouter" method="POST">
+  <div class="form-group">
+    <label for="nombrePersonnes">Nombre de personnes</label>
+    <input type="number" class="form-control" id="nombrePersonnes" name="nombrePersonnes" required>
+  </div>
+  <div class="form-group">
+    <label for="type">Type de Formation</label>
+    <select class="form-control" id="type" name="type">
+      <option value="Incendie">Incendie</option>
+      <option value="SST">SST</option>
+      <option value="Intégration">Intégration</option>
+    </select>
+  </div>
+  <button type="submit" class="btn btn-primary">Ajouter</button>
+</form>
+
+<h2>Liste des Formations</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Nombre de personnes</th>
+      <th>Type</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% formation.forEach(function(f) { %>
+      <tr>
+        <td><%= f.nombrePersonnes %></td>
+        <td><%= f.type %></td>
+        <td>
+          <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/formation/editer/<%= f._id %>" class="btn btn-sm btn-warning">Éditer</a>
+          <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/formation/supprimer/<%= f._id %>" class="btn btn-sm btn-danger">Supprimer</a>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>

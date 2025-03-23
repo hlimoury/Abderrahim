@@ -1,0 +1,62 @@
+
+<h1>Autres Incidents - Instance du Mois</h1>
+<a href="/supermarkets/<%= supermarketId %>" class="btn btn-secondary mb-3">Retour</a>
+
+<h2>Ajouter un Incident</h2>
+<form action="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/incidents/ajouter" method="POST">
+  <div class="form-group">
+    <label for="nombreIncidents">Nombre d'incidents</label>
+    <input type="number" class="form-control" id="nombreIncidents" name="nombreIncidents" required>
+  </div>
+  <div class="form-group">
+    <label for="typeIncident">Type d'incident</label>
+    <select class="form-control" id="typeIncident" name="typeIncident">
+      <option value="Départ de feu">Départ de feu</option>
+      <option value="Agression envers le personnel">Agression envers le personnel</option>
+      <option value="Passage des autorités">Passage des autorités</option>
+      <option value="Sinistre déclaré par un client">Sinistre déclaré par un client</option>
+      <option value="Acte de sécurisation">Acte de sécurisation</option>
+      <option value="Autre">Autre</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="date">Date</label>
+    <input type="date" class="form-control" id="date" name="date" required>
+  </div>
+  <div class="form-group">
+    <label for="detail">Détail</label>
+    <input type="text" class="form-control" id="detail" name="detail">
+  </div>
+  <button type="submit" class="btn btn-primary">Ajouter</button>
+</form>
+
+<h2 class="mt-4">Liste des Incidents</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Nombre</th>
+      <th>Type</th>
+      <th>Date</th>
+      <th>Détail</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% incidents.forEach(function(incident) { %>
+      <tr>
+        <td><%= incident.nombreIncidents %></td>
+        <td><%= incident.typeIncident %></td>
+        <td><%= incident.date ? incident.date.toISOString().split('T')[0] : '' %></td>
+        <td><%= incident.detail %></td>
+        <td>
+          <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/incidents/editer/<%= incident._id %>" class="btn btn-warning btn-sm">
+            Modifier
+          </a>
+          <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/incidents/supprimer/<%= incident._id %>" class="btn btn-danger btn-sm" onclick="return confirm('Voulez-vous vraiment supprimer cet incident ?');">
+            Supprimer
+          </a>
+        </td>
+      </tr>
+    <% }); %>
+  </tbody>
+</table>
