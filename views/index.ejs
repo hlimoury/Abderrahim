@@ -1,6 +1,7 @@
 
 <h1>Liste des Supermarchés</h1>
 <a href="/ajouter" class="btn btn-primary mb-3">Ajouter un Supermarché</a>
+
 <table class="table">
   <thead>
     <tr>
@@ -13,7 +14,25 @@
       <tr>
         <td><%= market.nom %></td>
         <td>
-          <a href="/supermarkets/<%= market._id %>" class="btn btn-info">Voir</a>
+          <!-- Voir button -->
+          <a href="/supermarkets/<%= market._id %>" class="btn btn-info btn-sm">Voir</a>
+          
+          <!-- Modifier button -->
+          <a 
+            href="/supermarkets/<%= market._id %>/editer" 
+            class="btn btn-warning btn-sm"
+          >
+            Modifier
+          </a>
+          
+          <!-- Supprimer button -->
+          <a 
+            href="/supermarkets/<%= market._id %>/supprimer" 
+            class="btn btn-danger btn-sm"
+            onclick="return confirm('Voulez-vous vraiment supprimer ce supermarché ?');"
+          >
+            Supprimer
+          </a>
         </td>
       </tr>
     <% }) %>

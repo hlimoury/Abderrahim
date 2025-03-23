@@ -1,0 +1,17 @@
+
+<h1>Modifier le Supermarché</h1>
+
+<form action="/supermarkets/<%= supermarket._id %>/editer" method="POST">
+  <div class="form-group">
+    <label for="nom">Nom du Supermarché</label>
+    <input 
+      type="text" 
+      class="form-control" 
+      id="nom" 
+      name="nom" 
+      value="<%= supermarket.nom %>" 
+      required
+    >
+  </div>
+  <button type="submit" class="btn btn-primary">Mettre à jour</button>
+</form>

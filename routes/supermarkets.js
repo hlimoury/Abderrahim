@@ -166,6 +166,50 @@ router.get('/:id', async (req, res) => {
   res.render('supermarket', { supermarket });
 });
 
+
+
+// ======================
+// Edit a Supermarket
+// ======================
+
+// GET: Edit form
+router.get('/:id/editer', async (req, res) => {
+  const supermarket = await Supermarket.findById(req.params.id);
+  if (!supermarket) return res.status(404).send('Supermarché introuvable');
+  // Render the edit form
+  res.render('editerSupermarket', { supermarket });
+});
+
+// POST: Save edited data
+router.post('/:id/editer', async (req, res) => {
+  const { nom } = req.body;
+  const supermarket = await Supermarket.findById(req.params.id);
+  if (!supermarket) return res.status(404).send('Supermarché introuvable');
+
+  supermarket.nom = nom;
+  await supermarket.save();
+
+  res.redirect('/');
+});
+
+// ======================
+// Delete a Supermarket
+// ======================
+// Delete route (GET)
+router.get('/:id/supprimer', async (req, res) => {
+  const supermarket = await Supermarket.findById(req.params.id);
+  if (!supermarket) {
+    return res.status(404).send('Supermarché introuvable');
+  }
+
+  // Instead of supermarket.remove(), use supermarket.deleteOne()
+  await supermarket.deleteOne();
+  // Or: await Supermarket.findByIdAndDelete(req.params.id);
+
+  res.redirect('/');
+});
+
+
 // Formulaire pour ajouter une instance (mois/année)
 router.get('/:id/ajouter-instance', (req, res) => {
   res.render('monthInstance', { supermarketId: req.params.id });
