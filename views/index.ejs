@@ -1,11 +1,21 @@
 
 <h1>Liste des Supermarchés</h1>
+
+<!-- Search form for Supermarchés -->
+<form action="/" method="GET" class="mb-3">
+  <div class="form-group">
+    <input type="text" name="search" class="form-control" placeholder="Rechercher par nom ou ville">
+  </div>
+  <button type="submit" class="btn btn-primary">Rechercher</button>
+</form>
+
 <a href="/ajouter" class="btn btn-primary mb-3">Ajouter un Supermarché</a>
 
 <table class="table">
   <thead>
     <tr>
       <th>Nom</th>
+      <th>Ville</th>
       <th>Actions</th>
     </tr>
   </thead>
@@ -13,24 +23,15 @@
     <% supermarkets.forEach(function(market) { %>
       <tr>
         <td><%= market.nom %></td>
+        <td><%= market.ville %></td>
         <td>
           <!-- Voir button -->
           <a href="/supermarkets/<%= market._id %>" class="btn btn-info btn-sm">Voir</a>
-          
           <!-- Modifier button -->
-          <a 
-            href="/supermarkets/<%= market._id %>/editer" 
-            class="btn btn-warning btn-sm"
-          >
-            Modifier
-          </a>
-          
+          <a href="/supermarkets/<%= market._id %>/editer" class="btn btn-warning btn-sm">Modifier</a>
           <!-- Supprimer button -->
-          <a 
-            href="/supermarkets/<%= market._id %>/supprimer" 
-            class="btn btn-danger btn-sm"
-            onclick="return confirm('Voulez-vous vraiment supprimer ce supermarché ?');"
-          >
+          <a href="/supermarkets/<%= market._id %>/supprimer" class="btn btn-danger btn-sm"
+             onclick="return confirm('Voulez-vous vraiment supprimer ce supermarché ?');">
             Supprimer
           </a>
         </td>

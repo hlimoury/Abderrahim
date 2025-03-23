@@ -1,8 +1,20 @@
 
-<h1>Supermarché: <%= supermarket.nom %></h1>
-<a href="/supermarkets/<%= supermarket._id %>/ajouter-instance" class="btn btn-primary mb-3">
-  Ajouter Instance (Mois/Année)
-</a>
+<h1>Supermarché: <%= supermarket.nom %> (<%= supermarket.ville %>)</h1>
+
+<!-- Button to add a new instance and view instance totals -->
+<div class="mb-3">
+  <a href="/supermarkets/<%= supermarket._id %>/ajouter-instance" class="btn btn-primary">Ajouter Instance (Mois/Année)</a>
+  <a href="/supermarkets/<%= supermarket._id %>/instances/totaux" class="btn btn-info">Totaux Instances</a>
+</div>
+
+<!-- Search form for filtering instances by month and year -->
+<form action="/supermarkets/<%= supermarket._id %>" method="GET" class="mb-3">
+  <div class="form-inline">
+    <input type="number" name="mois" class="form-control mr-2" placeholder="Mois" value="<%= mois || '' %>">
+    <input type="number" name="annee" class="form-control mr-2" placeholder="Année" value="<%= annee || '' %>">
+    <button type="submit" class="btn btn-primary">Filtrer Instances</button>
+  </div>
+</form>
 
 <h2>Instances</h2>
 <table class="table">
@@ -14,53 +26,32 @@
     </tr>
   </thead>
   <tbody>
-    <% supermarket.instances.forEach(function(instance) { %>
+    <% 
+       // If a filter is applied, use the filtered instances passed via the route;
+       // otherwise, default to supermarket.instances.
+       const instancesToShow = instances || supermarket.instances;
+       instancesToShow.forEach(function(instance) { 
+    %>
       <tr>
         <td><%= instance.mois %></td>
         <td><%= instance.annee %></td>
         <td>
           <!-- Formation -->
-          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/formation" class="btn btn-info btn-sm">
-            Formation
-          </a>
+          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/formation" class="btn btn-info btn-sm">Formation</a>
           <!-- Accidents -->
-          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/accidents" class="btn btn-warning btn-sm">
-            Accidents
-          </a>
+          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/accidents" class="btn btn-warning btn-sm">Accidents</a>
           <!-- Autres Incidents -->
-          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/incidents" class="btn btn-danger btn-sm">
-            Autres Incidents
-          </a>
+          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/incidents" class="btn btn-danger btn-sm">Autres Incidents</a>
           <!-- Interpellations -->
-          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/interpellations" class="btn btn-success btn-sm">
-            Interpellations
-          </a>
+          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/interpellations" class="btn btn-success btn-sm">Interpellations</a>
           <!-- Équipements -->
-          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/equipements" class="btn btn-secondary btn-sm">
-            Équipements
-          </a>
-
-          <a 
-            href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/scoring" 
-            class="btn btn-dark btn-sm"
-          >
-            Scoring
-          </a>
-
-          <!-- New: Modifier Instance -->
-          <a 
-            href="/supermarkets/<%= supermarket._id %>/instance/editer/<%= instance._id %>" 
-            class="btn btn-primary btn-sm"
-          >
-            Modifier
-          </a>
-
-          <!-- New: Supprimer Instance -->
-          <a 
-            href="/supermarkets/<%= supermarket._id %>/instance/supprimer/<%= instance._id %>" 
-            class="btn btn-danger btn-sm"
-            onclick="return confirm('Voulez-vous vraiment supprimer cette instance ?');"
-          >
+          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/equipements" class="btn btn-secondary btn-sm">Équipements</a>
+          <!-- Scoring -->
+          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/scoring" class="btn btn-dark btn-sm">Scoring</a>
+          <!-- Edit/Delete instance -->
+          <a href="/supermarkets/<%= supermarket._id %>/instance/editer/<%= instance._id %>" class="btn btn-primary btn-sm">Modifier</a>
+          <a href="/supermarkets/<%= supermarket._id %>/instance/supprimer/<%= instance._id %>" class="btn btn-danger btn-sm"
+             onclick="return confirm('Voulez-vous vraiment supprimer cette instance ?');">
             Supprimer
           </a>
         </td>

@@ -163,7 +163,22 @@ router.get('/:id/instance/:instanceId/scoring/:category/supprimer/:scoreId', asy
 // Voir un supermarché et ses instances
 router.get('/:id', async (req, res) => {
   const supermarket = await Supermarket.findById(req.params.id);
-  res.render('supermarket', { supermarket });
+  if (!supermarket) return res.status(404).send('Supermarché introuvable');
+
+  // Filter instances based on query parameters (mois and annee)
+  const mois = req.query.mois;
+  const annee = req.query.annee;
+  let instances = supermarket.instances;
+  if (mois || annee) {
+    instances = instances.filter(instance => {
+      let match = true;
+      if (mois) match = match && (instance.mois == mois);
+      if (annee) match = match && (instance.annee == annee);
+      return match;
+    });
+  }
+  // Pass both filtered instances and original supermarket (so you have access to all fields)
+  res.render('supermarket', { supermarket, instances, mois, annee });
 });
 
 
@@ -182,15 +197,17 @@ router.get('/:id/editer', async (req, res) => {
 
 // POST: Save edited data
 router.post('/:id/editer', async (req, res) => {
-  const { nom } = req.body;
+  const { nom, ville } = req.body;
   const supermarket = await Supermarket.findById(req.params.id);
   if (!supermarket) return res.status(404).send('Supermarché introuvable');
 
   supermarket.nom = nom;
+  supermarket.ville = ville;
   await supermarket.save();
 
   res.redirect('/');
 });
+
 
 // ======================
 // Delete a Supermarket
@@ -619,5 +636,51 @@ router.get('/:id/instance/:instanceId/equipements/supprimer', async (req, res) =
   await supermarket.save();
   res.redirect(`/supermarkets/${req.params.id}/instance/${req.params.instanceId}/equipements`);
 });
+
+
+
+
+
+// Totaux pour toutes les instances d'un supermarché
+router.get('/:id/instances/totaux', async (req, res) => {
+  const { id } = req.params;
+  const supermarket = await Supermarket.findById(id);
+  if (!supermarket) return res.status(404).send('Supermarché introuvable');
+
+  // Initialize totals for various sections:
+  let totals = {
+    formation: 0,
+    accidents: { count: 0, jours: 0 },
+    incidents: 0,
+    interpellations: { personnes: 0, poursuites: 0, valeur: 0 }
+  };
+
+  // Iterate over each instance of the supermarket
+  supermarket.instances.forEach(instance => {
+    instance.formation.forEach(f => totals.formation += Number(f.nombrePersonnes));
+    
+    instance.accidents.forEach(a => {
+      totals.accidents.count += Number(a.nombreAccidents);
+      totals.accidents.jours += Number(a.joursArret);
+    });
+    
+    instance.incidents.forEach(i => totals.incidents += Number(i.nombreIncidents));
+    
+    instance.interpellations.forEach(inter => {
+      totals.interpellations.personnes += Number(inter.nombrePersonnes);
+      totals.interpellations.poursuites += Number(inter.poursuites);
+      totals.interpellations.valeur += Number(inter.valeurMarchandise);
+    });
+  });
+
+  res.render('instanceTotal', { supermarket, totals });
+});
+
+
+
+
+
+
+
 
 module.exports = router;

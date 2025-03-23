@@ -11,15 +11,12 @@
 <h1>Scoring - Instance <%= instance.mois %>/<%= instance.annee %></h1>
 <a href="/supermarkets/<%= supermarketId %>" class="btn btn-secondary mb-3">Retour</a>
 
-<!-- ======================
-     1) Sécurité Incendie
-     ====================== -->
 <div class="card mb-4">
   <div class="card-header">
     <h3>Sécurité Incendie</h3>
   </div>
   <div class="card-body">
-    <!-- Add new Sous-Indicateur with dropdown -->
+
     <form 
       action="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/scoring/securiteIncendie/ajouter" 
       method="POST" 
@@ -31,30 +28,60 @@
         <option value="Extincteurs+RIA">Extincteurs+RIA</option>
         <option value="Désenfumage+Évacuation">Désenfumage+Évacuation</option>
       </select>
-      <input type="number" step="0.01" class="form-control mr-2" name="niveau" placeholder="Niveau">
-      <input type="number" step="0.01" class="form-control mr-2" name="objectif" placeholder="Objectif">
+      <input 
+        type="number" 
+        step="0.01" 
+        class="form-control mr-2" 
+        name="niveau" 
+        placeholder="Niveau"
+      >
+      <input 
+        type="number" 
+        step="0.01" 
+        class="form-control mr-2" 
+        name="objectif" 
+        placeholder="Objectif"
+      >
       <button class="btn btn-success">Ajouter</button>
     </form>
 
-    <!-- Table listing for Sécurité Incendie -->
+
     <table class="table">
       <thead>
         <tr>
           <th>Sous-indicateur</th>
           <th>Niveau</th>
           <th>Objectif</th>
+          <th>Écart</th> 
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        <% scoring.securiteIncendie.forEach(function(item) { %>
+        <% scoring.securiteIncendie.forEach(function(item) { 
+           const niveauVal = parseFloat(item.niveau) || 0;
+           const objectifVal = parseFloat(item.objectif) || 0;
+           const diff = niveauVal - objectifVal;
+           const ecart = (diff > 0 ? '+' : '') + diff.toFixed(2);
+        %>
           <tr>
             <td><%= item.nom %></td>
             <td><%= item.niveau %></td>
             <td><%= item.objectif %></td>
+            <td><%= ecart %></td>
             <td>
-              <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/scoring/securiteIncendie/editer/<%= item._id %>" class="btn btn-warning btn-sm">Édit</a>
-              <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/scoring/securiteIncendie/supprimer/<%= item._id %>" class="btn btn-danger btn-sm" onclick="return confirm('Supprimer cet indicateur ?');">Delete</a>
+              <a 
+                href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/scoring/securiteIncendie/editer/<%= item._id %>" 
+                class="btn btn-warning btn-sm"
+              >
+                Édit
+              </a>
+              <a 
+                href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/scoring/securiteIncendie/supprimer/<%= item._id %>" 
+                class="btn btn-danger btn-sm" 
+                onclick="return confirm('Supprimer cet indicateur ?');"
+              >
+                Delete
+              </a>
             </td>
           </tr>
         <% }) %>
@@ -63,9 +90,6 @@
   </div>
 </div>
 
-<!-- ======================
-     2) Sécurité et Santé au Travail (SST)
-     ====================== -->
 <div class="card mb-4">
   <div class="card-header">
     <h3>Sécurité et Santé au Travail</h3>
@@ -84,8 +108,20 @@
         <option value="Mise en Rayon+Caisse">Mise en Rayon+Caisse</option>
         <option value="Locaux Sociaux">Locaux Sociaux</option>
       </select>
-      <input type="number" step="0.01" class="form-control mr-2" name="niveau" placeholder="Niveau">
-      <input type="number" step="0.01" class="form-control mr-2" name="objectif" placeholder="Objectif">
+      <input 
+        type="number" 
+        step="0.01" 
+        class="form-control mr-2" 
+        name="niveau" 
+        placeholder="Niveau"
+      >
+      <input 
+        type="number" 
+        step="0.01" 
+        class="form-control mr-2" 
+        name="objectif" 
+        placeholder="Objectif"
+      >
       <button class="btn btn-success">Ajouter</button>
     </form>
 
@@ -95,18 +131,36 @@
           <th>Sous-indicateur</th>
           <th>Niveau</th>
           <th>Objectif</th>
+          <th>Écart</th> 
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        <% scoring.sst.forEach(function(item) { %>
+        <% scoring.sst.forEach(function(item) {
+           const niveauVal = parseFloat(item.niveau) || 0;
+           const objectifVal = parseFloat(item.objectif) || 0;
+           const diff = niveauVal - objectifVal;
+           const ecart = (diff > 0 ? '+' : '') + diff.toFixed(2);
+        %>
           <tr>
             <td><%= item.nom %></td>
             <td><%= item.niveau %></td>
             <td><%= item.objectif %></td>
+            <td><%= ecart %></td>
             <td>
-              <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/scoring/sst/editer/<%= item._id %>" class="btn btn-warning btn-sm">Édit</a>
-              <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/scoring/sst/supprimer/<%= item._id %>" class="btn btn-danger btn-sm" onclick="return confirm('Supprimer cet indicateur ?');">Delete</a>
+              <a 
+                href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/scoring/sst/editer/<%= item._id %>" 
+                class="btn btn-warning btn-sm"
+              >
+                Édit
+              </a>
+              <a 
+                href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/scoring/sst/supprimer/<%= item._id %>" 
+                class="btn btn-danger btn-sm" 
+                onclick="return confirm('Supprimer cet indicateur ?');"
+              >
+                Delete
+              </a>
             </td>
           </tr>
         <% }) %>
@@ -115,9 +169,7 @@
   </div>
 </div>
 
-<!-- ======================
-     3) Sûreté
-     ====================== -->
+
 <div class="card mb-4">
   <div class="card-header">
     <h3>Sûreté</h3>
@@ -136,8 +188,20 @@
         <option value="Sûreté et Sécurité Station Service">Sûreté et Sécurité Station Service</option>
         <option value="Sécurité des Fonds">Sécurité des Fonds</option>
       </select>
-      <input type="number" step="0.01" class="form-control mr-2" name="niveau" placeholder="Niveau">
-      <input type="number" step="0.01" class="form-control mr-2" name="objectif" placeholder="Objectif">
+      <input 
+        type="number" 
+        step="0.01" 
+        class="form-control mr-2" 
+        name="niveau" 
+        placeholder="Niveau"
+      >
+      <input 
+        type="number" 
+        step="0.01" 
+        class="form-control mr-2" 
+        name="objectif" 
+        placeholder="Objectif"
+      >
       <button class="btn btn-success">Ajouter</button>
     </form>
 
@@ -147,18 +211,36 @@
           <th>Sous-indicateur</th>
           <th>Niveau</th>
           <th>Objectif</th>
+          <th>Écart</th> 
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        <% scoring.surete.forEach(function(item) { %>
+        <% scoring.surete.forEach(function(item) {
+           const niveauVal = parseFloat(item.niveau) || 0;
+           const objectifVal = parseFloat(item.objectif) || 0;
+           const diff = niveauVal - objectifVal;
+           const ecart = (diff > 0 ? '+' : '') + diff.toFixed(2);
+        %>
           <tr>
             <td><%= item.nom %></td>
             <td><%= item.niveau %></td>
             <td><%= item.objectif %></td>
+            <td><%= ecart %></td>
             <td>
-              <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/scoring/surete/editer/<%= item._id %>" class="btn btn-warning btn-sm">Édit</a>
-              <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/scoring/surete/supprimer/<%= item._id %>" class="btn btn-danger btn-sm" onclick="return confirm('Supprimer cet indicateur ?');">Delete</a>
+              <a 
+                href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/scoring/surete/editer/<%= item._id %>" 
+                class="btn btn-warning btn-sm"
+              >
+                Édit
+              </a>
+              <a 
+                href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/scoring/surete/supprimer/<%= item._id %>" 
+                class="btn btn-danger btn-sm" 
+                onclick="return confirm('Supprimer cet indicateur ?');"
+              >
+                Delete
+              </a>
             </td>
           </tr>
         <% }) %>
@@ -166,44 +248,62 @@
     </table>
   </div>
 </div>
+
+
 <div class="card mb-4">
-    <div class="card-header">
-      <h3>Niveau de Sécurité Global</h3>
-      <p>(Voici la moyenne des pourcentages de chaque section)</p>
-    </div>
-    <div class="card-body">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Thème</th>
-            <th>Niveau (%)</th>
-            <th>Objectifs (%)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Sécurité Incendie</td>
-            <td><%= incNiveauAvg.toFixed(2) %></td>
-            <td><%= incObjAvg.toFixed(2) %></td>
-          </tr>
-          <tr>
-            <td>Sécurité et Santé au Travail</td>
-            <td><%= sstNiveauAvg.toFixed(2) %></td>
-            <td><%= sstObjAvg.toFixed(2) %></td>
-          </tr>
-          <tr>
-            <td>Sûreté</td>
-            <td><%= sureteNiveauAvg.toFixed(2) %></td>
-            <td><%= sureteObjAvg.toFixed(2) %></td>
-          </tr>
-          <tr>
-            <!-- Final row: overall average across the above sections -->
-            <th>Niveau de Sécurité Global</th>
-            <th><%= totalNiveauAvg.toFixed(2) %></th>
-            <th><%= totalObjAvg.toFixed(2) %></th>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+  <div class="card-header">
+    <h3>Niveau de Sécurité Global</h3>
+    <p>(Voici la moyenne des pourcentages de chaque section)</p>
   </div>
-  
+  <div class="card-body">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Thème</th>
+          <th>Niveau (%)</th>
+          <th>Objectifs (%)</th>
+          <th>Écart (%)</th> 
+        </tr>
+      </thead>
+      <tbody>
+        <% 
+          // Calculate difference for each category row
+          const incDiff = incNiveauAvg - incObjAvg;
+          const sstDiff = sstNiveauAvg - sstObjAvg;
+          const sureteDiff = sureteNiveauAvg - sureteObjAvg;
+          const totalDiff = totalNiveauAvg - totalObjAvg;
+
+          const incEcart = (incDiff > 0 ? '+' : '') + incDiff.toFixed(2);
+          const sstEcart = (sstDiff > 0 ? '+' : '') + sstDiff.toFixed(2);
+          const sureteEcart = (sureteDiff > 0 ? '+' : '') + sureteDiff.toFixed(2);
+          const totalEcart = (totalDiff > 0 ? '+' : '') + totalDiff.toFixed(2);
+        %>
+        <tr>
+          <td>Sécurité Incendie</td>
+          <td><%= incNiveauAvg.toFixed(2) %></td>
+          <td><%= incObjAvg.toFixed(2) %></td>
+          <td><%= incEcart %></td>
+        </tr>
+        <tr>
+          <td>Sécurité et Santé au Travail</td>
+          <td><%= sstNiveauAvg.toFixed(2) %></td>
+          <td><%= sstObjAvg.toFixed(2) %></td>
+          <td><%= sstEcart %></td>
+        </tr>
+        <tr>
+          <td>Sûreté</td>
+          <td><%= sureteNiveauAvg.toFixed(2) %></td>
+          <td><%= sureteObjAvg.toFixed(2) %></td>
+          <td><%= sureteEcart %></td>
+        </tr>
+        <tr>
+        
+          <th>Niveau de Sécurité Global</th>
+          <th><%= totalNiveauAvg.toFixed(2) %></th>
+          <th><%= totalObjAvg.toFixed(2) %></th>
+          <th><%= totalEcart %></th>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

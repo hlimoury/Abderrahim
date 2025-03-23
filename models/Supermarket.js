@@ -76,9 +76,10 @@ const InstanceSchema = new Schema({
   scoring: ScoringSchema
 });
 
-// Supermarché
+// Update SupermarketSchema to include "ville"
 const SupermarketSchema = new Schema({
-  nom: String,
+  nom: { type: String, required: true },
+  ville: { type: String, required: true },  // Make sure this field exists!
   instances: [InstanceSchema]
 });
 

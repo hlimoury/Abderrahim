@@ -1,0 +1,34 @@
+
+<h1>Totaux des Instances pour <%= supermarket.nom %></h1>
+<a href="/supermarkets/<%= supermarket._id %>" class="btn btn-secondary mb-3">Retour</a>
+
+<div class="card">
+  <div class="card-body">
+    <h3>Formation</h3>
+    <p>Total Formation: <%= totals.formation %> personnes</p>
+  </div>
+</div>
+
+<div class="card mt-3">
+  <div class="card-body">
+    <h3>Accidents de Travail</h3>
+    <p>Total Accidents: <%= totals.accidents.count %> accidents</p>
+    <p>Total Jours d'arrêt: <%= totals.accidents.jours %> jours</p>
+  </div>
+</div>
+
+<div class="card mt-3">
+  <div class="card-body">
+    <h3>Autres Incidents</h3>
+    <p>Total Incidents: <%= totals.incidents %></p>
+  </div>
+</div>
+
+<div class="card mt-3">
+  <div class="card-body">
+    <h3>Interpellations</h3>
+    <p>Total Interpellations: <%= totals.interpellations.personnes %> personnes</p>
+    <p>Total Poursuites: <%= totals.interpellations.poursuites %></p>
+    <p>Total Valeur récupérée: <%= totals.interpellations.valeur %> DH</p>
+  </div>
+</div>

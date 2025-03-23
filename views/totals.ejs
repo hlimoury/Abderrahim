@@ -6,6 +6,31 @@
     <p>Formation: <%= totals.formation %> personnes</p>
     <p>Accidents: <%= totals.accidents.count %> accidents, <%= totals.accidents.jours %> jours d'arrêt</p>
     <p>Autres Incidents: <%= totals.incidents %></p>
-    <p>Interpellations: <%= totals.interpellations.personnes %> personnes, <%= totals.interpellations.poursuites %> poursuites, <%= totals.interpellations.valeur %> DH récupérés</p>
+    
+  
+    
+    <h3>Interpellations par Type</h3>
+    <p>
+      Clients: <%= interpellationByType.Client.personnes %> personnes, 
+      <%= interpellationByType.Client.poursuites %> poursuites, 
+      <%= interpellationByType.Client.valeur %> DH récupérés
+    </p>
+    <p>
+      Personnels: <%= interpellationByType.Personnel.personnes %> personnes, 
+      <%= interpellationByType.Personnel.poursuites %> poursuites, 
+      <%= interpellationByType.Personnel.valeur %> DH récupérés
+    </p>
+    <p>
+      Prestataires: <%= interpellationByType.Prestataire.personnes %> personnes, 
+      <%= interpellationByType.Prestataire.poursuites %> poursuites, 
+      <%= interpellationByType.Prestataire.valeur %> DH récupérés
+    </p>
+
+    <h3>Interpellations Globales</h3>
+    <p>
+      Total Interpellations: <%= totals.interpellations.personnes %> personnes, 
+      <%= totals.interpellations.poursuites %> poursuites, 
+      <%= totals.interpellations.valeur %> DH récupérés
+    </p>
   </div>
 </div>
