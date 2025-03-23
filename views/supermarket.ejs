@@ -36,16 +36,18 @@
         <td><%= instance.mois %></td>
         <td><%= instance.annee %></td>
         <td>
-          <!-- Formation -->
-          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/formation" class="btn btn-info btn-sm">Formation</a>
+
+          <!-- Équipements -->
+          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/equipements" class="btn btn-secondary btn-sm">Équipements</a>
+          <!-- Interpellations -->
+          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/interpellations" class="btn btn-success btn-sm">Interpellations</a>
           <!-- Accidents -->
           <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/accidents" class="btn btn-warning btn-sm">Accidents</a>
           <!-- Autres Incidents -->
           <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/incidents" class="btn btn-danger btn-sm">Autres Incidents</a>
-          <!-- Interpellations -->
-          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/interpellations" class="btn btn-success btn-sm">Interpellations</a>
-          <!-- Équipements -->
-          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/equipements" class="btn btn-secondary btn-sm">Équipements</a>
+          
+          <!-- Formation -->
+          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/formation" class="btn btn-info btn-sm">Formation</a>
           <!-- Scoring -->
           <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/scoring" class="btn btn-dark btn-sm">Scoring</a>
           <!-- Edit/Delete instance -->
