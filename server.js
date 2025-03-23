@@ -7,13 +7,15 @@ const path = require('path');
 const app = express();
 
 // Connexion à MongoDB (adapter la chaîne de connexion si nécessaire)
-mongoose.connect('mongodb://localhost:27017/supermarket-platform', { 
-  useNewUrlParser: true, 
-  useUnifiedTopology: true 
-})
-.then(() => console.log('MongoDB connecté'))
-.catch(err => console.log(err));
 
+const MONGO_URI = 'mongodb+srv://abderrahim:houmam2003@cluster0.scvas.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+
+mongoose.connect(MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => console.log('MongoDB Atlas connected'))
+.catch(err => console.error('MongoDB Atlas connection error:', err));
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
