@@ -647,7 +647,7 @@ router.get('/:id/instances/totaux', async (req, res) => {
   const supermarket = await Supermarket.findById(id);
   if (!supermarket) return res.status(404).send('Supermarché introuvable');
 
-  // Initialize totals for various sections:
+  // Initialize totals for sections
   let totals = {
     formation: 0,
     accidents: { count: 0, jours: 0 },
@@ -655,28 +655,49 @@ router.get('/:id/instances/totaux', async (req, res) => {
     interpellations: { personnes: 0, poursuites: 0, valeur: 0 }
   };
 
+  // Object to hold interpellation totals grouped by type
+  let interByType = {
+    Client: { personnes: 0, poursuites: 0, valeur: 0 },
+    Personnel: { personnes: 0, poursuites: 0, valeur: 0 },
+    Prestataire: { personnes: 0, poursuites: 0, valeur: 0 }
+  };
+
   // Iterate over each instance of the supermarket
   supermarket.instances.forEach(instance => {
-    instance.formation.forEach(f => totals.formation += Number(f.nombrePersonnes));
+    // Formation totals
+    instance.formation.forEach(f => {
+      totals.formation += Number(f.nombrePersonnes);
+    });
     
+    // Accidents totals
     instance.accidents.forEach(a => {
       totals.accidents.count += Number(a.nombreAccidents);
       totals.accidents.jours += Number(a.joursArret);
     });
     
-    instance.incidents.forEach(i => totals.incidents += Number(i.nombreIncidents));
+    // Incidents totals
+    instance.incidents.forEach(i => {
+      totals.incidents += Number(i.nombreIncidents);
+    });
     
+    // Interpellations totals and grouping by type
     instance.interpellations.forEach(inter => {
       totals.interpellations.personnes += Number(inter.nombrePersonnes);
       totals.interpellations.poursuites += Number(inter.poursuites);
       totals.interpellations.valeur += Number(inter.valeurMarchandise);
+
+      // If the type matches one of our keys, add to group totals
+      const type = inter.typePersonne;
+      if (interByType[type]) {
+        interByType[type].personnes += Number(inter.nombrePersonnes);
+        interByType[type].poursuites += Number(inter.poursuites);
+        interByType[type].valeur += Number(inter.valeurMarchandise);
+      }
     });
   });
-
-  res.render('instanceTotal', { supermarket, totals });
+  
+  res.render('instanceTotal', { supermarket, totals, interByType });
 });
-
-
 
 
 

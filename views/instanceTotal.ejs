@@ -26,9 +26,32 @@
 
 <div class="card mt-3">
   <div class="card-body">
-    <h3>Interpellations</h3>
-    <p>Total Interpellations: <%= totals.interpellations.personnes %> personnes</p>
-    <p>Total Poursuites: <%= totals.interpellations.poursuites %></p>
-    <p>Total Valeur récupérée: <%= totals.interpellations.valeur %> DH</p>
+    <h3>Interpellations Globales</h3>
+    <p>
+      Total Interpellations: <%= totals.interpellations.personnes %> personnes, 
+      <%= totals.interpellations.poursuites %> poursuites, 
+      <%= totals.interpellations.valeur %> DH récupérés
+    </p>
+  </div>
+</div>
+
+<div class="card mt-3">
+  <div class="card-body">
+    <h3>Interpellations par Type</h3>
+    <p>
+      Clients: <%= interByType.Client.personnes %> personnes, 
+      <%= interByType.Client.poursuites %> poursuites, 
+      <%= interByType.Client.valeur %> DH récupérés
+    </p>
+    <p>
+      Personnels: <%= interByType.Personnel.personnes %> personnes, 
+      <%= interByType.Personnel.poursuites %> poursuites, 
+      <%= interByType.Personnel.valeur %> DH récupérés
+    </p>
+    <p>
+      Prestataires: <%= interByType.Prestataire.personnes %> personnes, 
+      <%= interByType.Prestataire.poursuites %> poursuites, 
+      <%= interByType.Prestataire.valeur %> DH récupérés
+    </p>
   </div>
 </div>
