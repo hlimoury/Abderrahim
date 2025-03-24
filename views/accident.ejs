@@ -16,10 +16,24 @@
     <input type="checkbox" class="form-check-input" id="accidentDeclare" name="accidentDeclare">
     <label class="form-check-label" for="accidentDeclare">Accident déclaré ?</label>
   </div>
+  
+  <!-- Cause dropdown -->
   <div class="form-group">
     <label for="cause">Cause</label>
-    <input type="text" class="form-control" id="cause" name="cause">
+    <select class="form-control" id="cause" name="cause" required>
+      <option value="" disabled selected>-- Sélectionnez la cause --</option>
+      <option value="Chutes et glissades">Chutes et glissades</option>
+      <option value="Manutention manuelle">Manutention manuelle</option>
+      <option value="Hachoirs">Hachoirs</option>
+      <option value="trancheuse">trancheuse</option>
+      <option value="Scie Électrique boucherie">Scie Électrique boucherie</option>
+      <option value="Outils tranchants">Outils tranchants</option>
+      <option value="Chutes d’objets">Chutes d’objets</option>
+      <option value="Agressions et violences">Agressions et violences</option>
+      <option value="Autres">Autres</option>
+    </select>
   </div>
+  
   <div class="form-group">
     <label for="date">Date</label>
     <input type="date" class="form-control" id="date" name="date" required>
@@ -48,20 +62,10 @@
         <td><%= a.cause %></td>
         <td><%= a.date ? a.date.toISOString().split('T')[0] : '' %></td>
         <td>
-          <!-- Modifier button -->
-          <a 
-            href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/accidents/editer/<%= a._id %>" 
-            class="btn btn-warning btn-sm"
-          >
+          <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/accidents/editer/<%= a._id %>" class="btn btn-warning btn-sm">
             Modifier
           </a>
-
-          <!-- Supprimer button -->
-          <a 
-            href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/accidents/supprimer/<%= a._id %>" 
-            class="btn btn-danger btn-sm" 
-            onclick="return confirm('Voulez-vous vraiment supprimer cet accident ?');"
-          >
+          <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/accidents/supprimer/<%= a._id %>" class="btn btn-danger btn-sm" onclick="return confirm('Voulez-vous vraiment supprimer cet accident ?');">
             Supprimer
           </a>
         </td>

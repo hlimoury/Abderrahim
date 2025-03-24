@@ -43,15 +43,21 @@
     <label class="form-check-label" for="accidentDeclare">Accident déclaré ?</label>
   </div>
 
+  <!-- Cause dropdown -->
   <div class="form-group">
     <label for="cause">Cause</label>
-    <input
-      type="text"
-      class="form-control"
-      id="cause"
-      name="cause"
-      value="<%= accidentItem.cause %>"
-    >
+    <select class="form-control" id="cause" name="cause" required>
+      <option value="" disabled>-- Sélectionnez la cause --</option>
+      <option value="Chutes et glissades" <%= accidentItem.cause === 'Chutes et glissades' ? 'selected' : '' %>>Chutes et glissades</option>
+      <option value="Manutention manuelle" <%= accidentItem.cause === 'Manutention manuelle' ? 'selected' : '' %>>Manutention manuelle</option>
+      <option value="Hachoirs" <%= accidentItem.cause === 'Hachoirs' ? 'selected' : '' %>>Hachoirs</option>
+      <option value="trancheuse" <%= accidentItem.cause === 'trancheuse' ? 'selected' : '' %>>trancheuse</option>
+      <option value="Scie Électrique boucherie" <%= accidentItem.cause === 'Scie Électrique boucherie' ? 'selected' : '' %>>Scie Électrique boucherie</option>
+      <option value="Outils tranchants" <%= accidentItem.cause === 'Outils tranchants' ? 'selected' : '' %>>Outils tranchants</option>
+      <option value="Chutes d’objets" <%= accidentItem.cause === 'Chutes d’objets' ? 'selected' : '' %>>Chutes d’objets</option>
+      <option value="Agressions et violences" <%= accidentItem.cause === 'Agressions et violences' ? 'selected' : '' %>>Agressions et violences</option>
+      <option value="Autres" <%= accidentItem.cause === 'Autres' ? 'selected' : '' %>>Autres</option>
+    </select>
   </div>
 
   <div class="form-group">
