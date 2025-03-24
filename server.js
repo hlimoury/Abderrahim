@@ -1,7 +1,8 @@
 const express = require('express');
 const expressLayouts = require('express-ejs-layouts');
 const mongoose = require('mongoose');
-const session = require('express-session');  // Added express-session
+const session = require('express-session');
+const MongoStore = require('connect-mongo'); // <-- For storing sessions in Mongo
 const bodyParser = require('body-parser');
 const path = require('path');
 
@@ -20,11 +21,15 @@ mongoose.connect(MONGO_URI, {
 // Middleware to parse form data
 app.use(express.urlencoded({ extended: true }));
 
-// Configure sessions
+// Configure sessions with connect-mongo
 app.use(session({
-  secret: 'yourSecretKey', // Replace with a strong secret
+  secret: 'Houmam2003@@', // Replace with a strong secret
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: MONGO_URI, // Reuse your Mongo Atlas URI
+    collectionName: 'sessions', // (Optional) Collection name for sessions
+  })
 }));
 
 // Additional middleware
@@ -46,9 +51,9 @@ app.use((req, res, next) => {
 
 // Routes
 const authRoutes = require('./routes/auth');         // Authentication routes (login/logout)
-const indexRoutes = require('./routes/index');         // Routes for the homepage/search etc.
-const supermarketRoutes = require('./routes/supermarkets'); // Routes for supermarket operations
-const totalsRoutes = require('./routes/totals');       // Routes for totals/reporting
+const indexRoutes = require('./routes/index');       // Homepage/search etc.
+const supermarketRoutes = require('./routes/supermarkets');
+const totalsRoutes = require('./routes/totals');
 
 // Mount the routes. Order matters: authentication routes are available before others.
 app.use('/', authRoutes);
