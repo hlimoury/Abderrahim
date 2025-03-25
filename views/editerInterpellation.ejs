@@ -19,8 +19,15 @@
   </div>
   <div class="form-group">
     <label for="valeurMarchandise">Valeur marchandise récupérée (DH)</label>
-    <input type="number" class="form-control" id="valeurMarchandise" name="valeurMarchandise" value="<%= interpellationItem.valeurMarchandise %>" required>
+    <input 
+      type="text" 
+      class="form-control" 
+      id="valeurMarchandise" 
+      name="valeurMarchandise" 
+      value="<%= interpellationItem.valeurMarchandise ? interpellationItem.valeurMarchandise.toString().replace('.', ',') : '' %>" 
+      required>
   </div>
+  
   <div class="form-group">
     <label for="rayon">Rayon concerné</label>
     <input type="text" class="form-control" id="rayon" name="rayon" value="<%= interpellationItem.rayon %>">

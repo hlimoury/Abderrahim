@@ -11,12 +11,15 @@
 <h1>Scoring - Instance <%= instance.mois %>/<%= instance.annee %></h1>
 <a href="/supermarkets/<%= supermarketId %>" class="btn btn-secondary mb-3">Retour</a>
 
+<!-- ======================
+     1) Sécurité Incendie
+     ====================== -->
 <div class="card mb-4">
   <div class="card-header">
     <h3>Sécurité Incendie</h3>
   </div>
   <div class="card-body">
-
+    <!-- Form to add a new Sous-Indicateur -->
     <form 
       action="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/scoring/securiteIncendie/ajouter" 
       method="POST" 
@@ -45,14 +48,13 @@
       <button class="btn btn-success">Ajouter</button>
     </form>
 
-
     <table class="table">
       <thead>
         <tr>
           <th>Sous-indicateur</th>
           <th>Niveau</th>
           <th>Objectif</th>
-          <th>Écart</th> 
+          <th>Écart</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -61,13 +63,17 @@
            const niveauVal = parseFloat(item.niveau) || 0;
            const objectifVal = parseFloat(item.objectif) || 0;
            const diff = niveauVal - objectifVal;
+           // Create a string with + or - sign
            const ecart = (diff > 0 ? '+' : '') + diff.toFixed(2);
         %>
           <tr>
             <td><%= item.nom %></td>
-            <td><%= item.niveau %></td>
-            <td><%= item.objectif %></td>
-            <td><%= ecart %></td>
+            <!-- Append '%' to Niveau -->
+            <td><%= item.niveau %>%</td>
+            <!-- Append '%' to Objectif -->
+            <td><%= item.objectif %>%</td>
+            <!-- Append '%' to Écart -->
+            <td><%= ecart %>%</td>
             <td>
               <a 
                 href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/scoring/securiteIncendie/editer/<%= item._id %>" 
@@ -77,7 +83,7 @@
               </a>
               <a 
                 href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/scoring/securiteIncendie/supprimer/<%= item._id %>" 
-                class="btn btn-danger btn-sm" 
+                class="btn btn-danger btn-sm"
                 onclick="return confirm('Supprimer cet indicateur ?');"
               >
                 Delete
@@ -90,6 +96,9 @@
   </div>
 </div>
 
+<!-- ======================
+     2) Sécurité et Santé au Travail (SST)
+     ====================== -->
 <div class="card mb-4">
   <div class="card-header">
     <h3>Sécurité et Santé au Travail</h3>
@@ -131,7 +140,7 @@
           <th>Sous-indicateur</th>
           <th>Niveau</th>
           <th>Objectif</th>
-          <th>Écart</th> 
+          <th>Écart</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -144,9 +153,9 @@
         %>
           <tr>
             <td><%= item.nom %></td>
-            <td><%= item.niveau %></td>
-            <td><%= item.objectif %></td>
-            <td><%= ecart %></td>
+            <td><%= item.niveau %>%</td>
+            <td><%= item.objectif %>%</td>
+            <td><%= ecart %>%</td>
             <td>
               <a 
                 href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/scoring/sst/editer/<%= item._id %>" 
@@ -156,7 +165,7 @@
               </a>
               <a 
                 href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/scoring/sst/supprimer/<%= item._id %>" 
-                class="btn btn-danger btn-sm" 
+                class="btn btn-danger btn-sm"
                 onclick="return confirm('Supprimer cet indicateur ?');"
               >
                 Delete
@@ -169,7 +178,9 @@
   </div>
 </div>
 
-
+<!-- ======================
+     3) Sûreté
+     ====================== -->
 <div class="card mb-4">
   <div class="card-header">
     <h3>Sûreté</h3>
@@ -211,7 +222,7 @@
           <th>Sous-indicateur</th>
           <th>Niveau</th>
           <th>Objectif</th>
-          <th>Écart</th> 
+          <th>Écart</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -224,9 +235,9 @@
         %>
           <tr>
             <td><%= item.nom %></td>
-            <td><%= item.niveau %></td>
-            <td><%= item.objectif %></td>
-            <td><%= ecart %></td>
+            <td><%= item.niveau %>%</td>
+            <td><%= item.objectif %>%</td>
+            <td><%= ecart %>%</td>
             <td>
               <a 
                 href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/scoring/surete/editer/<%= item._id %>" 
@@ -236,7 +247,7 @@
               </a>
               <a 
                 href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/scoring/surete/supprimer/<%= item._id %>" 
-                class="btn btn-danger btn-sm" 
+                class="btn btn-danger btn-sm"
                 onclick="return confirm('Supprimer cet indicateur ?');"
               >
                 Delete
@@ -249,7 +260,9 @@
   </div>
 </div>
 
-
+<!-- ======================
+     Final Summary Table
+     ====================== -->
 <div class="card mb-4">
   <div class="card-header">
     <h3>Niveau de Sécurité Global</h3>
@@ -262,7 +275,7 @@
           <th>Thème</th>
           <th>Niveau (%)</th>
           <th>Objectifs (%)</th>
-          <th>Écart (%)</th> 
+          <th>Écart (%)</th>
         </tr>
       </thead>
       <tbody>
@@ -280,28 +293,28 @@
         %>
         <tr>
           <td>Sécurité Incendie</td>
-          <td><%= incNiveauAvg.toFixed(2) %></td>
-          <td><%= incObjAvg.toFixed(2) %></td>
-          <td><%= incEcart %></td>
+          <!-- Append '%' to incNiveauAvg and incObjAvg, and to incEcart -->
+          <td><%= incNiveauAvg.toFixed(2) %>%</td>
+          <td><%= incObjAvg.toFixed(2) %>%</td>
+          <td><%= incEcart %>%</td>
         </tr>
         <tr>
           <td>Sécurité et Santé au Travail</td>
-          <td><%= sstNiveauAvg.toFixed(2) %></td>
-          <td><%= sstObjAvg.toFixed(2) %></td>
-          <td><%= sstEcart %></td>
+          <td><%= sstNiveauAvg.toFixed(2) %>%</td>
+          <td><%= sstObjAvg.toFixed(2) %>%</td>
+          <td><%= sstEcart %>%</td>
         </tr>
         <tr>
           <td>Sûreté</td>
-          <td><%= sureteNiveauAvg.toFixed(2) %></td>
-          <td><%= sureteObjAvg.toFixed(2) %></td>
-          <td><%= sureteEcart %></td>
+          <td><%= sureteNiveauAvg.toFixed(2) %>%</td>
+          <td><%= sureteObjAvg.toFixed(2) %>%</td>
+          <td><%= sureteEcart %>%</td>
         </tr>
         <tr>
-        
           <th>Niveau de Sécurité Global</th>
-          <th><%= totalNiveauAvg.toFixed(2) %></th>
-          <th><%= totalObjAvg.toFixed(2) %></th>
-          <th><%= totalEcart %></th>
+          <th><%= totalNiveauAvg.toFixed(2) %>%</th>
+          <th><%= totalObjAvg.toFixed(2) %>%</th>
+          <th><%= totalEcart %>%</th>
         </tr>
       </tbody>
     </table>

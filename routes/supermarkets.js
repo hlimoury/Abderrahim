@@ -3,6 +3,13 @@ const router = express.Router();
 const Supermarket = require('../models/Supermarket');
 
 
+
+
+
+function parseNumber(str) {
+  if (!str) return 0;
+  return parseFloat(str.replace(',', '.'));
+}
 // ==========================
 // SCORING ROUTES
 // ==========================
@@ -531,7 +538,7 @@ router.post('/:id/instance/:instanceId/interpellations/ajouter', async (req, res
     typePersonne,
     nombrePersonnes,
     poursuites,
-    valeurMarchandise,
+    valeurMarchandise: parseNumber(valeurMarchandise),  // Convert value with comma
     rayon,
     date
   });
@@ -571,7 +578,6 @@ router.get('/:id/instance/:instanceId/interpellations/editer/:interId', async (r
   }
 });
 
-
 // Edit interpellation (POST)
 router.post('/:id/instance/:instanceId/interpellations/editer/:interId', async (req, res) => {
   const { typePersonne, nombrePersonnes, poursuites, valeurMarchandise, rayon, date } = req.body;
@@ -582,7 +588,7 @@ router.post('/:id/instance/:instanceId/interpellations/editer/:interId', async (
   interItem.typePersonne = typePersonne;
   interItem.nombrePersonnes = nombrePersonnes;
   interItem.poursuites = poursuites;
-  interItem.valeurMarchandise = valeurMarchandise;
+  interItem.valeurMarchandise = parseNumber(valeurMarchandise); // Convert value with comma
   interItem.rayon = rayon;
   interItem.date = date;
 
@@ -622,7 +628,18 @@ router.post('/:id/instance/:instanceId/equipements/editer', async (req, res) => 
   const { extincteurs, ria, portes, issuesSecours, skydomes, cameras, nvr, ads } = req.body;
   const supermarket = await Supermarket.findById(req.params.id);
   const instance = supermarket.instances.id(req.params.instanceId);
-  instance.equipements = { extincteurs, ria, portes, issuesSecours, skydomes, cameras, nvr, ads };
+
+  instance.equipements = { 
+    extincteurs: parseNumber(extincteurs),
+    ria: parseNumber(ria),
+    portes: parseNumber(portes),
+    issuesSecours: parseNumber(issuesSecours),
+    skydomes: parseNumber(skydomes),
+    cameras: parseNumber(cameras),
+    nvr: parseNumber(nvr),
+    ads: parseNumber(ads)
+  };
+
   await supermarket.save();
   res.redirect(`/supermarkets/${req.params.id}/instance/${req.params.instanceId}/equipements`);
 });
@@ -631,12 +648,11 @@ router.post('/:id/instance/:instanceId/equipements/editer', async (req, res) => 
 router.get('/:id/instance/:instanceId/equipements/supprimer', async (req, res) => {
   const supermarket = await Supermarket.findById(req.params.id);
   const instance = supermarket.instances.id(req.params.instanceId);
-  // Reset to default values
+  // Reset to default values (all set to zero)
   instance.equipements = { extincteurs: 0, ria: 0, portes: 0, issuesSecours: 0, skydomes: 0, cameras: 0, nvr: 0, ads: 0 };
   await supermarket.save();
   res.redirect(`/supermarkets/${req.params.id}/instance/${req.params.instanceId}/equipements`);
 });
-
 
 
 
