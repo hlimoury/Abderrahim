@@ -12,11 +12,47 @@
       <option value="Prestataire">Prestataire</option>
     </select>
   </div>
-  <input type="number" class="form-control mb-2" name="nombrePersonnes" placeholder="Nombre de personnes" required>
-  <input type="number" class="form-control mb-2" name="poursuites" placeholder="Poursuites judiciaires" required>
-  <input type="number" class="form-control mb-2" name="valeurMarchandise" placeholder="Valeur marchandise récupérée (DH)" required>
-  <input type="text" class="form-control mb-2" name="rayon" placeholder="Rayon concerné" required>
-  <input type="date" class="form-control mb-2" name="date" required>
+  
+  <input 
+    type="number" 
+    class="form-control mb-2" 
+    name="nombrePersonnes" 
+    placeholder="Nombre de personnes" 
+    required
+  >
+  
+  <input 
+    type="number" 
+    class="form-control mb-2" 
+    name="poursuites" 
+    placeholder="Poursuites judiciaires" 
+    required
+  >
+
+  <!-- Change to type="text" to allow commas -->
+  <input 
+    type="text" 
+    class="form-control mb-2" 
+    name="valeurMarchandise" 
+    placeholder="Valeur marchandise récupérée (ex: 2,6)" 
+    required
+  >
+
+  <input 
+    type="text" 
+    class="form-control mb-2" 
+    name="rayon" 
+    placeholder="Rayon concerné" 
+    required
+  >
+  
+  <input 
+    type="date" 
+    class="form-control mb-2" 
+    name="date" 
+    required
+  >
+
   <button class="btn btn-primary">Ajouter</button>
 </form>
 
@@ -43,8 +79,19 @@
         <td><%= inter.rayon %></td>
         <td><%= inter.date.toISOString().split("T")[0] %></td>
         <td>
-          <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/interpellations/editer/<%= inter._id %>" class="btn btn-warning btn-sm">Éditer</a>
-          <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/interpellations/supprimer/<%= inter._id %>" class="btn btn-danger btn-sm" onclick="return confirm('Supprimer cette interpellation ?');">Supprimer</a>
+          <a 
+            href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/interpellations/editer/<%= inter._id %>" 
+            class="btn btn-warning btn-sm"
+          >
+            Éditer
+          </a>
+          <a 
+            href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/interpellations/supprimer/<%= inter._id %>" 
+            class="btn btn-danger btn-sm" 
+            onclick="return confirm('Supprimer cette interpellation ?');"
+          >
+            Supprimer
+          </a>
         </td>
       </tr>
     <% }) %>
