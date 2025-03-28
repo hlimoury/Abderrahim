@@ -9,12 +9,12 @@
   </div>
   <div class="card-body">
     <p>Formation: <%= globalTotals.formation %> personnes</p>
-    <p>Accidents: <%= globalTotals.accidents.count %> accidents, <%= globalTotals.accidents.jours %> jours d'arrêt</p>
+    <p>AT: <%= globalTotals.accidents.count %> accidents, <%= globalTotals.accidents.jours %> jours d'arrêt</p>
     <p>Incidents: <%= globalTotals.incidents %></p>
     <p>Interpellations: 
       <%= globalTotals.interpellations.personnes %> personnes, 
       <%= globalTotals.interpellations.poursuites %> poursuites, 
-      <%= globalTotals.interpellations.valeur %> DH récupérés
+      <%= globalTotals.interpellations.valeur.toFixed(3).replace('.', ',') %> DH récupérés
     </p>
   </div>
 </div>
@@ -22,19 +22,19 @@
 <!-- Details by Market -->
 <div class="card">
   <div class="card-header">
-    <h3>Détails par Supermarché</h3>
+    <h3>Détails par Magasin</h3>
   </div>
   <div class="card-body">
     <table class="table">
       <thead>
         <tr>
-          <th>Supermarché</th>
+          <th>Magasin</th>
           <th>Formation</th>
-          <th>Accidents (count)</th>
+          <th>Accidents (nombre)</th>
           <th>Accidents (jours)</th>
           <th>Incidents</th>
-          <th>Interpellations (pers.)</th>
-          <th>Interpellations (pours.)</th>
+          <th>Interpellations (total)</th>
+          <th>Interpellations (pj)</th>
           <th>Interpellations (valeur)</th>
         </tr>
       </thead>
@@ -48,7 +48,7 @@
             <td><%= d.marketTotals.incidents %></td>
             <td><%= d.marketTotals.interpellations.personnes %></td>
             <td><%= d.marketTotals.interpellations.poursuites %></td>
-            <td><%= d.marketTotals.interpellations.valeur %></td>
+            <td><%= d.marketTotals.interpellations.valeur.toFixed(3).replace('.', ',') %></td>
           </tr>
         <% }) %>
       </tbody>
