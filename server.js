@@ -2,7 +2,7 @@ const express = require('express');
 const expressLayouts = require('express-ejs-layouts');
 const mongoose = require('mongoose');
 const session = require('express-session');
-const MongoStore = require('connect-mongo'); // <-- For storing sessions in Mongo
+const MongoStore = require('connect-mongo'); // For storing sessions in Mongo
 const bodyParser = require('body-parser');
 const path = require('path');
 
@@ -27,10 +27,18 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
-    mongoUrl: MONGO_URI, // Reuse your Mongo Atlas URI
-    collectionName: 'sessions', // (Optional) Collection name for sessions
+    mongoUrl: MONGO_URI,
+    collectionName: 'sessions'
   })
 }));
+
+
+// After configuring sessions:
+app.use((req, res, next) => {
+  res.locals.session = req.session;
+  next();
+});
+
 
 // Additional middleware
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -41,25 +49,31 @@ app.use(expressLayouts);
 app.set('layout', 'layout'); // Uses views/layout.ejs as the default layout
 app.set('view engine', 'ejs');
 
-// Authentication middleware: allow access to /login and /logout without authentication.
+// Authentication middleware: allow access to /login, /logout, /adminlogin, and /adminlogout without authentication.
 app.use((req, res, next) => {
-  if (req.session.user || req.path === '/login' || req.path === '/logout') {
+  if (req.session.user || req.session.isAdmin ||
+      req.path === '/login' || req.path === '/logout' ||
+      req.path === '/adminlogin' || req.path === '/adminlogout') {
     return next();
   }
   res.redirect('/login');
 });
 
 // Routes
-const authRoutes = require('./routes/auth');         // Authentication routes (login/logout)
-const indexRoutes = require('./routes/index');       // Homepage/search etc.
+const authRoutes = require('./routes/auth');           // Regular authentication routes
+const authAdminRoutes = require('./routes/authAdmin');   // Admin authentication routes
+const indexRoutes = require('./routes/index');           // Homepage / search etc.
 const supermarketRoutes = require('./routes/supermarkets');
 const totalsRoutes = require('./routes/totals');
+const statsRoutes = require('./routes/stats');           // Admin stats dashboard
 
-// Mount the routes. Order matters: authentication routes are available before others.
+// Mount the routes in order
 app.use('/', authRoutes);
+app.use('/', authAdminRoutes);
 app.use('/', indexRoutes);
 app.use('/supermarkets', supermarketRoutes);
 app.use('/totals', totalsRoutes);
+app.use('/', statsRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Serveur démarré sur le port ${PORT}`));

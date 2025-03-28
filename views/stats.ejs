@@ -1,0 +1,57 @@
+
+<h1>Tableau de Bord - Statistiques</h1>
+<a href="/adminlogout" class="btn btn-danger mb-3">Se Déconnecter (Admin)</a>
+
+<!-- Global Totals -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h3>Totaux Globaux</h3>
+  </div>
+  <div class="card-body">
+    <p>Formation: <%= globalTotals.formation %> personnes</p>
+    <p>Accidents: <%= globalTotals.accidents.count %> accidents, <%= globalTotals.accidents.jours %> jours d'arrêt</p>
+    <p>Incidents: <%= globalTotals.incidents %></p>
+    <p>Interpellations: 
+      <%= globalTotals.interpellations.personnes %> personnes, 
+      <%= globalTotals.interpellations.poursuites %> poursuites, 
+      <%= globalTotals.interpellations.valeur %> DH récupérés
+    </p>
+  </div>
+</div>
+
+<!-- Details by Market -->
+<div class="card">
+  <div class="card-header">
+    <h3>Détails par Supermarché</h3>
+  </div>
+  <div class="card-body">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Supermarché</th>
+          <th>Formation</th>
+          <th>Accidents (count)</th>
+          <th>Accidents (jours)</th>
+          <th>Incidents</th>
+          <th>Interpellations (pers.)</th>
+          <th>Interpellations (pours.)</th>
+          <th>Interpellations (valeur)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% details.forEach(d => { %>
+          <tr>
+            <td><%= d.marketName %></td>
+            <td><%= d.marketTotals.formation %></td>
+            <td><%= d.marketTotals.accidents.count %></td>
+            <td><%= d.marketTotals.accidents.jours %></td>
+            <td><%= d.marketTotals.incidents %></td>
+            <td><%= d.marketTotals.interpellations.personnes %></td>
+            <td><%= d.marketTotals.interpellations.poursuites %></td>
+            <td><%= d.marketTotals.interpellations.valeur %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>

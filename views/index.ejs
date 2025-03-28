@@ -1,21 +1,24 @@
 
-<h1>Liste des Markets</h1>
+<!-- Sign In / Sign Out Buttons at the Top Right -->
+<div class="d-flex justify-content-end mb-3">
+  <% if (session.user || session.isAdmin) { %>
+    <a href="/logout" class="btn btn-danger">Sign Out</a>
+  <% } else { %>
+    <a href="/login" class="btn btn-primary">Sign In</a>
+  <% } %>
+</div>
+
+<h1>Liste des Supermarchés</h1>
 
 <!-- Search form -->
 <form action="/" method="GET" class="mb-3">
   <div class="form-group">
-    <input 
-      type="text" 
-      name="search" 
-      class="form-control" 
-      placeholder="Rechercher par nom ou ville"
-      value="<%= searchQuery %>"
-    >
+    <input type="text" name="search" class="form-control" placeholder="Rechercher par nom ou ville" value="<%= searchQuery %>">
   </div>
   <button type="submit" class="btn btn-primary">Rechercher</button>
 </form>
 
-<a href="/ajouter" class="btn btn-primary mb-3">Ajouter un market</a>
+<a href="/ajouter" class="btn btn-primary mb-3">Ajouter un Supermarché</a>
 
 <table class="table">
   <thead>
@@ -31,11 +34,13 @@
         <td><%= market.nom %></td>
         <td><%= market.ville %></td>
         <td>
+          <!-- Voir button -->
           <a href="/supermarkets/<%= market._id %>" class="btn btn-info btn-sm">Voir</a>
+          <!-- Modifier button -->
           <a href="/supermarkets/<%= market._id %>/editer" class="btn btn-warning btn-sm">Modifier</a>
+          <!-- Supprimer button -->
           <a href="/supermarkets/<%= market._id %>/supprimer" class="btn btn-danger btn-sm"
-             onclick="return confirm('Voulez-vous vraiment supprimer ce supermarché ?');"
-          >
+             onclick="return confirm('Voulez-vous vraiment supprimer ce supermarché ?');">
             Supprimer
           </a>
         </td>
