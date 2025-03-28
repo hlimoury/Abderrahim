@@ -242,6 +242,25 @@ router.get('/:id/ajouter-instance', (req, res) => {
 router.post('/:id/ajouter-instance', async (req, res) => {
   const { mois, annee } = req.body;
   const supermarket = await Supermarket.findById(req.params.id);
+
+  // If there's at least one existing instance, copy its equipements.
+  let equipementsToCopy = {
+    extincteurs: 0,
+    ria: 0,
+    portes: 0,
+    issuesSecours: 0,
+    skydomes: 0,
+    cameras: 0,
+    nvr: 0,
+    ads: 0
+  };
+
+  if (supermarket.instances.length > 0) {
+    // For simplicity, let's copy from the LAST instance in the array.
+    const lastInstance = supermarket.instances[supermarket.instances.length - 1];
+    equipementsToCopy = { ...lastInstance.equipements };
+  }
+
   supermarket.instances.push({
     mois,
     annee,
@@ -249,11 +268,13 @@ router.post('/:id/ajouter-instance', async (req, res) => {
     accidents: [],
     incidents: [],
     interpellations: [],
-    equipements: { extincteurs: 0, ria: 0, portes: 0, issuesSecours: 0, skydomes: 0, cameras: 0, nvr: 0, ads: 0 }
+    equipements: equipementsToCopy  // Copy from the last instance
   });
+
   await supermarket.save();
   res.redirect(`/supermarkets/${req.params.id}`);
 });
+
 // ----------------------------------------------------
 // Edit an instance (GET form)
 // ----------------------------------------------------
