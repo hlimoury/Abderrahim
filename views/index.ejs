@@ -1,10 +1,16 @@
 
 <h1>Liste des Markets</h1>
 
-<!-- Search form for Supermarchés -->
+<!-- Search form -->
 <form action="/" method="GET" class="mb-3">
   <div class="form-group">
-    <input type="text" name="search" class="form-control" placeholder="Rechercher par nom ou ville">
+    <input 
+      type="text" 
+      name="search" 
+      class="form-control" 
+      placeholder="Rechercher par nom ou ville"
+      value="<%= searchQuery %>"
+    >
   </div>
   <button type="submit" class="btn btn-primary">Rechercher</button>
 </form>
@@ -25,13 +31,11 @@
         <td><%= market.nom %></td>
         <td><%= market.ville %></td>
         <td>
-          <!-- Voir button -->
           <a href="/supermarkets/<%= market._id %>" class="btn btn-info btn-sm">Voir</a>
-          <!-- Modifier button -->
           <a href="/supermarkets/<%= market._id %>/editer" class="btn btn-warning btn-sm">Modifier</a>
-          <!-- Supprimer button -->
           <a href="/supermarkets/<%= market._id %>/supprimer" class="btn btn-danger btn-sm"
-             onclick="return confirm('Voulez-vous vraiment supprimer ce supermarché ?');">
+             onclick="return confirm('Voulez-vous vraiment supprimer ce supermarché ?');"
+          >
             Supprimer
           </a>
         </td>
@@ -39,3 +43,23 @@
     <% }) %>
   </tbody>
 </table>
+
+<!-- Pagination -->
+<% if (totalPages > 1) { %>
+  <ul class="pagination">
+    <% 
+      // For each page from 1..totalPages
+      for (let i = 1; i <= totalPages; i++) { 
+        // Build the base URL with ?page=i
+        // If there's a searchQuery, append &search=searchQuery
+        let pageUrl = '?page=' + i;
+        if (searchQuery) {
+          pageUrl += '&search=' + encodeURIComponent(searchQuery);
+        }
+    %>
+      <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+        <a class="page-link" href="<%= pageUrl %>"><%= i %></a>
+      </li>
+    <% } %>
+  </ul>
+<% } %>
