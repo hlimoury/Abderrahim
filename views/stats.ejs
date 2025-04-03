@@ -11,30 +11,70 @@
     <p>Formation: <%= globalTotals.formation %> personnes</p>
     <p>AT: <%= globalTotals.accidents.count %> accidents, <%= globalTotals.accidents.jours %> jours d'arrêt</p>
     <p>Incidents: <%= globalTotals.incidents %></p>
-    <p>Interpellations: 
+    <p>Interpellations Globales: 
       <%= globalTotals.interpellations.personnes %> personnes, 
       <%= globalTotals.interpellations.poursuites %> poursuites, 
-      <%= globalTotals.interpellations.valeur.toFixed(3).replace('.', ',') %> DH récupérés
+      <%= globalTotals.interpellations.valeur.toFixed(3).replace('.', ',') %> kDH récupérés
     </p>
   </div>
 </div>
 
-<!-- Details by Market -->
+<!-- Interpellations by Type -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h3>Interpellations par Type</h3>
+  </div>
+  <div class="card-body">
+    <p>
+      Clients: <%= interpellationByType.Client.personnes %> personnes, 
+      <%= interpellationByType.Client.poursuites %> poursuites, 
+      <%= interpellationByType.Client.valeur.toFixed(3).replace('.', ',') %> kDH récupérés
+    </p>
+    <p>
+      Personnels: <%= interpellationByType.Personnel.personnes %> personnes, 
+      <%= interpellationByType.Personnel.poursuites %> poursuites, 
+      <%= interpellationByType.Personnel.valeur.toFixed(3).replace('.', ',') %> kDH récupérés
+    </p>
+    <p>
+      Prestataires: <%= interpellationByType.Prestataire.personnes %> personnes, 
+      <%= interpellationByType.Prestataire.poursuites %> poursuites, 
+      <%= interpellationByType.Prestataire.valeur.toFixed(3).replace('.', ',') %> kDH récupérés
+    </p>
+  </div>
+</div>
+
+<!-- Détails par Magasin with Search -->
 <div class="card">
   <div class="card-header">
     <h3>Détails par Magasin</h3>
   </div>
   <div class="card-body">
+    <!-- Search Form for Market Details -->
+    <form action="/stats" method="GET" class="mb-3">
+      <div class="input-group">
+        <input 
+          type="text" 
+          name="search" 
+          class="form-control" 
+          placeholder="Rechercher par nom ou ville" 
+          value="<%= searchQuery %>">
+        <div class="input-group-append">
+          <button class="btn btn-primary" type="submit">Rechercher</button>
+        </div>
+      </div>
+    </form>
+
     <table class="table">
       <thead>
         <tr>
           <th>Magasin</th>
+          <th>Region</th>
           <th>Formation</th>
           <th>Accidents (nombre)</th>
           <th>Accidents (jours)</th>
           <th>Incidents</th>
           <th>Interpellations (total)</th>
-          <th>Interpellations (pj)</th>
+          <th>Interpellations (poursuites)</th>
           <th>Interpellations (valeur)</th>
         </tr>
       </thead>
@@ -42,6 +82,7 @@
         <% details.forEach(d => { %>
           <tr>
             <td><%= d.marketName %></td>
+            <td><%= d.marketVille %></td>
             <td><%= d.marketTotals.formation %></td>
             <td><%= d.marketTotals.accidents.count %></td>
             <td><%= d.marketTotals.accidents.jours %></td>

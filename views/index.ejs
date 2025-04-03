@@ -8,23 +8,23 @@
   <% } %>
 </div>
 
-<h1>Liste des Supermarchés</h1>
+<h1>Liste des Magasins</h1>
 
 <!-- Search form -->
 <form action="/" method="GET" class="mb-3">
   <div class="form-group">
-    <input type="text" name="search" class="form-control" placeholder="Rechercher par nom ou ville" value="<%= searchQuery %>">
+    <input type="text" name="search" class="form-control" placeholder="Rechercher par nom ou region" value="<%= searchQuery %>">
   </div>
   <button type="submit" class="btn btn-primary">Rechercher</button>
 </form>
 
-<a href="/ajouter" class="btn btn-primary mb-3">Ajouter un Supermarché</a>
+<a href="/ajouter" class="btn btn-primary mb-3">Ajouter un Magasin</a>
 
 <table class="table">
   <thead>
     <tr>
       <th>Nom</th>
-      <th>Ville</th>
+      <th>Region</th>
       <th>Actions</th>
     </tr>
   </thead>

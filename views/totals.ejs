@@ -13,24 +13,25 @@
     <p>
       Clients: <%= interpellationByType.Client.personnes %> personnes, 
       <%= interpellationByType.Client.poursuites %> poursuites, 
-      <%= interpellationByType.Client.valeur %> KDH récupérés
+      <%= interpellationByType.Client.valeur.toFixed(3).replace('.', ',') %> KDH récupérés
     </p>
     <p>
       Personnels: <%= interpellationByType.Personnel.personnes %> personnes, 
       <%= interpellationByType.Personnel.poursuites %> poursuites, 
-      <%= interpellationByType.Personnel.valeur %> KDH récupérés
+      <%= interpellationByType.Personnel.valeur.toFixed(3).replace('.', ',') %> KDH récupérés
     </p>
     <p>
       Prestataires: <%= interpellationByType.Prestataire.personnes %> personnes, 
       <%= interpellationByType.Prestataire.poursuites %> poursuites, 
-      <%= interpellationByType.Prestataire.valeur %> KDH récupérés
+      <%= interpellationByType.Prestataire.valeur.toFixed(3).replace('.', ',') %> KDH récupérés
+      
     </p>
 
     <h3>Interpellations Globales</h3>
     <p>
       Total Interpellations: <%= totals.interpellations.personnes %> personnes, 
       <%= totals.interpellations.poursuites %> poursuites, 
-      <%= totals.interpellations.valeur %> KDH récupérés
+      <%= totals.interpellations.valeur.toFixed(3).replace('.', ',') %> KDH récupérés
     </p>
   </div>
 </div>
