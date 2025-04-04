@@ -203,17 +203,23 @@ router.get('/:id/editer', async (req, res) => {
 
 // POST: Update the supermarket's data
 router.post('/:id/editer', async (req, res) => {
-  const { nom } = req.body;
+  const { nom, region } = req.body; // region is sent from the form when applicable
   const supermarket = await Supermarket.findById(req.params.id);
   if (!supermarket) return res.status(404).send('Supermarché introuvable');
 
   supermarket.nom = nom;
-  // Auto-assign the region from the session (which is stored in req.session.region)
-  supermarket.ville = req.session.region || supermarket.ville;
-
+  // If the logged-in user's region is "ALL" (main account), use the value submitted in the form.
+  // Otherwise, force the region to the user's region stored in the session.
+  if (req.session.region === 'ALL') {
+    supermarket.ville = region;
+  } else {
+    supermarket.ville = req.session.region;
+  }
+  
   await supermarket.save();
   res.redirect('/');
 });
+
 // ======================
 // Delete a Supermarket
 // ======================

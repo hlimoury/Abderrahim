@@ -43,6 +43,55 @@
   </div>
 </div>
 
+
+<!-- Formation par Type -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h3>Formation par Type</h3>
+  </div>
+  <div class="card-body">
+    <p>
+      Incendie: <%= formationByType.Incendie %> personnes
+    </p>
+    <p>
+      SST: <%= formationByType.SST %> personnes
+    </p>
+    <p>
+      Intégration: <%= formationByType.Intégration %> personnes
+    </p>
+  </div>
+</div>
+
+<!-- Incidents par Type -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h3>Incidents par Type</h3>
+  </div>
+  <div class="card-body">
+    <p>
+      Départ de feu: <%= incidentByType['Départ de feu'] %> incidents
+    </p>
+    <p>
+      Agression envers le personnel: <%= incidentByType['Agression envers le personnel'] %> incidents
+    </p>
+    <p>
+      Passage des autorités: <%= incidentByType['Passage des autorités'] %> incidents
+    </p>
+    <p>
+      Sinistre déclaré par un client: <%= incidentByType['Sinistre déclaré par un client'] %> incidents
+    </p>
+    <p>
+      Acte de sécurisation: <%= incidentByType['Acte de sécurisation'] %> incidents
+    </p>
+    <p>
+      Autre: <%= incidentByType['Autre'] %> incidents
+    </p>
+  </div>
+</div>
+
+
+
+
 <!-- Détails par Magasin with Search and Pagination -->
 <div class="card">
   <div class="card-header">

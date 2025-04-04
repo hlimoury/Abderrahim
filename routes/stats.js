@@ -32,6 +32,22 @@ router.get('/stats', ensureAdmin, async (req, res) => {
       Prestataire: { personnes: 0, poursuites: 0, valeur: 0 }
     };
     
+    // Initialize formation by type and incidents by type
+    let formationByType = {
+      'Incendie': 0,
+      'SST': 0,
+      'Intégration': 0
+    };
+    
+    let incidentByType = {
+      'Départ de feu': 0,
+      'Agression envers le personnel': 0,
+      'Passage des autorités': 0,
+      'Sinistre déclaré par un client': 0,
+      'Acte de sécurisation': 0,
+      'Autre': 0
+    };
+    
     // Build details for each market
     let details = [];
     
@@ -57,12 +73,29 @@ router.get('/stats', ensureAdmin, async (req, res) => {
           interpellations: { personnes: 0, poursuites: 0, valeur: 0 }
         };
 
-        instance.formation.forEach(f => instTotals.formation += Number(f.nombrePersonnes));
+        instance.formation.forEach(f => {
+          instTotals.formation += Number(f.nombrePersonnes);
+          // Also update formation by type
+          const type = f.type;
+          if (formationByType.hasOwnProperty(type)) {
+            formationByType[type] += Number(f.nombrePersonnes);
+          }
+        });
+        
         instance.accidents.forEach(a => {
           instTotals.accidents.count += Number(a.nombreAccidents);
           instTotals.accidents.jours += Number(a.joursArret);
         });
-        instance.incidents.forEach(i => instTotals.incidents += Number(i.nombreIncidents));
+        
+        instance.incidents.forEach(i => {
+          instTotals.incidents += Number(i.nombreIncidents);
+          // Also update incidents by type
+          const type = i.typeIncident;
+          if (incidentByType.hasOwnProperty(type)) {
+            incidentByType[type] += Number(i.nombreIncidents);
+          }
+        });
+        
         instance.interpellations.forEach(inter => {
           instTotals.interpellations.personnes += Number(inter.nombrePersonnes);
           instTotals.interpellations.poursuites += Number(inter.poursuites);
@@ -132,7 +165,9 @@ router.get('/stats', ensureAdmin, async (req, res) => {
     res.render('stats', { 
       details: paginatedDetails, 
       globalTotals, 
-      interpellationByType, 
+      interpellationByType,
+      formationByType,
+      incidentByType, 
       searchQuery, 
       currentPage, 
       totalPages 
