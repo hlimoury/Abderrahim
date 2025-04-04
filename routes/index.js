@@ -1,12 +1,11 @@
-// routes/index.js (example)
 const express = require('express');
 const router = express.Router();
 const Supermarket = require('../models/Supermarket');
 
-// GET '/'
+// GET '/' - List supermarkets with search, region filter, and pagination
 router.get('/', async (req, res) => {
   try {
-    // 1) Handle search
+    // 1) Handle search query
     const searchQuery = req.query.search || '';
     let query = {};
     if (searchQuery) {
@@ -18,21 +17,26 @@ router.get('/', async (req, res) => {
       };
     }
 
-    // 2) Pagination
+    // 2) If user has a region set in session (and it's not "ALL"), filter by that region
+    if (req.session.region && req.session.region !== 'ALL') {
+      query.ville = req.session.region;
+    }
+
+    // 3) Pagination setup
     const limit = 10; // 10 markets per page
-    const page = parseInt(req.query.page) || 1; // Current page (default 1)
+    const page = parseInt(req.query.page) || 1; // default page 1
     const skip = (page - 1) * limit;
 
-    // 3) Count total documents (for total pages)
+    // 4) Count total documents matching the query
     const totalCount = await Supermarket.countDocuments(query);
 
-    // 4) Retrieve documents for the current page
+    // 5) Retrieve markets for the current page
     const supermarkets = await Supermarket.find(query)
       .skip(skip)
       .limit(limit)
       .sort({ _id: 1 }); // Optional sort
 
-    // 5) Calculate total pages
+    // 6) Calculate total pages
     const totalPages = Math.ceil(totalCount / limit);
 
     res.render('index', {
@@ -47,16 +51,20 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Formulaire pour ajouter un nouveau supermarché
+// Form to add a new supermarket
 router.get('/ajouter', (req, res) => {
   res.render('ajouterSupermarket');
 });
 
 router.post('/ajouter', async (req, res) => {
-  const { nom, ville } = req.body;
-  const newMarket = new Supermarket({ nom, ville });
+  const { nom } = req.body;
+  // Use the logged-in user's region (stored in session) to auto-assign the market's region.
+  const region = req.session.region || '';
+  // Here we store the region in the "ville" field.
+  const newMarket = new Supermarket({ nom, ville: region });
   await newMarket.save();
   res.redirect('/');
 });
+
 
 module.exports = router;

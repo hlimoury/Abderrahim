@@ -194,28 +194,26 @@ router.get('/:id', async (req, res) => {
 // Edit a Supermarket
 // ======================
 
-// GET: Edit form
+// GET: Render the edit form for a supermarket
 router.get('/:id/editer', async (req, res) => {
   const supermarket = await Supermarket.findById(req.params.id);
   if (!supermarket) return res.status(404).send('Supermarché introuvable');
-  // Render the edit form
   res.render('editerSupermarket', { supermarket });
 });
 
-// POST: Save edited data
+// POST: Update the supermarket's data
 router.post('/:id/editer', async (req, res) => {
-  const { nom, ville } = req.body;
+  const { nom } = req.body;
   const supermarket = await Supermarket.findById(req.params.id);
   if (!supermarket) return res.status(404).send('Supermarché introuvable');
 
   supermarket.nom = nom;
-  supermarket.ville = ville;
-  await supermarket.save();
+  // Auto-assign the region from the session (which is stored in req.session.region)
+  supermarket.ville = req.session.region || supermarket.ville;
 
+  await supermarket.save();
   res.redirect('/');
 });
-
-
 // ======================
 // Delete a Supermarket
 // ======================

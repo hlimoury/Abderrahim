@@ -43,7 +43,7 @@
   </div>
 </div>
 
-<!-- Détails par Magasin with Search -->
+<!-- Détails par Magasin with Search and Pagination -->
 <div class="card">
   <div class="card-header">
     <h3>Détails par Magasin</h3>
@@ -68,7 +68,7 @@
       <thead>
         <tr>
           <th>Magasin</th>
-          <th>Region</th>
+          <th>Région</th>
           <th>Formation</th>
           <th>Accidents (nombre)</th>
           <th>Accidents (jours)</th>
@@ -79,8 +79,9 @@
         </tr>
       </thead>
       <tbody>
-        <% details.forEach(d => { %>
-          <tr>
+        <% details.forEach((d, index) => { %>
+          <!-- Main Market Row: Clickable to toggle collapse -->
+          <tr data-toggle="collapse" data-target="#market-<%= index %>" class="clickable" style="cursor: pointer;">
             <td><%= d.marketName %></td>
             <td><%= d.marketVille %></td>
             <td><%= d.marketTotals.formation %></td>
@@ -91,8 +92,63 @@
             <td><%= d.marketTotals.interpellations.poursuites %></td>
             <td><%= d.marketTotals.interpellations.valeur.toFixed(3).replace('.', ',') %></td>
           </tr>
+          <!-- Collapsible Row with instance details -->
+          <tr class="collapse" id="market-<%= index %>">
+            <td colspan="9">
+              <div class="card card-body">
+                <h5>Détails par Instance</h5>
+                <table class="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>Mois</th>
+                      <th>Année</th>
+                      <th>Formation</th>
+                      <th>Accidents (nombre)</th>
+                      <th>Accidents (jours)</th>
+                      <th>Incidents</th>
+                      <th>Interpellations (total)</th>
+                      <th>Interpellations (poursuites)</th>
+                      <th>Interpellations (valeur)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% d.instancesDetails.forEach(inst => { %>
+                      <tr>
+                        <td><%= inst.mois %></td>
+                        <td><%= inst.annee %></td>
+                        <td><%= inst.totals.formation %></td>
+                        <td><%= inst.totals.accidents.count %></td>
+                        <td><%= inst.totals.accidents.jours %></td>
+                        <td><%= inst.totals.incidents %></td>
+                        <td><%= inst.totals.interpellations.personnes %></td>
+                        <td><%= inst.totals.interpellations.poursuites %></td>
+                        <td><%= inst.totals.interpellations.valeur.toFixed(3).replace('.', ',') %></td>
+                      </tr>
+                    <% }) %>
+                  </tbody>
+                </table>
+              </div>
+            </td>
+          </tr>
         <% }) %>
       </tbody>
     </table>
+    
+    <!-- Pagination Links for Market Details -->
+    <% if (totalPages > 1) { %>
+      <ul class="pagination">
+        <% for (let i = 1; i <= totalPages; i++) { 
+             let pageUrl = '?page=' + i;
+             if (searchQuery) {
+               pageUrl += '&search=' + encodeURIComponent(searchQuery);
+             }
+        %>
+          <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+            <a class="page-link" href="<%= pageUrl %>"><%= i %></a>
+          </li>
+        <% } %>
+      </ul>
+    <% } %>
+    
   </div>
 </div>

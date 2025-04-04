@@ -36,27 +36,50 @@ router.get('/stats', ensureAdmin, async (req, res) => {
     let details = [];
     
     for (const market of supermarkets) {
+      // Initialize market-level totals
       let marketTotals = {
         formation: 0,
         accidents: { count: 0, jours: 0 },
         incidents: 0,
         interpellations: { personnes: 0, poursuites: 0, valeur: 0 }
       };
-      
-      // For each instance in the market, sum up totals
+
+      // Array to store instance-specific details for this market
+      let instancesDetails = [];
+
+      // Loop through each instance in the market
       for (const instance of market.instances) {
-        instance.formation.forEach(f => marketTotals.formation += Number(f.nombrePersonnes));
+        // For each instance, calculate its totals:
+        let instTotals = {
+          formation: 0,
+          accidents: { count: 0, jours: 0 },
+          incidents: 0,
+          interpellations: { personnes: 0, poursuites: 0, valeur: 0 }
+        };
+
+        instance.formation.forEach(f => instTotals.formation += Number(f.nombrePersonnes));
         instance.accidents.forEach(a => {
-          marketTotals.accidents.count += Number(a.nombreAccidents);
-          marketTotals.accidents.jours += Number(a.joursArret);
+          instTotals.accidents.count += Number(a.nombreAccidents);
+          instTotals.accidents.jours += Number(a.joursArret);
         });
-        instance.incidents.forEach(i => marketTotals.incidents += Number(i.nombreIncidents));
+        instance.incidents.forEach(i => instTotals.incidents += Number(i.nombreIncidents));
         instance.interpellations.forEach(inter => {
-          marketTotals.interpellations.personnes += Number(inter.nombrePersonnes);
-          marketTotals.interpellations.poursuites += Number(inter.poursuites);
-          marketTotals.interpellations.valeur += Number(inter.valeurMarchandise);
-          
-          // Also update global totals by type
+          instTotals.interpellations.personnes += Number(inter.nombrePersonnes);
+          instTotals.interpellations.poursuites += Number(inter.poursuites);
+          instTotals.interpellations.valeur += Number(inter.valeurMarchandise);
+        });
+        
+        // Add instance totals to market totals
+        marketTotals.formation += instTotals.formation;
+        marketTotals.accidents.count += instTotals.accidents.count;
+        marketTotals.accidents.jours += instTotals.accidents.jours;
+        marketTotals.incidents += instTotals.incidents;
+        marketTotals.interpellations.personnes += instTotals.interpellations.personnes;
+        marketTotals.interpellations.poursuites += instTotals.interpellations.poursuites;
+        marketTotals.interpellations.valeur += instTotals.interpellations.valeur;
+
+        // Also update global interpellation totals by type
+        instance.interpellations.forEach(inter => {
           const type = inter.typePersonne;
           if (interpellationByType[type]) {
             interpellationByType[type].personnes += Number(inter.nombrePersonnes);
@@ -64,9 +87,16 @@ router.get('/stats', ensureAdmin, async (req, res) => {
             interpellationByType[type].valeur += Number(inter.valeurMarchandise);
           }
         });
+
+        // Save instance-level details (include month, year, and totals)
+        instancesDetails.push({
+          mois: instance.mois,
+          annee: instance.annee,
+          totals: instTotals
+        });
       }
       
-      // Accumulate to global totals
+      // Accumulate market totals to global totals
       globalTotals.formation += marketTotals.formation;
       globalTotals.accidents.count += marketTotals.accidents.count;
       globalTotals.accidents.jours += marketTotals.accidents.jours;
@@ -79,7 +109,8 @@ router.get('/stats', ensureAdmin, async (req, res) => {
       details.push({
         marketName: market.nom,
         marketVille: market.ville,
-        marketTotals
+        marketTotals,
+        instancesDetails
       });
     }
     
@@ -91,7 +122,21 @@ router.get('/stats', ensureAdmin, async (req, res) => {
       );
     }
     
-    res.render('stats', { details, globalTotals, interpellationByType, searchQuery });
+    // Pagination for details: 10 markets per page
+    const limit = 10;
+    const currentPage = parseInt(req.query.page) || 1;
+    const totalPages = Math.ceil(details.length / limit);
+    const start = (currentPage - 1) * limit;
+    const paginatedDetails = details.slice(start, start + limit);
+    
+    res.render('stats', { 
+      details: paginatedDetails, 
+      globalTotals, 
+      interpellationByType, 
+      searchQuery, 
+      currentPage, 
+      totalPages 
+    });
   } catch (err) {
     console.error(err);
     res.status(500).send('Erreur serveur');

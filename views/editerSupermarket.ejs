@@ -1,8 +1,8 @@
 
-<h1>Modifier le Magasin</h1>
+<h1>Modifier le Supermarché</h1>
 <form action="/supermarkets/<%= supermarket._id %>/editer" method="POST">
   <div class="form-group">
-    <label for="nom">Nom du Magasin</label>
+    <label for="nom">Nom du Supermarché</label>
     <input 
       type="text" 
       class="form-control" 
@@ -13,14 +13,15 @@
     >
   </div>
   <div class="form-group">
-    <label for="ville">Region</label>
+    <label for="region">Région</label>
+    <!-- Display the region from the session (read-only) -->
     <input 
       type="text" 
       class="form-control" 
-      id="ville" 
-      name="ville" 
-      value="<%= supermarket.ville %>" 
-      required
+      id="region" 
+      name="region" 
+      value="<%= session.region %>" 
+      readonly
     >
   </div>
   <button type="submit" class="btn btn-primary">Mettre à jour</button>

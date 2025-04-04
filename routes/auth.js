@@ -1,23 +1,31 @@
 const express = require('express');
 const router = express.Router();
 
-// GET login page
+// Hard-coded accounts:
+const accounts = {
+  'REGION CENTRE 02': { password: 'M@rjane2003', region: 'REGION CENTRE 02' },
+  'REGION SUD': { password: 'M@rjane2003', region: 'REGION SUD' },
+  'REGION ORIENT': { password: 'M@rjane2003', region: 'REGION ORIENT' },
+  'REGION CENTRE 1': { password: 'M@rjane2003', region: 'REGION CENTRE 1' },
+  'REGION NORD': { password: 'M@rjane2003', region: 'REGION NORD' },
+  'MAIN': { password: 'M@rjane2003', region: 'ALL' } // main account sees all markets
+};
+
 router.get('/login', (req, res) => {
   res.render('login', { error: null });
 });
 
-// POST login: Check credentials and set session
 router.post('/login', (req, res) => {
   const { username, password } = req.body;
-  if (username === 'admin' && password === 'M@rjane2025') {
+  if (accounts[username] && accounts[username].password === password) {
     req.session.user = username;
-    res.redirect('/');  // Redirect to home after login
+    req.session.region = accounts[username].region;
+    res.redirect('/');
   } else {
     res.render('login', { error: 'Identifiants incorrects' });
   }
 });
 
-// Logout route
 router.get('/logout', (req, res) => {
   req.session.destroy();
   res.redirect('/login');
