@@ -1,394 +1,238 @@
-<h1>Tableau de Bord - Statistiques</h1>
-<a href="/adminlogout" class="btn btn-danger mb-3">Se Déconnecter (Admin)</a>
-
-<!-- Global Totals -->
-<div class="card mb-4">
-  <div class="card-header">
-    <h3>Totaux Globaux</h3>
-  </div>
-  <div class="card-body">
-    <p>Formation: <%= globalTotals.formation %> personnes</p>
-    <p>AT: <%= globalTotals.accidents.count %> accidents, <%= globalTotals.accidents.jours %> jours d'arrêt</p>
-    <p>Incidents: <%= globalTotals.incidents %></p>
-    <p>Interpellations Globales: 
-      <%= globalTotals.interpellations.personnes %> personnes, 
-      <%= globalTotals.interpellations.poursuites %> poursuites, 
-      <%= globalTotals.interpellations.valeur.toFixed(3).replace('.', ',') %> kDH récupérés
-    </p>
-  </div>
-</div>
-
-<!-- Interpellations by Type -->
-<div class="card mb-4">
-  <div class="card-header">
-    <h3>Interpellations par Type</h3>
-  </div>
-  <div class="card-body">
-    <!-- Month/Year Search Bar for Interpellations -->
-    <div class="search-period mb-3">
-      <form action="/stats" method="GET" class="d-flex align-items-center">
-        <!-- Keep existing search if present -->
-        <% if (searchQuery) { %>
-          <input type="hidden" name="search" value="<%= searchQuery %>">
-        <% } %>
-        
-        <div class="input-group input-group-sm">
-          <label class="input-group-text" for="filterMonth">Mois</label>
-          <select class="form-select form-select-sm" id="filterMonth" name="filterMonth">
-            <option value="">Tous</option>
-            <option value="1" <%= filterMonth == 1 ? 'selected' : '' %>>Janvier</option>
-            <option value="2" <%= filterMonth == 2 ? 'selected' : '' %>>Février</option>
-            <option value="3" <%= filterMonth == 3 ? 'selected' : '' %>>Mars</option>
-            <option value="4" <%= filterMonth == 4 ? 'selected' : '' %>>Avril</option>
-            <option value="5" <%= filterMonth == 5 ? 'selected' : '' %>>Mai</option>
-            <option value="6" <%= filterMonth == 6 ? 'selected' : '' %>>Juin</option>
-            <option value="7" <%= filterMonth == 7 ? 'selected' : '' %>>Juillet</option>
-            <option value="8" <%= filterMonth == 8 ? 'selected' : '' %>>Août</option>
-            <option value="9" <%= filterMonth == 9 ? 'selected' : '' %>>Septembre</option>
-            <option value="10" <%= filterMonth == 10 ? 'selected' : '' %>>Octobre</option>
-            <option value="11" <%= filterMonth == 11 ? 'selected' : '' %>>Novembre</option>
-            <option value="12" <%= filterMonth == 12 ? 'selected' : '' %>>Décembre</option>
-          </select>
-          
-          <label class="input-group-text" for="filterYear">Année</label>
-          <select class="form-select form-select-sm" id="filterYear" name="filterYear">
-            <option value="">Toutes</option>
-            <% const currentYear = new Date().getFullYear(); %>
-            <% for (let year = currentYear; year >= currentYear - 5; year--) { %>
-              <option value="<%= year %>" <%= filterYear == year ? 'selected' : '' %>><%= year %></option>
-            <% } %>
-          </select>
-          
-          <button class="btn btn-sm btn-primary" type="submit">Filtrer</button>
-          <% if (filterMonth || filterYear) { %>
-            <a href="<%= searchQuery ? '/stats?search=' + encodeURIComponent(searchQuery) : '/stats' %>" class="btn btn-sm btn-outline-secondary">Réinitialiser</a>
-          <% } %>
-        </div>
-      </form>
-    </div>
-
-    <div class="row">
-      <% Object.entries(interpellationByType).forEach(([type, data]) => { %>
-        <div class="col-md-4 mb-3">
-          <div class="card h-100 border-info">
-            <div class="card-header bg-info text-white">
-              <%= type %>
-            </div>
-            <div class="card-body">
-              <p class="card-text">
-                <strong><%= data.personnes %></strong> personnes<br>
-                <strong><%= data.poursuites %></strong> poursuites<br>
-                <strong><%= data.valeur.toFixed(3).replace('.', ',') %></strong> kDH récupérés
-              </p>
-              <% if (data.sources.length > 0) { %>
-                <div class="mt-3">
-                  <h6>Principales sources:</h6>
-                  <ul class="list-group list-group-flush">
-                    <% data.sources.forEach(src => { %>
-                      <li class="list-group-item py-1 px-2">
-                        <small>
-                          <span class="badge bg-primary"><%= src.date %></span>
-                          <strong><%= src.sourceId.split(' - ')[0] %></strong>: 
-                          <%= src.personnes %> personne(s)
-                          <% if (src.poursuites > 0) { %>, <%= src.poursuites %> poursuite(s)<% } %>
-                          <% if (src.valeur > 0) { %>, <%= src.valeur.toFixed(3).replace('.', ',') %> kDH<% } %>
-                        </small>
-                      </li>
-                    <% }) %>
-                  </ul>
-                </div>
-              <% } %>
-            </div>
-          </div>
-        </div>
-      <% }) %>
-    </div>
-  </div>
-</div>
-
-<!-- Formation par Type -->
-<div class="card mb-4">
-  <div class="card-header">
-    <h3>Formation par Type</h3>
-  </div>
-  <div class="card-body">
-    <!-- Month/Year Search Bar for Formations -->
-    <div class="search-period mb-3">
-      <form action="/stats" method="GET" class="d-flex align-items-center">
-        <!-- Keep existing search if present -->
-        <% if (searchQuery) { %>
-          <input type="hidden" name="search" value="<%= searchQuery %>">
-        <% } %>
-        
-        <div class="input-group input-group-sm">
-          <label class="input-group-text" for="filterMonth_formation">Mois</label>
-          <select class="form-select form-select-sm" id="filterMonth_formation" name="filterMonth">
-            <option value="">Tous</option>
-            <option value="1" <%= filterMonth == 1 ? 'selected' : '' %>>Janvier</option>
-            <option value="2" <%= filterMonth == 2 ? 'selected' : '' %>>Février</option>
-            <option value="3" <%= filterMonth == 3 ? 'selected' : '' %>>Mars</option>
-            <option value="4" <%= filterMonth == 4 ? 'selected' : '' %>>Avril</option>
-            <option value="5" <%= filterMonth == 5 ? 'selected' : '' %>>Mai</option>
-            <option value="6" <%= filterMonth == 6 ? 'selected' : '' %>>Juin</option>
-            <option value="7" <%= filterMonth == 7 ? 'selected' : '' %>>Juillet</option>
-            <option value="8" <%= filterMonth == 8 ? 'selected' : '' %>>Août</option>
-            <option value="9" <%= filterMonth == 9 ? 'selected' : '' %>>Septembre</option>
-            <option value="10" <%= filterMonth == 10 ? 'selected' : '' %>>Octobre</option>
-            <option value="11" <%= filterMonth == 11 ? 'selected' : '' %>>Novembre</option>
-            <option value="12" <%= filterMonth == 12 ? 'selected' : '' %>>Décembre</option>
-          </select>
-          
-          <label class="input-group-text" for="filterYear_formation">Année</label>
-          <select class="form-select form-select-sm" id="filterYear_formation" name="filterYear">
-            <option value="">Toutes</option>
-            <% for (let year = currentYear; year >= currentYear - 5; year--) { %>
-              <option value="<%= year %>" <%= filterYear == year ? 'selected' : '' %>><%= year %></option>
-            <% } %>
-          </select>
-          
-          <button class="btn btn-sm btn-primary" type="submit">Filtrer</button>
-          <% if (filterMonth || filterYear) { %>
-            <a href="<%= searchQuery ? '/stats?search=' + encodeURIComponent(searchQuery) : '/stats' %>" class="btn btn-sm btn-outline-secondary">Réinitialiser</a>
-          <% } %>
-        </div>
-      </form>
-    </div>
-
-    <div class="row">
-      <% Object.entries(formationByType).forEach(([type, data]) => { %>
-        <div class="col-md-4 mb-3">
-          <div class="card h-100 border-success">
-            <div class="card-header bg-success text-white">
-              <%= type %>
-            </div>
-            <div class="card-body">
-              <p class="card-text">
-                <strong><%= data.total %></strong> personnes formées
-              </p>
-              <% if (data.sources.length > 0) { %>
-                <div class="mt-3">
-                  <h6>Principales sources:</h6>
-                  <ul class="list-group list-group-flush">
-                    <% data.sources.forEach(src => { %>
-                      <li class="list-group-item py-1 px-2">
-                        <small>
-                          <span class="badge bg-primary"><%= src.date %></span>
-                          <strong><%= src.sourceId.split(' - ')[0] %></strong>: 
-                          <%= src.count %> personne(s)
-                        </small>
-                      </li>
-                    <% }) %>
-                  </ul>
-                </div>
-              <% } %>
-            </div>
-          </div>
-        </div>
-      <% }) %>
-    </div>
-  </div>
-</div>
-
-<!-- Incidents par Type -->
-<div class="card mb-4">
-  <div class="card-header">
-    <h3>Incidents par Type</h3>
-  </div>
-  <div class="card-body">
-    <!-- Month/Year Search Bar for Incidents -->
-    <div class="search-period mb-3">
-      <form action="/stats" method="GET" class="d-flex align-items-center">
-        <!-- Keep existing search if present -->
-        <% if (searchQuery) { %>
-          <input type="hidden" name="search" value="<%= searchQuery %>">
-        <% } %>
-        
-        <div class="input-group input-group-sm">
-          <label class="input-group-text" for="filterMonth_incidents">Mois</label>
-          <select class="form-select form-select-sm" id="filterMonth_incidents" name="filterMonth">
-            <option value="">Tous</option>
-            <option value="1" <%= filterMonth == 1 ? 'selected' : '' %>>Janvier</option>
-            <option value="2" <%= filterMonth == 2 ? 'selected' : '' %>>Février</option>
-            <option value="3" <%= filterMonth == 3 ? 'selected' : '' %>>Mars</option>
-            <option value="4" <%= filterMonth == 4 ? 'selected' : '' %>>Avril</option>
-            <option value="5" <%= filterMonth == 5 ? 'selected' : '' %>>Mai</option>
-            <option value="6" <%= filterMonth == 6 ? 'selected' : '' %>>Juin</option>
-            <option value="7" <%= filterMonth == 7 ? 'selected' : '' %>>Juillet</option>
-            <option value="8" <%= filterMonth == 8 ? 'selected' : '' %>>Août</option>
-            <option value="9" <%= filterMonth == 9 ? 'selected' : '' %>>Septembre</option>
-            <option value="10" <%= filterMonth == 10 ? 'selected' : '' %>>Octobre</option>
-            <option value="11" <%= filterMonth == 11 ? 'selected' : '' %>>Novembre</option>
-            <option value="12" <%= filterMonth == 12 ? 'selected' : '' %>>Décembre</option>
-          </select>
-          
-          <label class="input-group-text" for="filterYear_incidents">Année</label>
-          <select class="form-select form-select-sm" id="filterYear_incidents" name="filterYear">
-            <option value="">Toutes</option>
-            <% for (let year = currentYear; year >= currentYear - 5; year--) { %>
-              <option value="<%= year %>" <%= filterYear == year ? 'selected' : '' %>><%= year %></option>
-            <% } %>
-          </select>
-          
-          <button class="btn btn-sm btn-primary" type="submit">Filtrer</button>
-          <% if (filterMonth || filterYear) { %>
-            <a href="<%= searchQuery ? '/stats?search=' + encodeURIComponent(searchQuery) : '/stats' %>" class="btn btn-sm btn-outline-secondary">Réinitialiser</a>
-          <% } %>
-        </div>
-      </form>
-    </div>
-
-    <div class="row">
-      <% Object.entries(incidentByType).forEach(([type, data]) => { %>
-        <div class="col-md-4 mb-3">
-          <div class="card h-100 border-danger">
-            <div class="card-header bg-danger text-white">
-              <%= type %>
-            </div>
-            <div class="card-body">
-              <p class="card-text">
-                <strong><%= data.total %></strong> incidents
-              </p>
-              <% if (data.sources.length > 0) { %>
-                <div class="mt-3">
-                  <h6>Principales sources:</h6>
-                  <ul class="list-group list-group-flush">
-                    <% data.sources.forEach(src => { %>
-                      <li class="list-group-item py-1 px-2">
-                        <small>
-                          <span class="badge bg-primary"><%= src.date %></span>
-                          <strong><%= src.sourceId.split(' - ')[0] %></strong>: 
-                          <%= src.count %> incident(s)
-                        </small>
-                      </li>
-                    <% }) %>
-                  </ul>
-                </div>
-              <% } %>
-            </div>
-          </div>
-        </div>
-      <% }) %>
-    </div>
-  </div>
-</div>
-
-<!-- Détails par Magasin with Search and Pagination -->
-<div class="card">
-  <div class="card-header">
-    <h3>Détails par Magasin</h3>
-  </div>
-  <div class="card-body">
-    <!-- Search Form for Market Details -->
-    <form action="/stats" method="GET" class="mb-3">
-      <div class="input-group">
-        <input 
-          type="text" 
-          name="search" 
-          class="form-control" 
-          placeholder="Rechercher par nom ou ville" 
-          value="<%= searchQuery %>">
-        
-        <!-- Add month/year filters to this search too -->
-        <% if (filterMonth) { %>
-          <input type="hidden" name="filterMonth" value="<%= filterMonth %>">
-        <% } %>
-        <% if (filterYear) { %>
-          <input type="hidden" name="filterYear" value="<%= filterYear %>">
-        <% } %>
-        
-        <div class="input-group-append">
-          <button class="btn btn-primary" type="submit">Rechercher</button>
-        </div>
-      </div>
-    </form>
-
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Magasin</th>
-          <th>Région</th>
-          <th>Formation</th>
-          <th>Accidents (nombre)</th>
-          <th>Accidents (jours)</th>
-          <th>Incidents</th>
-          <th>Interpellations (total)</th>
-          <th>Interpellations (poursuites)</th>
-          <th>Interpellations (valeur)</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% details.forEach((d, index) => { %>
-          <!-- Main Market Row: Clickable to toggle collapse -->
-          <tr data-toggle="collapse" data-target="#market-<%= index %>" class="clickable" style="cursor: pointer;">
-            <td><%= d.marketName %></td>
-            <td><%= d.marketVille %></td>
-            <td><%= d.marketTotals.formation %></td>
-            <td><%= d.marketTotals.accidents.count %></td>
-            <td><%= d.marketTotals.accidents.jours %></td>
-            <td><%= d.marketTotals.incidents %></td>
-            <td><%= d.marketTotals.interpellations.personnes %></td>
-            <td><%= d.marketTotals.interpellations.poursuites %></td>
-            <td><%= d.marketTotals.interpellations.valeur.toFixed(3).replace('.', ',') %></td>
-          </tr>
-          <!-- Collapsible Row with instance details -->
-          <tr class="collapse" id="market-<%= index %>">
-            <td colspan="9">
-              <div class="card card-body">
-                <h5>Détails par Instance</h5>
-                <table class="table table-sm">
-                  <thead>
-                    <tr>
-                      <th>Mois</th>
-                      <th>Année</th>
-                      <th>Formation</th>
-                      <th>Accidents (nombre)</th>
-                      <th>Accidents (jours)</th>
-                      <th>Incidents</th>
-                      <th>Interpellations (total)</th>
-                      <th>Interpellations (poursuites)</th>
-                      <th>Interpellations (valeur)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <% d.instancesDetails.forEach(inst => { %>
-                      <tr>
-                        <td><%= inst.mois %></td>
-                        <td><%= inst.annee %></td>
-                        <td><%= inst.totals.formation %></td>
-                        <td><%= inst.totals.accidents.count %></td>
-                        <td><%= inst.totals.accidents.jours %></td>
-                        <td><%= inst.totals.incidents %></td>
-                        <td><%= inst.totals.interpellations.personnes %></td>
-                        <td><%= inst.totals.interpellations.poursuites %></td>
-                        <td><%= inst.totals.interpellations.valeur.toFixed(3).replace('.', ',') %></td>
-                      </tr>
-                    <% }) %>
-                  </tbody>
-                </table>
+<div class="container-fluid mt-4">
+  <div class="row mb-4">
+      <div class="col-md-12">
+          <div class="card search-card">
+              <div class="card-header">
+                  <h4 class="mb-0">Recherche Avancée</h4>
               </div>
-            </td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
-    
-    <!-- Pagination Links for Market Details -->
-    <% if (totalPages > 1) { %>
-      <ul class="pagination">
-        <% for (let i = 1; i <= totalPages; i++) { 
-             let pageUrl = '?page=' + i;
-             if (searchQuery) {
-               pageUrl += '&search=' + encodeURIComponent(searchQuery);
-             }
-        %>
-          <li class="page-item <%= i === currentPage ? 'active' : '' %>">
-            <a class="page-link" href="<%= pageUrl %>"><%= i %></a>
-          </li>
-        <% } %>
-      </ul>
-    <% } %>
-    
+              <div class="card-body">
+                  <form action="/stats" method="GET" class="row g-3">
+                      <div class="col-md-3">
+                          <input type="text" class="form-control" name="nom" placeholder="Nom du magasin"
+                              value="<%= searchParams.nom || '' %>">
+                      </div>
+                      <div class="col-md-3">
+                          <input type="text" class="form-control" name="ville" placeholder="Ville"
+                              value="<%= searchParams.ville || '' %>">
+                      </div>
+                      <div class="col-md-2">
+                          <select class="form-select" name="mois">
+                              <option value="">Tous les mois</option>
+                              <% [...Array(12).keys()].forEach(i => { %>
+                                  <option value="<%= i+1 %>" <%= searchParams.mois == i+1 ? 'selected' : '' %>>
+                                      <%= new Date(0, i).toLocaleString('fr-FR', {month: 'long'}) %>
+                                  </option>
+                              <% }); %>
+                          </select>
+                      </div>
+                      <div class="col-md-2">
+                          <select class="form-select" name="annee">
+                              <option value="">Toutes les années</option>
+                              <% const currentYear = new Date().getFullYear();
+                              for(let y = currentYear; y >= currentYear; y--){ %>
+                                  <option value="<%= y %>" <%= searchParams.annee == y ? 'selected' : '' %>>
+                                      <%= y %>
+                                  </option>
+                              <% } %>
+                          </select>
+                      </div>
+                      <div class="col-md-2">
+                          <button type="submit" class="btn btn-primary w-100">Filtrer</button>
+                      </div>
+                  </form>
+              </div>
+          </div>
+      </div>
+  </div>
+
+  <% if (hasFilters) { %>
+      <div class="row mb-3">
+          <div class="col-12">
+              <div class="d-flex flex-wrap gap-2">
+                  <% if (searchParams.nom) { %>
+                      <span class="badge bg-primary badge-filter">
+                          Magasin: <%= searchParams.nom %>
+                      </span>
+                  <% } %>
+                  <% if (searchParams.ville) { %>
+                      <span class="badge bg-info badge-filter">
+                          Ville: <%= searchParams.ville %>
+                      </span>
+                  <% } %>
+                  <% if (searchParams.mois) { %>
+                      <span class="badge bg-success badge-filter">
+                          Mois: <%= new Date(0, searchParams.mois-1).toLocaleString('fr-FR', {month: 'long'}) %>
+                      </span>
+                  <% } %>
+                  <% if (searchParams.annee) { %>
+                      <span class="badge bg-warning badge-filter">
+                          Année: <%= searchParams.annee %>
+                      </span>
+                  <% } %>
+              </div>
+          </div>
+      </div>
+  <% } %>
+
+  <!-- Global Stats Cards -->
+  <div class="row row-cols-1 row-cols-md-4 g-4 mb-4">
+      <div class="col">
+          <div class="card stat-card h-100">
+              <div class="card-header bg-primary text-white">
+                  <h5 class="card-title mb-0">Formation</h5>
+              </div>
+              <div class="card-body">
+                  <h2 class="card-text"><%= globalTotals.formation %> P</h2>
+              </div>
+          </div>
+      </div>
+      <div class="col">
+          <div class="card stat-card h-100">
+              <div class="card-header bg-danger text-white">
+                  <h5 class="card-title mb-0">Accidents</h5>
+              </div>
+              <div class="card-body">
+                  <h2 class="card-text"><%= globalTotals.accidents.count %></h2>
+                  <p class="text-muted mb-0"><%= globalTotals.accidents.jours %> jours d'arrêt</p>
+              </div>
+          </div>
+      </div>
+      <div class="col">
+          <div class="card stat-card h-100">
+              <div class="card-header bg-warning text-dark">
+                  <h5 class="card-title mb-0">Incidents</h5>
+              </div>
+              <div class="card-body">
+                  <h2 class="card-text"><%= globalTotals.incidents %></h2>
+              </div>
+          </div>
+      </div>
+      <div class="col">
+          <div class="card stat-card h-100">
+              <div class="card-header bg-success text-white">
+                  <h5 class="card-title mb-0">Interpellations</h5>
+              </div>
+              <div class="card-body">
+                  <h2 class="card-text"><%= globalTotals.interpellations.personnes %> P</h2>
+                  <p class="text-muted mb-0">
+                      <%= globalTotals.interpellations.poursuites %> PJ<br>
+                      <%= globalTotals.interpellations.valeur.toFixed(3).replace('.', ',') %> kDH
+                  </p>
+              </div>
+          </div>
+      </div>
+  </div>
+
+  <!-- Detailed Statistics -->
+  <div class="row">
+      <!-- Interpellations by Type -->
+      <div class="col-md-6 mb-4">
+          <div class="card h-100">
+              <div class="card-header">
+                  <h5>Interpellations par Type</h5>
+              </div>
+              <div class="card-body">
+                  <% Object.entries(interpellationByType).forEach(([type, data]) => { %>
+                      <div class="mb-3">
+                          <h6 class="text-primary"><%= type %></h6>
+                          <div class="row">
+                              <div class="col-4">
+                                  <span class="badge bg-primary"><%= data.personnes %> P</span>
+                              </div>
+                              <div class="col-4">
+                                  <span class="badge bg-info"><%= data.poursuites %> PJ</span>
+                              </div>
+                              <div class="col-4">
+                                  <span class="badge bg-success"><%= data.valeur.toFixed(3).replace('.', ',') %> kDH</span>
+                              </div>
+                          </div>
+                      </div>
+                  <% }); %>
+              </div>
+          </div>
+      </div>
+
+      <!-- Formation by Type -->
+      <div class="col-md-6 mb-4">
+          <div class="card h-100">
+              <div class="card-header">
+                  <h5>Formation par Type</h5>
+              </div>
+              <div class="card-body">
+                  <% Object.entries(formationByType).forEach(([type, data]) => { %>
+                      <div class="mb-3">
+                          <h6 class="text-success"><%= type %></h6>
+                          <div class="progress" style="height: 25px;">
+                              <div class="progress-bar bg-success" 
+                                   role="progressbar" 
+                                   style="width: <%= (data.total / globalTotals.formation * 100) || 0 %>%">
+                                  <%= data.total %> P
+                              </div>
+                          </div>
+                      </div>
+                  <% }); %>
+              </div>
+          </div>
+      </div>
+  </div>
+
+  <!-- Detailed Market Table -->
+  <div class="card mb-4">
+      <div class="card-header">
+          <h5>Détails par Magasin</h5>
+      </div>
+      <div class="card-body">
+          <% if (details.length > 0) { %>
+              <div class="table-responsive">
+                  <table class="table table-hover">
+                      <thead class="table-light">
+                          <tr>
+                              <th>Magasin</th>
+                              <th>Ville</th>
+                              <th>Formation</th>
+                              <th>Accidents</th>
+                              <th>Incidents</th>
+                              <th>Interpellations</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          <% details.forEach(market => { %>
+                              <tr>
+                                  <td><%= market.marketName %></td>
+                                  <td><%= market.marketVille %></td>
+                                  <td><%= market.marketTotals.formation %> P</td>
+                                  <td>
+                                      <span class="badge bg-danger">
+                                          <%= market.marketTotals.accidents.count %>
+                                      </span>
+                                      <small class="text-muted">
+                                          (<%= market.marketTotals.accidents.jours %>j)
+                                      </small>
+                                  </td>
+                                  <td>
+                                      <span class="badge bg-warning">
+                                          <%= market.marketTotals.incidents %>
+                                      </span>
+                                  </td>
+                                  <td>
+                                      <span class="badge bg-success">
+                                          <%= market.marketTotals.interpellations.personnes %> P
+                                      </span>
+                                      <small class="text-muted">
+                                          <%= market.marketTotals.interpellations.poursuites %> PJ<br>
+                                          <%= market.marketTotals.interpellations.valeur.toFixed(3).replace('.', ',') %>kDH
+                                      </small>
+                                  </td>
+                              </tr>
+                          <% }); %>
+                      </tbody>
+                  </table>
+              </div>
+          <% } else { %>
+              <div class="alert alert-warning">
+                  Aucun résultat trouvé pour les critères de recherche sélectionnés.
+              </div>
+          <% } %>
+      </div>
   </div>
 </div>
-
-
