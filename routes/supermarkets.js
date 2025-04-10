@@ -699,6 +699,79 @@ router.get('/:id/instance/:instanceId/equipements/supprimer', async (req, res) =
 
 
 
+
+// ===============================
+//   DRL - FULL CRUD
+// ===============================
+
+// Affichage des DRL pour une instance
+router.get('/:id/instance/:instanceId/drl', async (req, res) => {
+  const supermarket = await Supermarket.findById(req.params.id);
+  const instance = supermarket.instances.id(req.params.instanceId);
+  res.render('drl', {
+    supermarketId: req.params.id,
+    instance,
+    drls: instance.drl
+  });
+});
+
+// Ajout d'un DRL
+router.post('/:id/instance/:instanceId/drl/ajouter', async (req, res) => {
+  const { valeur, statut, date } = req.body;
+  const supermarket = await Supermarket.findById(req.params.id);
+  const instance = supermarket.instances.id(req.params.instanceId);
+  
+  instance.drl.push({
+    valeur: parseNumber(valeur),
+    statut,
+    date
+  });
+  
+  await supermarket.save();
+  res.redirect(`/supermarkets/${req.params.id}/instance/${req.params.instanceId}/drl`);
+});
+
+// Formulaire d'édition d'un DRL
+router.get('/:id/instance/:instanceId/drl/editer/:drlId', async (req, res) => {
+  const supermarket = await Supermarket.findById(req.params.id);
+  const instance = supermarket.instances.id(req.params.instanceId);
+  const drlItem = instance.drl.id(req.params.drlId);
+  res.render('editerDRL', {
+    supermarketId: req.params.id,
+    instanceId: req.params.instanceId,
+    drlItem
+  });
+});
+
+// Traitement de l'édition d'un DRL
+router.post('/:id/instance/:instanceId/drl/editer/:drlId', async (req, res) => {
+  const { valeur, statut, date } = req.body;
+  const supermarket = await Supermarket.findById(req.params.id);
+  const instance = supermarket.instances.id(req.params.instanceId);
+  const drlItem = instance.drl.id(req.params.drlId);
+
+  drlItem.valeur = parseNumber(valeur);
+  drlItem.statut = statut;
+  drlItem.date = date;
+
+  await supermarket.save();
+  res.redirect(`/supermarkets/${req.params.id}/instance/${req.params.instanceId}/drl`);
+});
+
+// Suppression d'un DRL
+router.get('/:id/instance/:instanceId/drl/supprimer/:drlId', async (req, res) => {
+  const supermarket = await Supermarket.findById(req.params.id);
+  const instance = supermarket.instances.id(req.params.instanceId);
+  instance.drl.pull({ _id: req.params.drlId });
+  await supermarket.save();
+  res.redirect(`/supermarkets/${req.params.id}/instance/${req.params.instanceId}/drl`);
+});
+
+
+
+
+
+
 // Totaux pour toutes les instances d'un supermarché
 router.get('/:id/instances/totaux', async (req, res) => {
   const { id } = req.params;

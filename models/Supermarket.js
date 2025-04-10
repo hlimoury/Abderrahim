@@ -68,6 +68,13 @@ const EquipementSchema = new Schema({
   ads: Number
 });
 
+// DRL - Demande de Règlement Litige
+const DRLSchema = new Schema({
+  valeur: Number,
+  statut: { type: String, enum: ['Accepté', 'Refusé'] },
+  date: Date
+});
+
 // Instance mensuelle (pour un mois et une année donnés)
 const InstanceSchema = new Schema({
   mois: Number,
@@ -77,6 +84,7 @@ const InstanceSchema = new Schema({
   incidents: [IncidentSchema],
   interpellations: [InterpellationSchema],
   equipements: EquipementSchema,
+  drl: [DRLSchema],
   scoring: ScoringSchema
 });
 
