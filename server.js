@@ -70,10 +70,11 @@ const statsRoutes = require('./routes/stats');           // Admin stats dashboar
 // Mount the routes in order
 app.use('/', authRoutes);
 app.use('/', authAdminRoutes);
+app.use('/', statsRoutes);
 app.use('/', indexRoutes);
 app.use('/supermarkets', supermarketRoutes);
 app.use('/totals', totalsRoutes);
-app.use('/', statsRoutes);
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Serveur démarré sur le port ${PORT}`));
