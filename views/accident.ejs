@@ -1,6 +1,6 @@
 
 <h1>Accidents de Travail - Instance du Mois</h1>
-<a href="/supermarkets/<%= supermarketId %>" class="btn btn-secondary mb-3">Retour</a>
+<a href="/supermarkets/<%= supermarketId %>?fromPage=<%= fromPage || 1 %>" class="btn btn-secondary mb-3">Retour</a>
 
 <h2>Ajouter un Accident de Travail</h2>
 <form action="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/accidents/ajouter" method="POST">

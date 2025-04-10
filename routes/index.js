@@ -3,6 +3,9 @@ const router = express.Router();
 const Supermarket = require('../models/Supermarket');
 
 // GET '/' - List supermarkets with search, region filter, and pagination
+// In your index.js route file:
+
+// GET '/' - List supermarkets with search, region filter, and pagination
 router.get('/', async (req, res) => {
   try {
     // 1) Handle search query
@@ -39,11 +42,51 @@ router.get('/', async (req, res) => {
     // 6) Calculate total pages
     const totalPages = Math.ceil(totalCount / limit);
 
+    // Add the current page to the market links to remember it
     res.render('index', {
-      supermarkets,
+      supermarkets,  // Still named supermarkets in the route
       currentPage: page,
       totalPages,
       searchQuery
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Erreur serveur');
+  }
+});
+
+// In your supermarket.js route file:
+
+// Voir un supermarché et ses instances
+router.get('/:id', async (req, res) => {
+  try {
+    const supermarket = await Supermarket.findById(req.params.id);
+    if (!supermarket) return res.status(404).send('Supermarché introuvable');
+
+    // Filter instances based on query parameters (mois and annee)
+    const mois = req.query.mois;
+    const annee = req.query.annee;
+    const fromPage = req.query.fromPage || req.query.page || 1;
+    const searchQuery = req.query.search || '';
+    
+    let instances = supermarket.instances;
+    if (mois || annee) {
+      instances = instances.filter(instance => {
+        let match = true;
+        if (mois) match = match && (instance.mois == mois);
+        if (annee) match = match && (instance.annee == annee);
+        return match;
+      });
+    }
+    
+    // Pass the request object to the template to access query parameters
+    res.render('supermarket', { 
+      supermarket, 
+      instances, 
+      mois, 
+      annee,
+      searchQuery,
+      req
     });
   } catch (err) {
     console.error(err);

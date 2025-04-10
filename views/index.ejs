@@ -32,23 +32,24 @@
     </tr>
   </thead>
   <tbody>
-    <% supermarkets.forEach(function(market) { %>
-      <tr>
-        <td><%= market.nom %></td>
-        <td><%= market.ville %></td>
-        <td>
-          <!-- Voir button -->
-          <a href="/supermarkets/<%= market._id %>" class="btn btn-info btn-sm">Voir</a>
-          <!-- Modifier button -->
-          <a href="/supermarkets/<%= market._id %>/editer" class="btn btn-warning btn-sm">Modifier</a>
-          <!-- Supprimer button -->
-          <a href="/supermarkets/<%= market._id %>/supprimer" class="btn btn-danger btn-sm"
-             onclick="return confirm('Voulez-vous vraiment supprimer ce supermarché ?');">
-            Supprimer
-          </a>
-        </td>
-      </tr>
-    <% }) %>
+   <!-- In your index.ejs file, update the links to markets: -->
+<% supermarkets.forEach(function(market) { %>
+  <tr>
+    <td><%= market.nom %></td>
+    <td><%= market.ville %></td>
+    <td>
+      <!-- Pass the current page as a query parameter -->
+      <a href="/supermarkets/<%= market._id %>?fromPage=<%= currentPage %><%= searchQuery ? '&search=' + searchQuery : '' %>" 
+         class="btn btn-info btn-sm">Voir</a>
+      <a href="/supermarkets/<%= market._id %>/editer" class="btn btn-warning btn-sm">Modifier</a>
+      <a href="/supermarkets/<%= market._id %>/supprimer" 
+         class="btn btn-danger btn-sm" 
+         onclick="return confirm('Voulez-vous vraiment supprimer ce supermarché ?');">
+        Supprimer
+      </a>
+    </td>
+  </tr>
+<% }); %>
   </tbody>
 </table>
 

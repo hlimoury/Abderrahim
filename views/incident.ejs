@@ -1,5 +1,5 @@
 <h1>Autres Incidents - Instance du Mois</h1>
-<a href="/supermarkets/<%= supermarketId %>" class="btn btn-secondary mb-3">Retour</a>
+<a href="/supermarkets/<%= supermarketId %>?fromPage=<%= fromPage || 1 %>" class="btn btn-secondary mb-3">Retour</a>
 
 <h2>Ajouter un Incident</h2>
 <form action="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/incidents/ajouter" method="POST">

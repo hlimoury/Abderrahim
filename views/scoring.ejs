@@ -9,7 +9,11 @@
 %>
 
 <h1>Scoring - Instance <%= instance.mois %>/<%= instance.annee %></h1>
-<a href="/supermarkets/<%= supermarketId %>" class="btn btn-secondary mb-3">Retour</a>
+
+
+<a href="/supermarkets/<%= supermarketId %>?fromPage=<%= fromPage || 1 %>" class="btn btn-secondary">Retour</a>
+
+
 
 <!-- ======================
      1) Sécurité Incendie

@@ -1,10 +1,19 @@
-
 <h1>Supermarché: <%= supermarket.nom %> (<%= supermarket.ville %>)</h1>
+
+<!-- Store the original page number in a hidden element -->
+<% if (typeof fromPage !== 'undefined' && fromPage) { %>
+<input type="hidden" id="originalPage" value="<%= fromPage %>">
+<% } else { %>
+<input type="hidden" id="originalPage" value="1">
+<% } %>
 
 <!-- Button to add a new instance and view instance totals -->
 <div class="mb-3">
-  <a href="/supermarkets/<%= supermarket._id %>/ajouter-instance" class="btn btn-primary">Ajouter Instance (Mois/Année)</a>
-  <a href="/supermarkets/<%= supermarket._id %>/instances/totaux" class="btn btn-info">Total Indicateurs</a>
+  <a href="/supermarkets/<%= supermarket._id %>/ajouter-instance?fromPage=<%= fromPage || 1 %>" class="btn btn-primary">Ajouter Instance (Mois/Année)</a>
+  <a href="/supermarkets/<%= supermarket._id %>/instances/totaux?fromPage=<%= fromPage || 1 %>" class="btn btn-info">Total Indicateurs</a>
+  
+  <!-- Return button that will be updated via JS -->
+  <a href="/" id="returnButton" class="btn btn-secondary">Retour à la liste</a>
 </div>
 
 <!-- Search form for filtering instances by month and year -->
@@ -13,6 +22,11 @@
     <input type="number" name="mois" class="form-control mr-2" placeholder="Mois" value="<%= mois || '' %>">
     <input type="number" name="annee" class="form-control mr-2" placeholder="Année" value="<%= annee || '' %>">
     <button type="submit" class="btn btn-primary">Filtrer Instances</button>
+    
+    <!-- Preserve the fromPage parameter when filtering -->
+    <% if (typeof fromPage !== 'undefined' && fromPage) { %>
+    <input type="hidden" name="fromPage" value="<%= fromPage %>">
+    <% } %>
   </div>
 </form>
 
@@ -36,27 +50,16 @@
         <td><%= instance.mois %></td>
         <td><%= instance.annee %></td>
         <td>
-
-          <!-- Équipements -->
-          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/equipements" class="btn btn-secondary btn-sm">Dispositifs</a>
-          <!-- Interpellations -->
-          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/interpellations" class="btn btn-success btn-sm">Interpellations</a>
-          <!-- Accidents -->
-          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/accidents" class="btn btn-warning btn-sm">Accidents</a>
-          <!-- Autres Incidents -->
-          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/incidents" class="btn btn-danger btn-sm">Autres Incidents</a>
-          
-          <!-- Formation -->
-          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/formation" class="btn btn-info btn-sm">Formation</a>
-
-          <!-- DRL Button -->
-          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/drl" class="btn btn-primary btn-sm">DRL</a>
-
-          <!-- Scoring -->
-          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/scoring" class="btn btn-dark btn-sm">Scoring</a>
-          <!-- Edit/Delete instance -->
-          <a href="/supermarkets/<%= supermarket._id %>/instance/editer/<%= instance._id %>" class="btn btn-primary btn-sm">Modifier</a>
-          <a href="/supermarkets/<%= supermarket._id %>/instance/supprimer/<%= instance._id %>" class="btn btn-danger btn-sm"
+          <!-- Add fromPage parameter to all navigation links -->
+          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/equipements?fromPage=<%= fromPage || 1 %>" class="btn btn-secondary btn-sm">Équipements</a>
+          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/interpellations?fromPage=<%= fromPage || 1 %>" class="btn btn-success btn-sm">Interpellations</a>
+          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/accidents?fromPage=<%= fromPage || 1 %>" class="btn btn-warning btn-sm">Accidents</a>
+          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/incidents?fromPage=<%= fromPage || 1 %>" class="btn btn-danger btn-sm">Autres Incidents</a>
+          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/formation?fromPage=<%= fromPage || 1 %>" class="btn btn-info btn-sm">Formation</a>
+          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/drl?fromPage=<%= fromPage || 1 %>" class="btn btn-primary btn-sm">DRL</a>
+          <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/scoring?fromPage=<%= fromPage || 1 %>" class="btn btn-dark btn-sm">Scoring</a>
+          <a href="/supermarkets/<%= supermarket._id %>/instance/editer/<%= instance._id %>?fromPage=<%= fromPage || 1 %>" class="btn btn-primary btn-sm">Modifier</a>
+          <a href="/supermarkets/<%= supermarket._id %>/instance/supprimer/<%= instance._id %>?fromPage=<%= fromPage || 1 %>" class="btn btn-danger btn-sm"
              onclick="return confirm('Voulez-vous vraiment supprimer cette instance ?');">
             Supprimer
           </a>
@@ -65,3 +68,24 @@
     <% }) %>
   </tbody>
 </table>
+
+<script>
+  // Update the return button link when the page loads
+  document.addEventListener('DOMContentLoaded', function() {
+    const returnBtn = document.getElementById('returnButton');
+    const originalPage = document.getElementById('originalPage').value;
+    
+    // Check if we have a fromPage value
+    if (originalPage) {
+      // Update the return link with the original page number
+      returnBtn.href = `/?page=${originalPage}`;
+      
+      // Add search query if it exists in the URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const searchQuery = urlParams.get('search');
+      if (searchQuery) {
+        returnBtn.href += `&search=${encodeURIComponent(searchQuery)}`;
+      }
+    }
+  });
+</script>

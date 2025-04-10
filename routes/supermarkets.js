@@ -56,6 +56,7 @@ router.get('/:id/instance/:instanceId/scoring', async (req, res) => {
   ];
   const totalNiveauAvg = averageValues(combinedAll, 'niveau');
   const totalObjAvg    = averageValues(combinedAll, 'objectif');
+  const fromPage = req.query.fromPage || 1;
 
   res.render('scoring', {
     supermarketId: id,
@@ -67,7 +68,8 @@ router.get('/:id/instance/:instanceId/scoring', async (req, res) => {
     sureteNiveauAvg,
     sureteObjAvg,
     totalNiveauAvg,
-    totalObjAvg
+    totalObjAvg,
+    fromPage
   });
 });
 
@@ -168,26 +170,42 @@ router.get('/:id/instance/:instanceId/scoring/:category/supprimer/:scoreId', asy
 // ------------------------------
 
 // Voir un supermarché et ses instances
+// Voir un supermarché et ses instances
 router.get('/:id', async (req, res) => {
-  const supermarket = await Supermarket.findById(req.params.id);
-  if (!supermarket) return res.status(404).send('Supermarché introuvable');
+  try {
+    const supermarket = await Supermarket.findById(req.params.id);
+    if (!supermarket) return res.status(404).send('Supermarché introuvable');
 
-  // Filter instances based on query parameters (mois and annee)
-  const mois = req.query.mois;
-  const annee = req.query.annee;
-  let instances = supermarket.instances;
-  if (mois || annee) {
-    instances = instances.filter(instance => {
-      let match = true;
-      if (mois) match = match && (instance.mois == mois);
-      if (annee) match = match && (instance.annee == annee);
-      return match;
+    // Filter instances based on query parameters (mois and annee)
+    const mois = req.query.mois;
+    const annee = req.query.annee;
+    const fromPage = req.query.fromPage || req.query.page || 1;
+    const searchQuery = req.query.search || '';
+    
+    let instances = supermarket.instances;
+    if (mois || annee) {
+      instances = instances.filter(instance => {
+        let match = true;
+        if (mois) match = match && (instance.mois == mois);
+        if (annee) match = match && (instance.annee == annee);
+        return match;
+      });
+    }
+    
+    // Pass fromPage directly instead of the req object
+    res.render('supermarket', { 
+      supermarket, 
+      instances, 
+      mois, 
+      annee,
+      fromPage,
+      searchQuery
     });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Erreur serveur');
   }
-  // Pass both filtered instances and original supermarket (so you have access to all fields)
-  res.render('supermarket', { supermarket, instances, mois, annee });
 });
-
 
 
 // ======================
@@ -351,7 +369,8 @@ router.get('/:id/instance/supprimer/:instanceId', async (req, res) => {
 router.get('/:id/instance/:instanceId/formation', async (req, res) => {
   const supermarket = await Supermarket.findById(req.params.id);
   const instance = supermarket.instances.id(req.params.instanceId);
-  res.render('formation', { supermarketId: req.params.id, instance, formation: instance.formation });
+  const fromPage = req.query.fromPage || 1;
+  res.render('formation', { supermarketId: req.params.id, instance, formation: instance.formation, fromPage });
 });
 
 // Ajout d’une formation
@@ -399,11 +418,13 @@ router.get('/:id/instance/:instanceId/formation/supprimer/:formationId', async (
 router.get('/:id/instance/:instanceId/accidents', async (req, res) => {
   const supermarket = await Supermarket.findById(req.params.id);
   const instance = supermarket.instances.id(req.params.instanceId);
+  const fromPage = req.query.fromPage || 1;
 
   res.render('accident', {
     supermarketId: req.params.id,
     instance,
-    accidents: instance.accidents
+    accidents: instance.accidents,
+    fromPage
   });
 });
 
@@ -486,10 +507,12 @@ router.get('/:id/instance/:instanceId/accidents/supprimer/:accidentId', async (r
 router.get('/:id/instance/:instanceId/incidents', async (req, res) => {
   const supermarket = await Supermarket.findById(req.params.id);
   const instance = supermarket.instances.id(req.params.instanceId);
+  const fromPage = req.query.fromPage || 1;
   res.render('incident', {
     supermarketId: req.params.id,
     instance,
-    incidents: instance.incidents
+    incidents: instance.incidents,
+    fromPage
   });
 });
 
@@ -563,10 +586,12 @@ router.get('/:id/instance/:instanceId/incidents/supprimer/:incidentId', async (r
 router.get('/:id/instance/:instanceId/interpellations', async (req, res) => {
   const supermarket = await Supermarket.findById(req.params.id);
   const instance = supermarket.instances.id(req.params.instanceId);
+  const fromPage = req.query.fromPage || 1;
   res.render('interpellation', {
     supermarketId: req.params.id,
     instance,
     interpellations: instance.interpellations,
+    fromPage
   });
 });
 
@@ -655,7 +680,8 @@ router.get('/:id/instance/:instanceId/interpellations/supprimer/:interId', async
 router.get('/:id/instance/:instanceId/equipements', async (req, res) => {
   const supermarket = await Supermarket.findById(req.params.id);
   const instance = supermarket.instances.id(req.params.instanceId);
-  res.render('equipement', { supermarketId: req.params.id, instance });
+  const fromPage = req.query.fromPage || 1;
+  res.render('equipement', { supermarketId: req.params.id, instance, fromPage });
 });
 
 // Formulaire d'édition de l'équipement
@@ -708,10 +734,12 @@ router.get('/:id/instance/:instanceId/equipements/supprimer', async (req, res) =
 router.get('/:id/instance/:instanceId/drl', async (req, res) => {
   const supermarket = await Supermarket.findById(req.params.id);
   const instance = supermarket.instances.id(req.params.instanceId);
+  const fromPage = req.query.fromPage || 1;
   res.render('drl', {
     supermarketId: req.params.id,
     instance,
-    drls: instance.drl
+    drls: instance.drl,
+    fromPage
   });
 });
 
