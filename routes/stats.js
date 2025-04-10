@@ -160,4 +160,45 @@ router.get('/stats', ensureAdmin, async (req, res) => {
   }
 });
 
+
+
+
+// API endpoint for AJAX search
+router.get('/api/search', async (req, res) => {
+  try {
+    const query = req.query.query || '';
+    
+    // Skip search if query is too short
+    if (query.length < 2) {
+      return res.json([]);
+    }
+    
+    // Search for supermarkets with matching name or city
+    const results = await Supermarket.find({
+      $or: [
+        { nom: { $regex: query, $options: 'i' } },
+        { ville: { $regex: query, $options: 'i' } }
+      ]
+    }).limit(10);
+    
+    // Format results for display
+    const formattedResults = results.map(market => {
+      // Calculate total instances count (optional)
+      const count = market.instances ? market.instances.length : 0;
+      
+      return {
+        nom: market.nom,
+        ville: market.ville,
+        count: count,
+        // You could also add an image URL if you have one
+        image: null
+      };
+    });
+    
+    res.json(formattedResults);
+  } catch (err) {
+    console.error('Search API error:', err);
+    res.status(500).json({ error: 'Search failed' });
+  }
+});
 module.exports = router;

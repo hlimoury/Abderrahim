@@ -38,6 +38,10 @@ const IncidentSchema = new Schema({
     type: String, 
     enum: ['Départ de feu', 'Agression envers le personnel', 'Passage des autorités', 'Sinistre déclaré par un client', 'Acte de sécurisation', 'Autre'] 
   },
+  sousTypeFeu: {
+    type: String,
+    enum: ['Défauts électriques', 'Équipements de froid', 'Équipement de cuisson', 'Actes de malveillance', 'Accumulation de déchets', 'Travaux par point chaud', 'Autres']
+  },
   date: Date,
   detail: String
 });

@@ -1,47 +1,52 @@
 <div class="container-fluid mt-4">
   <div class="row mb-4">
       <div class="col-md-12">
-          <div class="card search-card">
-              <div class="card-header">
-                  <h4 class="mb-0">Recherche Avancée</h4>
-              </div>
-              <div class="card-body">
-                  <form action="/stats" method="GET" class="row g-3">
-                      <div class="col-md-3">
-                          <input type="text" class="form-control" name="nom" placeholder="Nom du magasin"
-                              value="<%= searchParams.nom || '' %>">
-                      </div>
-                      <div class="col-md-3">
-                          <input type="text" class="form-control" name="ville" placeholder="Ville"
-                              value="<%= searchParams.ville || '' %>">
-                      </div>
-                      <div class="col-md-2">
-                          <select class="form-select" name="mois">
-                              <option value="">Tous les mois</option>
-                              <% [...Array(12).keys()].forEach(i => { %>
-                                  <option value="<%= i+1 %>" <%= searchParams.mois == i+1 ? 'selected' : '' %>>
-                                      <%= new Date(0, i).toLocaleString('fr-FR', {month: 'long'}) %>
-                                  </option>
-                              <% }); %>
-                          </select>
-                      </div>
-                      <div class="col-md-2">
-                          <select class="form-select" name="annee">
-                              <option value="">Toutes les années</option>
-                              <% const currentYear = new Date().getFullYear();
-                              for(let y = currentYear; y >= currentYear; y--){ %>
-                                  <option value="<%= y %>" <%= searchParams.annee == y ? 'selected' : '' %>>
-                                      <%= y %>
-                                  </option>
-                              <% } %>
-                          </select>
-                      </div>
-                      <div class="col-md-2">
-                          <button type="submit" class="btn btn-primary w-100">Filtrer</button>
-                      </div>
-                  </form>
-              </div>
-          </div>
+          <!-- Replace the existing search form in stats.ejs with this -->
+<div class="card search-card">
+    <div class="card-header">
+        <h4 class="mb-0">Recherche Avancée</h4>
+    </div>
+    <div class="card-body">
+        <form action="/stats" method="GET" class="row g-3" id="search-form">
+            <div class="col-md-3 position-relative">
+                <input type="text" class="form-control" name="nom" id="search-input" placeholder="Nom du magasin"
+                    value="<%= searchParams.nom || '' %>" autocomplete="off">
+                <!-- Search overlay will be added here dynamically -->
+            </div>
+            <div class="col-md-3">
+                <input type="text" class="form-control" name="ville" placeholder="Ville"
+                    value="<%= searchParams.ville || '' %>">
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="mois">
+                    <option value="">Tous les mois</option>
+                    <% [...Array(12).keys()].forEach(i => { %>
+                        <option value="<%= i+1 %>" <%= searchParams.mois == i+1 ? 'selected' : '' %>>
+                            <%= new Date(0, i).toLocaleString('fr-FR', {month: 'long'}) %>
+                        </option>
+                    <% }); %>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="annee">
+                    <option value="">Toutes les années</option>
+                    <% const currentYear = new Date().getFullYear();
+                    for(let y = currentYear; y >= currentYear; y--){ %>
+                        <option value="<%= y %>" <%= searchParams.annee == y ? 'selected' : '' %>>
+                            <%= y %>
+                        </option>
+                    <% } %>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Filtrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add this at the bottom of your file before the closing body tag -->
+<script src="/js/searchOverlay.js"></script>
       </div>
   </div>
 

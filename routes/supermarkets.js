@@ -493,12 +493,20 @@ router.get('/:id/instance/:instanceId/incidents', async (req, res) => {
   });
 });
 
+
 // Ajout d'un incident
 router.post('/:id/instance/:instanceId/incidents/ajouter', async (req, res) => {
-  const { nombreIncidents, typeIncident, date, detail } = req.body;
+  const { nombreIncidents, typeIncident, sousTypeFeu, date, detail } = req.body;
   const supermarket = await Supermarket.findById(req.params.id);
   const instance = supermarket.instances.id(req.params.instanceId);
-  instance.incidents.push({ nombreIncidents, typeIncident, date, detail });
+  
+  // Ne stocker sousTypeFeu que si le type est "Départ de feu"
+  const incidentData = { nombreIncidents, typeIncident, date, detail };
+  if (typeIncident === 'Départ de feu' && sousTypeFeu) {
+    incidentData.sousTypeFeu = sousTypeFeu;
+  }
+  
+  instance.incidents.push(incidentData);
   await supermarket.save();
   res.redirect(`/supermarkets/${req.params.id}/instance/${req.params.instanceId}/incidents`);
 });
@@ -517,13 +525,22 @@ router.get('/:id/instance/:instanceId/incidents/editer/:incidentId', async (req,
 
 // Traitement de l'édition d'un incident
 router.post('/:id/instance/:instanceId/incidents/editer/:incidentId', async (req, res) => {
-  const { nombreIncidents, typeIncident, date, detail } = req.body;
+  const { nombreIncidents, typeIncident, sousTypeFeu, date, detail } = req.body;
   const supermarket = await Supermarket.findById(req.params.id);
   const instance = supermarket.instances.id(req.params.instanceId);
   const incidentItem = instance.incidents.id(req.params.incidentId);
 
   incidentItem.nombreIncidents = nombreIncidents;
   incidentItem.typeIncident = typeIncident;
+  
+  // Gérer le sous-type de feu: ajouter si présent et applicable, ou supprimer si non applicable
+  if (typeIncident === 'Départ de feu' && sousTypeFeu) {
+    incidentItem.sousTypeFeu = sousTypeFeu;
+  } else {
+    // Supprimer le champ s'il n'est plus applicable
+    incidentItem.sousTypeFeu = undefined;
+  }
+  
   incidentItem.date = date;
   incidentItem.detail = detail;
 
