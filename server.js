@@ -71,9 +71,10 @@ const statsRoutes = require('./routes/stats');           // Admin stats dashboar
 app.use('/', authRoutes);
 app.use('/', authAdminRoutes);
 app.use('/', statsRoutes);
+app.use('/totals', totalsRoutes);
 app.use('/', indexRoutes);
 app.use('/supermarkets', supermarketRoutes);
-app.use('/totals', totalsRoutes);
+
 
 
 const PORT = process.env.PORT || 3000;
