@@ -1,3 +1,4 @@
+//routes : this is total.js(
 const express = require('express');
 const router = express.Router();
 const Supermarket = require('../models/Supermarket');
@@ -97,6 +98,130 @@ router.get('/', ensureLoggedIn, async (req, res) => {
       formationByType, // Now included in the template data
       region: userRegion === 'ALL' ? 'Toutes les régions' : userRegion,
       currentUser: req.session.user
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Erreur serveur');
+  }
+});
+
+
+
+
+
+// Ajoutez ces nouvelles routes après la route GET principale
+
+/// Route pour les listes détaillées 
+// Route pour les listes détaillées 
+router.get('/details/:type', ensureLoggedIn, async (req, res) => {
+  try {
+    const type = req.params.type;
+    const userRegion = req.session.region;
+    
+    // Pagination parameters
+    const page = parseInt(req.query.page) || 1;
+    const limit = 20; // 10 items per page
+    const skip = (page - 1) * limit;
+    
+    // Search query parameter
+    const searchQuery = req.query.q || '';
+    
+    // Filtrer par région
+    let regionFilter = {};
+    if (userRegion && userRegion !== 'ALL') {
+      regionFilter.ville = userRegion;
+    }
+    
+    // Add search functionality
+    let searchFilter = {};
+    if (searchQuery) {
+      searchFilter = {
+        $or: [
+          { 'nom': { $regex: searchQuery, $options: 'i' } },
+          { 'ville': { $regex: searchQuery, $options: 'i' } }
+        ]
+      };
+    }
+    
+    // Combine filters
+    const finalFilter = { ...regionFilter, ...searchFilter };
+    
+    // Fetch supermarkets with populated instances
+    const supermarkets = await Supermarket.find(finalFilter).populate('instances');
+    
+    // Collect all entries
+    let allEntries = [];
+    
+    supermarkets.forEach(supermarket => {
+      supermarket.instances.forEach(instance => {
+        if (instance[type] && Array.isArray(instance[type])) {
+          instance[type].forEach(entry => {
+            allEntries.push({
+              supermarket,
+              instance,
+              entry
+            });
+          });
+        }
+      });
+    });
+    
+    // Total count for pagination
+    const totalItems = allEntries.length;
+    const totalPages = Math.ceil(totalItems / limit);
+    
+    // Apply pagination
+    const paginatedEntries = allEntries.slice(skip, skip + limit);
+    
+    res.render('detailsList', {
+      type,
+      entries: paginatedEntries,
+      currentPage: page,
+      totalPages: totalPages,
+      q: searchQuery,
+      formatDate: (date) => {
+        if (!date) return 'N/A';
+        return new Date(date).toLocaleDateString('fr-FR', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        });
+      }
+    });
+    
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Erreur serveur');
+  }
+});
+// Route pour les détails d'une entrée spécifique
+router.get('/details/:type/:supermarketId/:instanceId/:entryId', ensureLoggedIn, async (req, res) => {
+  try {
+    const { type, supermarketId, instanceId, entryId } = req.params;
+    
+    const supermarket = await Supermarket.findById(supermarketId);
+    if (!supermarket) return res.status(404).send('Supermarché non trouvé');
+    
+    const instance = supermarket.instances.id(instanceId);
+    if (!instance) return res.status(404).send('Instance non trouvée');
+    
+    const entry = instance[type].id(entryId);
+    if (!entry) return res.status(404).send('Entrée non trouvée');
+
+    res.render('entryDetails', {
+      type,
+      supermarket,
+      instance,
+      entry,
+      formatDate: (date) => {
+        if (!date) return 'N/A';
+        return new Date(date).toLocaleDateString('fr-FR', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        });
+      }
     });
 
   } catch (err) {

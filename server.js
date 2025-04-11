@@ -39,10 +39,12 @@ app.use((req, res, next) => {
   next();
 });
 
-
+app.get('/favicon.ico', (req, res) => res.status(204).end());
 // Additional middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+
 
 // Configure express-ejs-layouts and EJS
 app.use(expressLayouts);
@@ -66,14 +68,17 @@ const indexRoutes = require('./routes/index');           // Homepage / search et
 const supermarketRoutes = require('./routes/supermarkets');
 const totalsRoutes = require('./routes/totals');
 const statsRoutes = require('./routes/stats');           // Admin stats dashboard
+const reportsRouter = require('./routes/reports');
 
 // Mount the routes in order
 app.use('/', authRoutes);
 app.use('/', authAdminRoutes);
 app.use('/', statsRoutes);
+app.use('/reports', reportsRouter);
 app.use('/totals', totalsRoutes);
 app.use('/', indexRoutes);
 app.use('/supermarkets', supermarketRoutes);
+
 
 
 
