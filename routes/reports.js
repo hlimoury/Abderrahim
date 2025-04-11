@@ -324,6 +324,7 @@ router.get('/download', ensureLoggedIn, async (req, res) => {
 
 // Generate PDF from report data with improved styling
 // Generate PDF from report data with improved styling
+// Generate PDF from report data with improved styling and proper page flow
 async function generatePDF(reportData) {
   return new Promise((resolve, reject) => {
     try {
@@ -403,8 +404,12 @@ async function generatePDF(reportData) {
 
       // Process each section
       reportData.sections.forEach((section, sectionIndex) => {
+        // Only check for page break if content won't fit, not automatically for each section
+        // Add a smaller gap between sections instead of forcing a new page
         if (sectionIndex > 0) {
-          checkPageBreak(100); // Check if we need new page before new section
+          doc.moveDown();
+          // Only check if section title won't fit
+          checkPageBreak(40); 
         }
 
         // Section header with improved styling
@@ -418,11 +423,19 @@ async function generatePDF(reportData) {
         if (section.summary) {
           const summaryRows = Object.entries(section.summary).map(([key, value]) => [key, value]);
           
+          // Calculate total height needed for summary table
+          const rowHeight = 25;
+          const totalTableHeight = rowHeight * (summaryRows.length + 1); // +1 for header
+          
+          // Check if we need a page break before drawing the table
+          if (checkPageBreak(totalTableHeight)) {
+            // Just continue as the cursor is now positioned on a new page
+          }
+          
           // Table layout
           const tableTop = doc.y;
           const tableWidth = doc.page.width - 100;
           const colWidth = tableWidth / 2;
-          const rowHeight = 25;
           
           // Draw summary header
           doc.rect(50, tableTop, tableWidth, rowHeight)
@@ -433,25 +446,40 @@ async function generatePDF(reportData) {
           doc.text('Valeur', 50 + colWidth + 10, tableTop + 7);
           
           // Draw summary rows
+          let currentY = tableTop + rowHeight;
+          
           summaryRows.forEach(([key, value], i) => {
-            const rowY = tableTop + rowHeight * (i + 1);
-            
-            // Check for page break
-            if (checkPageBreak(rowHeight)) {
-              return; // Skip drawing as we're on a new page
+            // Check if row will fit on current page
+            if (currentY + rowHeight > doc.page.height - 50) {
+              doc.addPage();
+              addPageHeader();
+              currentY = doc.y;
+              
+              // Redraw the header on new page
+              doc.rect(50, currentY, tableWidth, rowHeight)
+                .fill(primaryColor);
+                
+              doc.fillColor('#ffffff').fontSize(12);
+              doc.text('Indicateur', 60, currentY + 7);
+              doc.text('Valeur', 50 + colWidth + 10, currentY + 7);
+              
+              currentY += rowHeight;
             }
             
             // Row background
-            doc.rect(50, rowY, tableWidth, rowHeight)
+            doc.rect(50, currentY, tableWidth, rowHeight)
               .fillAndStroke(i % 2 === 0 ? '#f9f9f9' : '#ffffff', borderColor);
             
             // Row content
             doc.fillColor('#000000');
-            doc.fontSize(10).text(key, 60, rowY + 7, { width: colWidth - 20 });
-            doc.fontSize(10).text(String(value), 50 + colWidth + 10, rowY + 7, { width: colWidth - 20 });
+            doc.fontSize(10).text(key, 60, currentY + 7, { width: colWidth - 20 });
+            doc.fontSize(10).text(String(value), 50 + colWidth + 10, currentY + 7, { width: colWidth - 20 });
+            
+            currentY += rowHeight;
           });
           
-          doc.moveDown(2);
+          // Update the document's y position after drawing the table
+          doc.y = currentY + 10;
         }
 
         // Details table with improved layout
@@ -485,10 +513,14 @@ async function generatePDF(reportData) {
             columnWidths[i] = (width / totalWidth) * tableWidth;
           });
           
+          const rowHeight = 25;
+          
+          // Check if we have enough space for at least the header and a couple of rows
+          checkPageBreak(rowHeight * 3);
+          
           // Table header
-          checkPageBreak(30);
-          const tableTop = doc.y;
-          doc.rect(50, tableTop, tableWidth, 25)
+          let currentY = doc.y;
+          doc.rect(50, currentY, tableWidth, rowHeight)
             .fill(primaryColor);
           
           let xOffset = 50;
@@ -496,21 +528,24 @@ async function generatePDF(reportData) {
             doc.fillColor('#ffffff').fontSize(10);
             doc.text(header, 
               xOffset + 5, 
-              tableTop + 8,
+              currentY + 8,
               { width: columnWidths[i] - 10 }
             );
             xOffset += columnWidths[i];
           });
           
-          // Table rows
+          currentY += rowHeight;
+          
+          // Table rows - process each row one by one with proper page breaks
           section.details.forEach((detail, rowIndex) => {
-            const rowY = tableTop + 25 + (rowIndex * 25);
-            
-            // Check for page break
-            if (checkPageBreak(25)) {
+            // Check if row will fit on current page
+            if (currentY + rowHeight > doc.page.height - 50) {
+              doc.addPage();
+              addPageHeader();
+              currentY = doc.y;
+              
               // Redraw the header on new page
-              const newTableTop = doc.y;
-              doc.rect(50, newTableTop, tableWidth, 25)
+              doc.rect(50, currentY, tableWidth, rowHeight)
                 .fill(primaryColor);
               
               let headerXOffset = 50;
@@ -518,46 +553,35 @@ async function generatePDF(reportData) {
                 doc.fillColor('#ffffff').fontSize(10);
                 doc.text(header, 
                   headerXOffset + 5, 
-                  newTableTop + 8,
+                  currentY + 8,
                   { width: columnWidths[i] - 10 }
                 );
                 headerXOffset += columnWidths[i];
               });
               
-              // Draw this row at the new position
-              const newRowY = newTableTop + 25;
-              doc.rect(50, newRowY, tableWidth, 25)
-                .fillAndStroke(rowIndex % 2 === 0 ? '#f9f9f9' : '#ffffff', borderColor);
-              
-              let cellXOffset = 50;
-              headers.forEach((header, i) => {
-                doc.fillColor('#000000').fontSize(9);
-                doc.text(detail[header] || 'N/A', 
-                  cellXOffset + 5, 
-                  newRowY + 8,
-                  { width: columnWidths[i] - 10 }
-                );
-                cellXOffset += columnWidths[i];
-              });
-            } else {
-              // Draw row normally
-              doc.rect(50, rowY, tableWidth, 25)
-                .fillAndStroke(rowIndex % 2 === 0 ? '#f9f9f9' : '#ffffff', borderColor);
-              
-              let cellXOffset = 50;
-              headers.forEach((header, i) => {
-                doc.fillColor('#000000').fontSize(9);
-                doc.text(detail[header] || 'N/A', 
-                  cellXOffset + 5, 
-                  rowY + 8,
-                  { width: columnWidths[i] - 10 }
-                );
-                cellXOffset += columnWidths[i];
-              });
+              currentY += rowHeight;
             }
+            
+            // Draw row
+            doc.rect(50, currentY, tableWidth, rowHeight)
+              .fillAndStroke(rowIndex % 2 === 0 ? '#f9f9f9' : '#ffffff', borderColor);
+            
+            let cellXOffset = 50;
+            headers.forEach((header, i) => {
+              doc.fillColor('#000000').fontSize(9);
+              doc.text(detail[header] || 'N/A', 
+                cellXOffset + 5, 
+                currentY + 8,
+                { width: columnWidths[i] - 10 }
+              );
+              cellXOffset += columnWidths[i];
+            });
+            
+            currentY += rowHeight;
           });
           
-          doc.moveDown(2);
+          // Update the document's y position after drawing the table
+          doc.y = currentY + 10;
         }
       });
 
@@ -568,7 +592,7 @@ async function generatePDF(reportData) {
         doc.fontSize(8)
           .fillColor(secondaryColor)
           .text(
-            `Page ${i - pageRange.start + 1} sur ${pageRange.count}`,
+            `Page ${i + 1} sur ${pageRange.count}`,
             50,
             doc.page.height - 50,
             { align: 'center', width: doc.page.width - 100 }
