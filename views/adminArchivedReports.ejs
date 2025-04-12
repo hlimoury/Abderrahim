@@ -27,7 +27,7 @@
           <td><%= report.user %></td>
           <td><%= new Date(report.createdAt).toLocaleString('fr-FR') %></td>
           <td>
-            <a href="/admin/pdf/<%= path.basename(archived.filePath) %>">
+            <a href="/admin/pdf/<%= report.basename %>">
               Ouvrir / Télécharger
             </a>
           </td>

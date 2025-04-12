@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Supermarket = require('../models/Supermarket');
 const ArchivedReport = require('../models/ArchivedReport');
+const path = require('path');
 
 // Middleware to ensure only admin can access
 function ensureAdmin(req, res, next) {
@@ -10,6 +11,36 @@ function ensureAdmin(req, res, next) {
   }
   return res.redirect('/adminlogin');
 }
+
+
+
+
+
+
+router.get('/admin/archived', ensureAdmin, async (req, res) => {
+  try {
+    const archivedReports = await ArchivedReport.find({}).sort({ createdAt: -1 });
+
+    // Add a basename property so the template can reference it
+    const enriched = archivedReports.map(report => {
+      const base = path.basename(report.filePath || '');
+      return {
+        ...report.toObject(),
+        basename: base
+      };
+    });
+
+    res.render('adminArchivedReports', { archivedReports: enriched });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Erreur serveur');
+  }
+});
+
+
+
+
+
 
 router.get('/stats', ensureAdmin, async (req, res) => {
   try {
@@ -249,30 +280,6 @@ router.post('/admin/archived/:id/delete', ensureAdmin, async (req, res) => {
 
 
 
-
-
-// GET route for admin to access a PDF by filename
-router.get('/admin/pdf/:filename', ensureAdmin, (req, res) => {
-  try {
-    const filename = req.params.filename;
-    
-    // Build the actual path on disk
-    const filePath = path.join('/mnt/data', filename); 
-    
-    // Check if it exists
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).send('Fichier introuvable');
-    }
-    
-    // Send it to the browser (inline). 
-    // If you want to force download, use res.download(filePath) instead.
-    res.sendFile(filePath);
-    
-  } catch (err) {
-    console.error('Error sending file to admin:', err);
-    res.status(500).send('Erreur lors de l\'accès au fichier');
-  }
-});
 
 
 
