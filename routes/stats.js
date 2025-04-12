@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Supermarket = require('../models/Supermarket');
+const ArchivedReport = require('../models/ArchivedReport');
 
 // Middleware to ensure only admin can access
 function ensureAdmin(req, res, next) {
@@ -201,4 +202,59 @@ router.get('/api/search', async (req, res) => {
     res.status(500).json({ error: 'Search failed' });
   }
 });
+
+
+
+
+
+
+router.get('/admin/archived', ensureAdmin, async (req, res) => {
+  try {
+    const archivedReports = await ArchivedReport.find().sort({ createdAt: -1 });
+    res.render('adminArchivedReports', { archivedReports });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Erreur lors du chargement des rapports archivés');
+  }
+});
+
+router.post('/admin/archived/:id/delete', ensureAdmin, async (req, res) => {
+  try {
+    const reportId = req.params.id;
+    const archived = await ArchivedReport.findById(reportId);
+    if (!archived) {
+      return res.status(404).send('Rapport introuvable');
+    }
+
+    // Delete physical PDF file
+    const fs = require('fs');
+    if (fs.existsSync(archived.filePath)) {
+      fs.unlinkSync(archived.filePath);
+    }
+
+    // Remove from DB
+    await archived.remove();
+
+    res.redirect('/admin/archived');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Erreur lors de la suppression du rapport archivé');
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 module.exports = router;

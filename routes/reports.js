@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose'); // Added to validate ObjectId
 const Supermarket = require('../models/Supermarket');
+const ArchivedReport = require('../models/ArchivedReport'); 
 const nodemailer = require('nodemailer');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
@@ -611,6 +612,51 @@ async function generatePDF(reportData) {
     }
   });
 }
+
+
+
+
+
+
+// This route is called by the "Envoyer au Admin" button in reportView.ejs
+router.get('/sendToAdmin', ensureLoggedIn, async (req, res) => {
+  try {
+    const reportData = req.session.reportData;
+    if (!reportData) {
+      return res.status(400).send('Aucun rapport à envoyer');
+    }
+
+    // 1) Generate the PDF (your existing function returns a temp file path)
+    const tempPdfPath = await generatePDF(reportData);
+
+    // 2) Decide where on disk to place the final PDF so it persists on Render:
+    //    For example, Render’s paid plan can have a persistent disk mounted
+    //    at `/mnt/data` or whatever path you configured. Adjust as needed.
+    const newFileName = `rapport_${Date.now()}.pdf`;
+    const finalPath = require('path').join('/mnt/data', newFileName);
+
+    // 3) Move from the temp location to our final location
+    const fs = require('fs');
+    fs.renameSync(tempPdfPath, finalPath);
+
+    // 4) Create a DB record referencing that saved file
+    const archived = new ArchivedReport({
+      title: reportData.title,
+      user: req.session.user,    // the username who sent it
+      filePath: finalPath,       // disk path
+    });
+    await archived.save();
+
+    // Optionally show a success message, then redirect
+    req.session.success = 'Rapport envoyé à l’admin avec succès.';
+    return res.redirect('/reports/view');
+  } catch (error) {
+    console.error('Error sending report to admin:', error);
+    return res.status(500).send('Erreur lors de l’envoi du rapport au admin');
+  }
+});
+
+
 
 
 
