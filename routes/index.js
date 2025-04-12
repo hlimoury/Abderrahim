@@ -58,6 +58,23 @@ router.get('/', async (req, res) => {
 
 // In your supermarket.js route file:
 
+
+
+// Form to add a new supermarket
+router.get('/ajouter', (req, res) => {
+  res.render('ajouterSupermarket');
+});
+
+router.post('/ajouter', async (req, res) => {
+  const { nom } = req.body;
+  // Use the logged-in user's region (stored in session) to auto-assign the market's region.
+  const region = req.session.region || '';
+  // Here we store the region in the "ville" field.
+  const newMarket = new Supermarket({ nom, ville: region });
+  await newMarket.save();
+  res.redirect('/');
+});
+
 // Voir un supermarché et ses instances
 router.get('/:id', async (req, res) => {
   try {
@@ -95,20 +112,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Form to add a new supermarket
-router.get('/ajouter', (req, res) => {
-  res.render('ajouterSupermarket');
-});
 
-router.post('/ajouter', async (req, res) => {
-  const { nom } = req.body;
-  // Use the logged-in user's region (stored in session) to auto-assign the market's region.
-  const region = req.session.region || '';
-  // Here we store the region in the "ville" field.
-  const newMarket = new Supermarket({ nom, ville: region });
-  await newMarket.save();
-  res.redirect('/');
-});
 
 
 module.exports = router;

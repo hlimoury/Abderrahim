@@ -21,8 +21,15 @@ const ensureLoggedIn = (req, res, next) => {
 // Main reports page
 router.get('/', ensureLoggedIn, async (req, res) => {
   try {
-    // Get all supermarkets for the dropdown
-    const supermarkets = await Supermarket.find({});
+    // Get supermarkets filtered by user's region
+    let supermarkets;
+    if (req.session.region === 'ALL') {
+      // Main account sees all supermarkets
+      supermarkets = await Supermarket.find({});
+    } else {
+      // Other accounts only see supermarkets in their region
+      supermarkets = await Supermarket.find({ ville: req.session.region });
+    }
     
     // Create month options for the dropdown
     const months = [
@@ -74,26 +81,43 @@ router.post('/generate', ensureLoggedIn, async (req, res) => {
     let dateFilter = {};
     let title = '';
     
+    // Add region filter based on user's session
+    if (req.session.region !== 'ALL') {
+      filter.ville = req.session.region;
+    }
+    
     // Build filters based on report type
     if (reportType === 'supermarket' && supermarketId) {
       // Validate the supermarketId to avoid errors from invalid ObjectIds (like "favicon.ico")
       if (!mongoose.Types.ObjectId.isValid(supermarketId)) {
         return res.status(400).send('ID de supermarché invalide');
       }
-      filter = { _id: supermarketId };
+      
+      // Check if supermarket belongs to user's region
       const supermarket = await Supermarket.findById(supermarketId);
       if (!supermarket) {
         return res.status(404).send('Supermarché non trouvé');
       }
+      
+      // Verify region access permission
+      if (req.session.region !== 'ALL' && supermarket.ville !== req.session.region) {
+        return res.status(403).send('Accès non autorisé à ce supermarché');
+      }
+      
+      // Override filter to only include this specific supermarket
+      filter = { _id: supermarketId };
       title = `Rapport - ${supermarket.nom}`;
+      
     } else if (reportType === 'month' && month && year) {
       // Create date range for the selected month
       const startDate = new Date(year, month - 1, 1);
       const endDate = new Date(year, month, 0, 23, 59, 59);
       dateFilter = { $gte: startDate, $lte: endDate };
       title = `Rapport Mensuel - ${getMonthName(month)} ${year}`;
+      // Region filter is maintained from initial filter setting
     } else {
       title = 'Rapport Général';
+      // Region filter is maintained from initial filter setting
     }
     
     // Get supermarkets based on filter
@@ -146,7 +170,6 @@ router.post('/generate', ensureLoggedIn, async (req, res) => {
     res.status(500).send('Erreur lors de la génération du rapport');
   }
 });
-
 // View the current report
 router.get('/view', ensureLoggedIn, (req, res) => {
   const reportData = req.session.reportData;
@@ -403,19 +426,33 @@ async function generatePDF(reportData) {
       addPageHeader();
 
       // Process each section
-      reportData.sections.forEach((section, sectionIndex) => {
-        // Only check for page break if content won't fit, not automatically for each section
-        // Add a smaller gap between sections instead of forcing a new page
-        if (sectionIndex > 0) {
-          doc.moveDown();
-          // Only check if section title won't fit
-          checkPageBreak(40); 
-        }
+reportData.sections.forEach((section, sectionIndex) => {
+  // Only check for page break if content won't fit, not automatically for each section
+  // Add a smaller gap between sections instead of forcing a new page
+  if (sectionIndex > 0) {
+    doc.moveDown();
+  }
+
+  // Calculate total height needed for this section (title + summary table)
+  let sectionHeight = 40; // Basic height for title
+  
+  if (section.summary) {
+    const summaryRows = Object.entries(section.summary).map(([key, value]) => [key, value]);
+    const rowHeight = 25;
+    sectionHeight += rowHeight * (summaryRows.length + 1); // Add height for summary table
+  }
+  
+  // Check if section will fit on current page
+  // Force page break if title + at least a few rows won't fit
+  if (doc.y + sectionHeight > doc.page.height - 100) {
+    doc.addPage();
+    addPageHeader();
+  }
 
         // Section header with improved styling
         doc.fontSize(16)
-          .fillColor(primaryColor)
-          .text(section.title.toUpperCase(), { underline: true });
+  .fillColor(primaryColor)
+  .text(section.title.toUpperCase(), { underline: true, align: 'left' });
         
         doc.moveDown();
 
