@@ -3,6 +3,7 @@ const router = express.Router();
 const Supermarket = require('../models/Supermarket');
 const ArchivedReport = require('../models/ArchivedReport');
 const path = require('path');
+const fs = require('fs');
 
 // Middleware to ensure only admin can access
 function ensureAdmin(req, res, next) {
