@@ -279,7 +279,30 @@ router.post('/admin/archived/:id/delete', ensureAdmin, async (req, res) => {
 
 
 
+// Serve PDF from /mnt/data to an admin at /admin/pdf/:filename
+router.get('/admin/pdf/:filename', ensureAdmin, (req, res) => {
+  try {
+    const { filename } = req.params;
+    
+    // Construct full absolute path in /mnt/data
+    const filePath = path.join('/mnt/data', filename);
 
+    // Make sure the file exists
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).send('Fichier PDF introuvable');
+    }
+
+    // Option A: Stream the file inline (browser will try to open it)
+    // res.sendFile(filePath);
+    
+    // Option B: Force download prompt
+    res.download(filePath);
+
+  } catch (err) {
+    console.error('Error serving PDF to admin:', err);
+    res.status(500).send('Erreur lors de l\'accès au PDF');
+  }
+});
 
 
 

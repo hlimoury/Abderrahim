@@ -27,9 +27,8 @@
           <td><%= report.user %></td>
           <td><%= new Date(report.createdAt).toLocaleString('fr-FR') %></td>
           <td>
-            <a href="/admin/pdf/<%= report.basename %>">
-              Ouvrir / Télécharger
-            </a>
+            <a href="/admin/pdf/<%= report.basename %>">Télécharger le PDF</a>
+
           </td>
           <td>
             <form action="/admin/archived/<%= report._id %>/delete" method="POST" style="display:inline;">
