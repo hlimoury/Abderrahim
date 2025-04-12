@@ -492,14 +492,20 @@ async function generatePDF(reportData) {
         }
       });
 
-      // Page numbers
-      const pageCount = doc.bufferedPageRange().count;
-      for (let i = 0; i < pageCount; i++) {
-        doc.switchToPage(i);
-        doc.fontSize(8).fillColor(secondaryColor)
-           .text(`Page ${i + 1} / ${pageCount}`, 50, doc.page.height - 50, {
-             align: 'center', width: doc.page.width - 100
-           });
+      // Here’s the CRUCIAL FIX for page numbering:
+      // doc.bufferedPageRange() might be { start: 0, count: 1 } if there's only 1 page.
+      // We'll do a zero-based loop so we don't go out of bounds.
+      const pageRange = doc.bufferedPageRange();
+      for (let i = 0; i < pageRange.count; i++) {
+        doc.switchToPage(pageRange.start + i);
+        doc.fontSize(8)
+           .fillColor(secondaryColor)
+           .text(
+             `Page ${i + 1} / ${pageRange.count}`,
+             50,
+             doc.page.height - 50,
+             { align: 'center', width: doc.page.width - 100 }
+           );
       }
 
       doc.end();
@@ -507,8 +513,8 @@ async function generatePDF(reportData) {
       stream.on('finish', () => resolve(pdfPath));
       stream.on('error', err => reject(err));
 
-    } catch (err) {
-      reject(err);
+    } catch (error) {
+      reject(error);
     }
   });
 }
