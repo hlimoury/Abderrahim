@@ -25,7 +25,7 @@ const ensureLoggedIn = (req, res, next) => {
   res.redirect('/login');
 };
 
-// If you have an admin check, you can also do:
+// Admin check middleware
 const ensureAdmin = (req, res, next) => {
   if (req.session.isAdmin) {
     return next();
@@ -33,7 +33,7 @@ const ensureAdmin = (req, res, next) => {
   return res.redirect('/adminlogin');
 };
 
-// On Render, we store PDFs in /mnt/data
+// Ensure persistence path for PDFs in /mnt/data
 function ensurePersistPath() {
   const persistPath = '/mnt/data';
   if (!fs.existsSync(persistPath)) {
@@ -132,9 +132,10 @@ router.post('/generate', ensureLoggedIn, async (req, res) => {
       return res.status(404).send('Aucun supermarché trouvé avec ces critères');
     }
     
+    // Save the date as an ISO string for reliable parsing later.
     let reportData = {
       title,
-      date: new Date().toLocaleDateString('fr-FR'),
+      date: new Date().toISOString(),
       sections: []
     };
     
@@ -207,6 +208,10 @@ router.post('/save', ensureLoggedIn, (req, res) => {
     let updatedData;
     try {
       updatedData = JSON.parse(editedReport);
+      // Preserve the original date if not supplied in the edited data.
+      if (!updatedData.date && req.session.reportData && req.session.reportData.date) {
+        updatedData.date = req.session.reportData.date;
+      }
       updatedData.sections?.forEach(section => {
         if (section.summary) {
           Object.entries(section.summary).forEach(([key, value]) => {
@@ -259,8 +264,8 @@ router.post('/email', ensureLoggedIn, async (req, res) => {
     await transporter.sendMail({
       from: process.env.SMTP_FROM || '"Système de Rapport" <rapports@example.com>',
       to: email,
-      subject: subject || `${reportData.title} - ${reportData.date}`,
-      text: `Veuillez trouver ci-joint le rapport "${reportData.title}" généré le ${reportData.date}.`,
+      subject: subject || `${reportData.title} - ${formatFrenchDate(reportData.date)}`,
+      text: `Veuillez trouver ci-joint le rapport "${reportData.title}" généré le ${formatFrenchDate(reportData.date)}.`,
       attachments: [
         {
           filename: path.basename(pdfPath),
@@ -269,7 +274,7 @@ router.post('/email', ensureLoggedIn, async (req, res) => {
       ]
     });
 
-    // If you DO want to remove the file after emailing, uncomment:
+    // Uncomment the next line if you want to delete the PDF after emailing.
     // fs.unlinkSync(pdfPath);
 
     res.status(200).send('Rapport envoyé avec succès');
@@ -295,7 +300,7 @@ router.get('/download', ensureLoggedIn, async (req, res) => {
     const fileStream = fs.createReadStream(pdfPath);
     fileStream.pipe(res);
 
-    // If you want to remove the file after the download:
+    // Uncomment the next lines if you wish to remove the file after download:
     // fileStream.on('end', () => fs.unlinkSync(pdfPath));
 
   } catch (err) {
@@ -312,25 +317,20 @@ router.get('/download', ensureLoggedIn, async (req, res) => {
 */
 router.get('/sendToAdmin', ensureLoggedIn, async (req, res) => {
   try {
-    // 1) Make sure we have a report in session
     const reportData = req.session.reportData;
     if (!reportData) {
       return res.status(400).send('Aucun rapport en session pour envoyer à l\'admin');
     }
 
-    // 2) Generate (or re-generate) the PDF
     const pdfPath = await generatePDF(reportData);
 
-    // 3) Save an ArchivedReport
     const archived = new ArchivedReport({
       title: reportData.title,
-      user: req.session.user,   // The user who is sending it
+      user: req.session.user,
       filePath: pdfPath
     });
     await archived.save();
 
-    // 4) Optionally redirect or show success
-    // E.g. we redirect back to the report page with success message
     req.session.success = 'Rapport envoyé à l\'admin avec succès!';
     res.redirect('/reports/view');
   } catch (err) {
@@ -369,8 +369,8 @@ function formatFrenchDate(date) {
 
 function getMonthName(monthNum) {
   const months = [
-    'Janvier','Février','Mars','Avril','Mai','Juin',
-    'Juillet','Août','Septembre','Octobre','Novembre','Décembre'
+    'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+    'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
   ];
   return months[monthNum - 1];
 }
@@ -389,13 +389,13 @@ async function generatePDF(reportData) {
         info: {
           Title: reportData.title,
           Author: 'Système de Rapports',
-          Subject: `Rapport généré le ${reportData.date}`
+          Subject: `Rapport généré le ${formatFrenchDate(reportData.date)}`
         }
       });
       const stream = fs.createWriteStream(pdfPath);
       doc.pipe(stream);
 
-      // Some quick styling
+      // Quick styling
       const primaryColor = '#0d6efd';
       const secondaryColor = '#6c757d';
       const borderColor = '#dee2e6';
@@ -406,8 +406,7 @@ async function generatePDF(reportData) {
            .text(reportData.title, 50, 50);
         doc.fontSize(10)
            .fillColor(secondaryColor)
-           .text(`Généré le: ${reportData.date}`, 50, 75);
-
+           .text(`Généré le: ${formatFrenchDate(reportData.date)}`, 50, 75);
         doc.moveTo(50, 110)
            .lineTo(doc.page.width - 50, 110)
            .stroke(borderColor);
@@ -424,11 +423,13 @@ async function generatePDF(reportData) {
 
       addPageHeader();
 
+      // Render each section
       reportData.sections.forEach((section, idx) => {
         if (idx > 0) doc.moveDown();
         doc.fontSize(16).fillColor(primaryColor).text(section.title.toUpperCase(), { underline: true });
         doc.moveDown();
 
+        // Render summary if exists
         if (section.summary) {
           const summaryRows = Object.entries(section.summary).map(([k, v]) => [k, v]);
           const rowH = 25;
@@ -438,13 +439,13 @@ async function generatePDF(reportData) {
           const colW = totalWidth / 2;
           let topY = doc.y;
 
-          // Header
+          // Header row
           doc.rect(startX, topY, totalWidth, rowH).fill(primaryColor);
           doc.fillColor('#fff').fontSize(12);
           doc.text('Indicateur', startX + 10, topY + 7);
           doc.text('Valeur', startX + colW + 10, topY + 7);
-
           topY += rowH;
+
           summaryRows.forEach(([key, val], i) => {
             checkPageBreak(rowH);
             doc.rect(startX, topY, totalWidth, rowH)
@@ -457,8 +458,9 @@ async function generatePDF(reportData) {
           doc.y = topY + 10;
         }
 
+        // Render details if available
         if (section.details && section.details.length > 0) {
-          const headers = Object.keys(section.details[0]).filter(k => !['id','Description'].includes(k));
+          const headers = Object.keys(section.details[0]).filter(k => !['id', 'Description'].includes(k));
           const rowH = 25;
           const startX = 50;
           const totalWidth = doc.page.width - 100;
@@ -492,9 +494,7 @@ async function generatePDF(reportData) {
         }
       });
 
-      // Here’s the CRUCIAL FIX for page numbering:
-      // doc.bufferedPageRange() might be { start: 0, count: 1 } if there's only 1 page.
-      // We'll do a zero-based loop so we don't go out of bounds.
+      // Add page numbering
       const pageRange = doc.bufferedPageRange();
       for (let i = 0; i < pageRange.count; i++) {
         doc.switchToPage(pageRange.start + i);
@@ -509,10 +509,8 @@ async function generatePDF(reportData) {
       }
 
       doc.end();
-
       stream.on('finish', () => resolve(pdfPath));
       stream.on('error', err => reject(err));
-
     } catch (error) {
       reject(error);
     }
@@ -520,6 +518,7 @@ async function generatePDF(reportData) {
 }
 
 // Generate each section’s data
+
 async function generateFormationSection(supermarkets, dateFilter) {
   let totalPersonnes = 0;
   let formationByType = { 'Incendie': 0, 'SST': 0, 'Intégration': 0 };
@@ -527,7 +526,6 @@ async function generateFormationSection(supermarkets, dateFilter) {
 
   supermarkets.forEach(market => {
     if (!market.instances) return;
-    
     market.instances.forEach(instance => {
       if (!instance.formation) return;
       instance.formation.forEach(f => {
@@ -568,10 +566,8 @@ async function generateAccidentsSection(supermarkets, dateFilter) {
     market.instances.forEach(instance => {
       if (!instance.accidents) return;
       instance.accidents.forEach(a => {
-        let accidentDate = null;
-        if (typeof a.date === 'string') accidentDate = new Date(a.date);
-
-        // Check date filter if needed
+        // Use a simple check that works if a.date is a Date or a string.
+        const accidentDate = a.date ? new Date(a.date) : null;
         if (accidentDate && dateFilter.$gte && accidentDate < dateFilter.$gte) return;
         if (accidentDate && dateFilter.$lte && accidentDate > dateFilter.$lte) return;
 
@@ -611,9 +607,7 @@ async function generateIncidentsSection(supermarkets, dateFilter) {
     market.instances.forEach(instance => {
       if (!instance.incidents) return;
       instance.incidents.forEach(i => {
-        let incidentDate = null;
-        if (typeof i.date === 'string') incidentDate = new Date(i.date);
-
+        const incidentDate = i.date ? new Date(i.date) : null;
         if (incidentDate && dateFilter.$gte && incidentDate < dateFilter.$gte) return;
         if (incidentDate && dateFilter.$lte && incidentDate > dateFilter.$lte) return;
 
@@ -658,9 +652,7 @@ async function generateInterpellationsSection(supermarkets, dateFilter) {
     market.instances.forEach(instance => {
       if (!instance.interpellations) return;
       instance.interpellations.forEach(inter => {
-        let interDate = null;
-        if (typeof inter.date === 'string') interDate = new Date(inter.date);
-
+        const interDate = inter.date ? new Date(inter.date) : null;
         if (interDate && dateFilter.$gte && interDate < dateFilter.$gte) return;
         if (interDate && dateFilter.$lte && interDate > dateFilter.$lte) return;
 
@@ -709,15 +701,6 @@ async function generateInterpellationsSection(supermarkets, dateFilter) {
     },
     details
   };
-}
-
-// Helper to get month name
-function getMonthName(monthNum) {
-  const months = [
-    'Janvier','Février','Mars','Avril','Mai','Juin',
-    'Juillet','Août','Septembre','Octobre','Novembre','Décembre'
-  ];
-  return months[monthNum - 1];
 }
 
 module.exports = router;
