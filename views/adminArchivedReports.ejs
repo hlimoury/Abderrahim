@@ -27,10 +27,9 @@
           <td><%= report.user %></td>
           <td><%= new Date(report.createdAt).toLocaleString('fr-FR') %></td>
           <td>
-            <!-- If you want direct download link: -->
-            <a href="<%= report.filePath %>" target="_blank">Voir PDF</a>
-            <!-- Note: If you want an in-server route, you could create
-                 a route like /admin/archived/:id/download that streams the file. -->
+            <a href="/admin/pdf/<%= path.basename(archived.filePath) %>">
+              Ouvrir / Télécharger
+            </a>
           </td>
           <td>
             <form action="/admin/archived/<%= report._id %>/delete" method="POST" style="display:inline;">
