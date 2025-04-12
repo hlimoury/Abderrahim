@@ -106,14 +106,14 @@ router.post('/generate', ensureLoggedIn, async (req, res) => {
     
     if (reportType === 'supermarket' && supermarketId) {
       if (!mongoose.Types.ObjectId.isValid(supermarketId)) {
-        return res.status(400).send('ID de supermarché invalide');
+        return res.status(400).send('ID de Magasin invalide');
       }
       const supermarket = await Supermarket.findById(supermarketId);
       if (!supermarket) {
-        return res.status(404).send('Supermarché non trouvé');
+        return res.status(404).send('Magasin non trouvé');
       }
       if (req.session.region !== 'ALL' && supermarket.ville !== req.session.region) {
-        return res.status(403).send('Accès non autorisé à ce supermarché');
+        return res.status(403).send('Accès non autorisé à ce Magasin');
       }
       filter = { _id: supermarketId };
       title = `Rapport - ${supermarket.nom}`;
@@ -129,7 +129,7 @@ router.post('/generate', ensureLoggedIn, async (req, res) => {
     
     const supermarkets = await Supermarket.find(filter).populate('instances');
     if (!supermarkets || supermarkets.length === 0) {
-      return res.status(404).send('Aucun supermarché trouvé avec ces critères');
+      return res.status(404).send('Aucun Magasin trouvé avec ces critères');
     }
     
     // Save the date as an ISO string for reliable parsing later.
@@ -536,7 +536,7 @@ async function generateFormationSection(supermarkets, dateFilter) {
         }
         details.push({
           id: f._id,
-          Supermarché: market.nom,
+          "Magasin": market.nom,
           Type: f.type,
           'NPr': f.nombrePersonnes
         });
@@ -578,7 +578,7 @@ async function generateAccidentsSection(supermarkets, dateFilter) {
 
         details.push({
           id: a._id,
-          Supermarché: market.nom,
+          "Magasin": market.nom,
           Date: accidentDate ? accidentDate.toLocaleDateString('fr-FR') : 'N/A',
           'NAt': a.nombreAccidents,
           'Jours d\'arrêt': a.joursArret
@@ -617,7 +617,7 @@ async function generateIncidentsSection(supermarkets, dateFilter) {
 
         details.push({
           id: i._id,
-          Supermarché: market.nom,
+          "Magasin": market.nom,
           Date: incidentDate ? incidentDate.toLocaleDateString('fr-FR') : 'N/A',
           Type: i.typeIncident,
           'Nombre d\'incidents': i.nombreIncidents
@@ -672,7 +672,7 @@ async function generateInterpellationsSection(supermarkets, dateFilter) {
 
         details.push({
           id: inter._id,
-          Supermarché: market.nom,
+          "Magasin": market.nom,
           Date: interDate ? interDate.toLocaleDateString('fr-FR') : 'N/A',
           'TP': inter.typePersonne,
           'NPr': inter.nombrePersonnes,
