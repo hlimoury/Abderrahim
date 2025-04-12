@@ -221,20 +221,23 @@ router.get('/admin/archived', ensureAdmin, async (req, res) => {
 router.post('/admin/archived/:id/delete', ensureAdmin, async (req, res) => {
   try {
     const reportId = req.params.id;
+
+    // 1) Find the archived report
     const archived = await ArchivedReport.findById(reportId);
     if (!archived) {
       return res.status(404).send('Rapport introuvable');
     }
 
-    // Delete physical PDF file
+    // 2) Delete the physical PDF file from disk
     const fs = require('fs');
     if (fs.existsSync(archived.filePath)) {
       fs.unlinkSync(archived.filePath);
     }
 
-    // Remove from DB
-    await archived.remove();
+    // 3) Remove from DB (replace old `archived.remove()`):
+    await archived.deleteOne();
 
+    // 4) Redirect or respond
     res.redirect('/admin/archived');
   } catch (err) {
     console.error(err);
