@@ -347,17 +347,18 @@ router.get('/download', ensureLoggedIn, async (req, res) => {
 
 // Generate PDF from report data with improved styling
 // Generate PDF from report data with improved styling
-// Generate PDF from report data with improved styling and proper page flow
 async function generatePDF(reportData) {
   return new Promise((resolve, reject) => {
     try {
-      const tmpDir = path.join(__dirname, '../tmp');
-      
+      const os = require('os');
+      // Use the system's temporary directory
+      const tmpDir = path.join(os.tmpdir(), 'my-app-tmp');
+
       // Create tmp directory if it doesn't exist
       if (!fs.existsSync(tmpDir)) {
         fs.mkdirSync(tmpDir, { recursive: true });
       }
-      
+
       const pdfPath = path.join(tmpDir, `rapport-${Date.now()}.pdf`);
       const doc = new PDFDocument({ 
         margin: 50,
@@ -368,16 +369,22 @@ async function generatePDF(reportData) {
           Subject: `Rapport généré le ${reportData.date}`
         }
       });
-      
-      // Add styling variables
+
+      // Pipe PDF to file using a write stream
+      const writeStream = fs.createWriteStream(pdfPath);
+      doc.pipe(writeStream);
+
+      // Listen for the 'finish' event on the write stream to resolve the promise
+      writeStream.on('finish', () => {
+        resolve(pdfPath);
+      });
+
+      // Add styling variables and helper functions as before
       const primaryColor = '#0d6efd';
       const secondaryColor = '#6c757d';
       const headerColor = '#f8f9fa';
       const borderColor = '#dee2e6';
-      
-      // Pipe PDF to file
-      doc.pipe(fs.createWriteStream(pdfPath));
-      
+
       // Helper function to check page break
       function checkPageBreak(height) {
         const marginBottom = 50;
@@ -388,10 +395,9 @@ async function generatePDF(reportData) {
         }
         return false;
       }
-      
+
       // Helper to add page header
       function addPageHeader() {
-        // Add logo if exists
         try {
           const logoPath = path.join(__dirname, '../public/logo.png');
           if (fs.existsSync(logoPath)) {
@@ -421,55 +427,46 @@ async function generatePDF(reportData) {
           
         doc.y = 130; // Set cursor position after header
       }
-      
+
       // Add initial header
       addPageHeader();
 
       // Process each section
-reportData.sections.forEach((section, sectionIndex) => {
-  // Only check for page break if content won't fit, not automatically for each section
-  // Add a smaller gap between sections instead of forcing a new page
-  if (sectionIndex > 0) {
-    doc.moveDown();
-  }
+      reportData.sections.forEach((section, sectionIndex) => {
+        if (sectionIndex > 0) {
+          doc.moveDown();
+        }
 
-  // Calculate total height needed for this section (title + summary table)
-  let sectionHeight = 40; // Basic height for title
-  
-  if (section.summary) {
-    const summaryRows = Object.entries(section.summary).map(([key, value]) => [key, value]);
-    const rowHeight = 25;
-    sectionHeight += rowHeight * (summaryRows.length + 1); // Add height for summary table
-  }
-  
-  // Check if section will fit on current page
-  // Force page break if title + at least a few rows won't fit
-  if (doc.y + sectionHeight > doc.page.height - 100) {
-    doc.addPage();
-    addPageHeader();
-  }
+        // Calculate total height needed for this section
+        let sectionHeight = 40;
+        if (section.summary) {
+          const summaryRows = Object.entries(section.summary).map(([key, value]) => [key, value]);
+          const rowHeight = 25;
+          sectionHeight += rowHeight * (summaryRows.length + 1);
+        }
+        
+        if (doc.y + sectionHeight > doc.page.height - 100) {
+          doc.addPage();
+          addPageHeader();
+        }
 
         // Section header with improved styling
         doc.fontSize(16)
-  .fillColor(primaryColor)
-  .text(section.title.toUpperCase(), { underline: true, align: 'left' });
+          .fillColor(primaryColor)
+          .text(section.title.toUpperCase(), { underline: true, align: 'left' });
         
         doc.moveDown();
 
         // Summary table with better formatting
         if (section.summary) {
           const summaryRows = Object.entries(section.summary).map(([key, value]) => [key, value]);
-          
-          // Calculate total height needed for summary table
           const rowHeight = 25;
-          const totalTableHeight = rowHeight * (summaryRows.length + 1); // +1 for header
+          const totalTableHeight = rowHeight * (summaryRows.length + 1);
           
-          // Check if we need a page break before drawing the table
           if (checkPageBreak(totalTableHeight)) {
-            // Just continue as the cursor is now positioned on a new page
+            // Continue as the cursor is on a new page
           }
           
-          // Table layout
           const tableTop = doc.y;
           const tableWidth = doc.page.width - 100;
           const colWidth = tableWidth / 2;
@@ -482,17 +479,14 @@ reportData.sections.forEach((section, sectionIndex) => {
           doc.text('Indicateur', 60, tableTop + 7);
           doc.text('Valeur', 50 + colWidth + 10, tableTop + 7);
           
-          // Draw summary rows
           let currentY = tableTop + rowHeight;
           
           summaryRows.forEach(([key, value], i) => {
-            // Check if row will fit on current page
             if (currentY + rowHeight > doc.page.height - 50) {
               doc.addPage();
               addPageHeader();
               currentY = doc.y;
               
-              // Redraw the header on new page
               doc.rect(50, currentY, tableWidth, rowHeight)
                 .fill(primaryColor);
                 
@@ -503,11 +497,9 @@ reportData.sections.forEach((section, sectionIndex) => {
               currentY += rowHeight;
             }
             
-            // Row background
             doc.rect(50, currentY, tableWidth, rowHeight)
               .fillAndStroke(i % 2 === 0 ? '#f9f9f9' : '#ffffff', borderColor);
             
-            // Row content
             doc.fillColor('#000000');
             doc.fontSize(10).text(key, 60, currentY + 7, { width: colWidth - 20 });
             doc.fontSize(10).text(String(value), 50 + colWidth + 10, currentY + 7, { width: colWidth - 20 });
@@ -515,47 +507,39 @@ reportData.sections.forEach((section, sectionIndex) => {
             currentY += rowHeight;
           });
           
-          // Update the document's y position after drawing the table
           doc.y = currentY + 10;
         }
 
         // Details table with improved layout
         if (section.details && section.details.length > 0) {
-          // Filter out description field as requested
           const headers = Object.keys(section.details[0])
             .filter(k => k !== 'id' && k !== 'Description');
-            
-          // Calculate table dimensions
+          
           const columnWidths = [];
           const tableWidth = doc.page.width - 100;
           
-          // Assign column widths proportionally
           headers.forEach(header => {
             if (header.includes('Date')) {
-              columnWidths.push(tableWidth * 0.15); // Date columns
+              columnWidths.push(tableWidth * 0.15);
             } else if (header === 'Supermarché') {
-              columnWidths.push(tableWidth * 0.25); // Supermarket column
+              columnWidths.push(tableWidth * 0.25);
             } else if (header.includes('Nombre')) {
-              columnWidths.push(tableWidth * 0.12); // Number columns
+              columnWidths.push(tableWidth * 0.12);
             } else if (header.includes('Valeur')) {
-              columnWidths.push(tableWidth * 0.15); // Value columns
+              columnWidths.push(tableWidth * 0.15);
             } else {
-              columnWidths.push(tableWidth * 0.18); // Other columns
+              columnWidths.push(tableWidth * 0.18);
             }
           });
           
-          // Normalize column widths to ensure they sum up to tableWidth
           const totalWidth = columnWidths.reduce((sum, width) => sum + width, 0);
           columnWidths.forEach((width, i) => {
             columnWidths[i] = (width / totalWidth) * tableWidth;
           });
           
           const rowHeight = 25;
-          
-          // Check if we have enough space for at least the header and a couple of rows
           checkPageBreak(rowHeight * 3);
           
-          // Table header
           let currentY = doc.y;
           doc.rect(50, currentY, tableWidth, rowHeight)
             .fill(primaryColor);
@@ -563,61 +547,44 @@ reportData.sections.forEach((section, sectionIndex) => {
           let xOffset = 50;
           headers.forEach((header, i) => {
             doc.fillColor('#ffffff').fontSize(10);
-            doc.text(header, 
-              xOffset + 5, 
-              currentY + 8,
-              { width: columnWidths[i] - 10 }
-            );
+            doc.text(header, xOffset + 5, currentY + 8, { width: columnWidths[i] - 10 });
             xOffset += columnWidths[i];
           });
           
           currentY += rowHeight;
           
-          // Table rows - process each row one by one with proper page breaks
           section.details.forEach((detail, rowIndex) => {
-            // Check if row will fit on current page
             if (currentY + rowHeight > doc.page.height - 50) {
               doc.addPage();
               addPageHeader();
               currentY = doc.y;
               
-              // Redraw the header on new page
               doc.rect(50, currentY, tableWidth, rowHeight)
                 .fill(primaryColor);
               
               let headerXOffset = 50;
               headers.forEach((header, i) => {
                 doc.fillColor('#ffffff').fontSize(10);
-                doc.text(header, 
-                  headerXOffset + 5, 
-                  currentY + 8,
-                  { width: columnWidths[i] - 10 }
-                );
+                doc.text(header, headerXOffset + 5, currentY + 8, { width: columnWidths[i] - 10 });
                 headerXOffset += columnWidths[i];
               });
               
               currentY += rowHeight;
             }
             
-            // Draw row
             doc.rect(50, currentY, tableWidth, rowHeight)
               .fillAndStroke(rowIndex % 2 === 0 ? '#f9f9f9' : '#ffffff', borderColor);
             
             let cellXOffset = 50;
             headers.forEach((header, i) => {
               doc.fillColor('#000000').fontSize(9);
-              doc.text(detail[header] || 'N/A', 
-                cellXOffset + 5, 
-                currentY + 8,
-                { width: columnWidths[i] - 10 }
-              );
+              doc.text(detail[header] || 'N/A', cellXOffset + 5, currentY + 8, { width: columnWidths[i] - 10 });
               cellXOffset += columnWidths[i];
             });
             
             currentY += rowHeight;
           });
           
-          // Update the document's y position after drawing the table
           doc.y = currentY + 10;
         }
       });
@@ -638,17 +605,13 @@ reportData.sections.forEach((section, sectionIndex) => {
       
       // Finalize and close PDF
       doc.end();
-      
-      // Return path when done
-      doc.on('end', () => {
-        resolve(pdfPath);
-      });
     } catch (err) {
       console.error('PDF generation error:', err);
       reject(err);
     }
   });
 }
+
 
 
 // Section generators with consistent date handling
