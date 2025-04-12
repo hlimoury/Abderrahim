@@ -11,11 +11,8 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
 
-// IMPORTANT: import your new ArchivedReport model
-const ArchivedReport = require('../models/ArchivedReport');
-
-// Serve favicon.ico requests
-router.get('/favicon.ico', (req, res) => res.status(204).end());
+// If you have an ArchivedReport model, import it:
+// const ArchivedReport = require('../models/ArchivedReport');
 
 // Middleware to check if user is logged in
 const ensureLoggedIn = (req, res, next) => {
@@ -25,24 +22,32 @@ const ensureLoggedIn = (req, res, next) => {
   res.redirect('/login');
 };
 
-// If you have an admin check, you can also do:
-const ensureAdmin = (req, res, next) => {
-  if (req.session.isAdmin) {
-    return next();
-  }
-  return res.redirect('/adminlogin');
-};
+// If you have an ensureAdmin check
+// function ensureAdmin(req, res, next) {
+//   if (req.session.isAdmin) return next();
+//   return res.redirect('/adminlogin');
+// }
 
-// On Render, we store PDFs in /mnt/data
+// Path to store PDFs on Render
 function ensurePersistPath() {
-  const persistPath = '/mnt/data';
+  const persistPath = '/mnt/data'; 
   if (!fs.existsSync(persistPath)) {
     fs.mkdirSync(persistPath, { recursive: true });
   }
   return persistPath;
 }
 
-// Main reports page
+// Format date as dd MMM yyyy for French-locale
+function formatFrenchDate(date) {
+  if (!date) return 'N/A';
+  return new Date(date).toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+}
+
+// GET main reports page
 router.get('/', ensureLoggedIn, async (req, res) => {
   try {
     let supermarkets;
@@ -82,7 +87,7 @@ router.get('/', ensureLoggedIn, async (req, res) => {
   }
 });
 
-// Generate report
+// POST: Generate a new report
 router.post('/generate', ensureLoggedIn, async (req, res) => {
   try {
     const { 
@@ -95,18 +100,20 @@ router.post('/generate', ensureLoggedIn, async (req, res) => {
       includeIncidents, 
       includeInterpellations 
     } = req.body;
-    
+
     let filter = {};
     let dateFilter = {};
     let title = '';
-    
+
+    // Region filter
     if (req.session.region !== 'ALL') {
       filter.ville = req.session.region;
     }
-    
+
+    // If "by supermarket" option
     if (reportType === 'supermarket' && supermarketId) {
       if (!mongoose.Types.ObjectId.isValid(supermarketId)) {
-        return res.status(400).send('ID de supermarché invalide');
+        return res.status(400).send('ID supermarché invalide');
       }
       const supermarket = await Supermarket.findById(supermarketId);
       if (!supermarket) {
@@ -117,8 +124,9 @@ router.post('/generate', ensureLoggedIn, async (req, res) => {
       }
       filter = { _id: supermarketId };
       title = `Rapport - ${supermarket.nom}`;
-      
+
     } else if (reportType === 'month' && month && year) {
+      // If "by month" option
       const startDate = new Date(year, month - 1, 1);
       const endDate = new Date(year, month, 0, 23, 59, 59);
       dateFilter = { $gte: startDate, $lte: endDate };
@@ -126,18 +134,20 @@ router.post('/generate', ensureLoggedIn, async (req, res) => {
     } else {
       title = 'Rapport Général';
     }
-    
+
     const supermarkets = await Supermarket.find(filter).populate('instances');
     if (!supermarkets || supermarkets.length === 0) {
       return res.status(404).send('Aucun supermarché trouvé avec ces critères');
     }
-    
+
+    // Prepare the data structure
     let reportData = {
       title,
       date: new Date().toLocaleDateString('fr-FR'),
       sections: []
     };
-    
+
+    // Include the relevant sections
     if (includeFormation === 'on') {
       reportData.sections.push(await generateFormationSection(supermarkets, dateFilter));
     }
@@ -150,9 +160,10 @@ router.post('/generate', ensureLoggedIn, async (req, res) => {
     if (includeInterpellations === 'on') {
       reportData.sections.push(await generateInterpellationsSection(supermarkets, dateFilter));
     }
-    
+
+    // Save it in session for emailing or printing
     req.session.reportData = reportData;
-    
+
     res.render('reportView', { 
       reportData,
       formatDate: formatFrenchDate
@@ -163,7 +174,7 @@ router.post('/generate', ensureLoggedIn, async (req, res) => {
   }
 });
 
-// View the current report
+// GET: show current report
 router.get('/view', ensureLoggedIn, (req, res) => {
   const reportData = req.session.reportData;
   if (!reportData) {
@@ -175,13 +186,13 @@ router.get('/view', ensureLoggedIn, (req, res) => {
   });
 });
 
-// Modify the report
+// GET: modify the report
 router.get('/modifier', ensureLoggedIn, (req, res) => {
   const reportData = req.session.reportData;
   if (!reportData) {
     return res.redirect('/reports');
   }
-  
+
   const success = req.session.success;
   const error = req.session.error;
   delete req.session.success;
@@ -195,7 +206,7 @@ router.get('/modifier', ensureLoggedIn, (req, res) => {
   });
 });
 
-// Save modifications
+// POST: save modifications
 router.post('/save', ensureLoggedIn, (req, res) => {
   try {
     const { editedReport } = req.body;
@@ -203,10 +214,10 @@ router.post('/save', ensureLoggedIn, (req, res) => {
       req.session.error = 'Données du rapport manquantes';
       return res.redirect('/reports/modifier');
     }
-
     let updatedData;
     try {
       updatedData = JSON.parse(editedReport);
+      // Validate numeric fields
       updatedData.sections?.forEach(section => {
         if (section.summary) {
           Object.entries(section.summary).forEach(([key, value]) => {
@@ -231,7 +242,7 @@ router.post('/save', ensureLoggedIn, (req, res) => {
   }
 });
 
-// Email the report
+// POST: email the report
 router.post('/email', ensureLoggedIn, async (req, res) => {
   try {
     const { email, subject } = req.body;
@@ -269,7 +280,7 @@ router.post('/email', ensureLoggedIn, async (req, res) => {
       ]
     });
 
-    // If you DO want to remove the file after emailing, uncomment:
+    // If you want to remove the file after emailing, do:
     // fs.unlinkSync(pdfPath);
 
     res.status(200).send('Rapport envoyé avec succès');
@@ -279,14 +290,14 @@ router.post('/email', ensureLoggedIn, async (req, res) => {
   }
 });
 
-// Download PDF
+// GET: download the PDF
 router.get('/download', ensureLoggedIn, async (req, res) => {
   try {
     const reportData = req.session.reportData;
     if (!reportData) {
       return res.status(400).send('Aucun rapport à télécharger');
     }
-    
+
     const pdfPath = await generatePDF(reportData);
     const safeFileName = reportData.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.pdf';
     res.setHeader('Content-Disposition', `attachment; filename="${safeFileName}"`);
@@ -295,7 +306,7 @@ router.get('/download', ensureLoggedIn, async (req, res) => {
     const fileStream = fs.createReadStream(pdfPath);
     fileStream.pipe(res);
 
-    // If you want to remove the file after the download:
+    // If you want to remove the file after sending:
     // fileStream.on('end', () => fs.unlinkSync(pdfPath));
 
   } catch (err) {
@@ -304,78 +315,10 @@ router.get('/download', ensureLoggedIn, async (req, res) => {
   }
 });
 
-/* 
-  NEW ROUTE: /reports/sendToAdmin
-  1) Generate PDF from the session's report
-  2) Save a record in ArchivedReport
-  3) Possibly redirect or confirm success
-*/
-router.get('/sendToAdmin', ensureLoggedIn, async (req, res) => {
-  try {
-    // 1) Make sure we have a report in session
-    const reportData = req.session.reportData;
-    if (!reportData) {
-      return res.status(400).send('Aucun rapport en session pour envoyer à l\'admin');
-    }
-
-    // 2) Generate (or re-generate) the PDF
-    const pdfPath = await generatePDF(reportData);
-
-    // 3) Save an ArchivedReport
-    const archived = new ArchivedReport({
-      title: reportData.title,
-      user: req.session.user,   // The user who is sending it
-      filePath: pdfPath
-    });
-    await archived.save();
-
-    // 4) Optionally redirect or show success
-    // E.g. we redirect back to the report page with success message
-    req.session.success = 'Rapport envoyé à l\'admin avec succès!';
-    res.redirect('/reports/view');
-  } catch (err) {
-    console.error('Error sending to admin:', err);
-    res.status(500).send('Erreur lors de l\'envoi du rapport à l\'admin');
-  }
-});
-
-/*
-  NEW ROUTE: /reports/adminArchive
-  - Admin only
-  - Shows a list of archived PDFs
-*/
-router.get('/adminArchive', ensureAdmin, async (req, res) => {
-  try {
-    const archivedReports = await ArchivedReport.find({}).sort({ createdAt: -1 });
-    res.render('archivedReports', { archivedReports });
-  } catch (err) {
-    console.error('Error fetching archived reports:', err);
-    res.status(500).send('Erreur serveur');
-  }
-});
-
 /* ------------------------------------------------------------------
-   HELPER FUNCTIONS
+   HELPER FUNCTIONS: generatePDF & section generators
    ------------------------------------------------------------------ */
 
-function formatFrenchDate(date) {
-  if (!date) return 'N/A';
-  return new Date(date).toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  });
-}
-
-function getMonthName(monthNum) {
-  const months = [
-    'Janvier','Février','Mars','Avril','Mai','Juin',
-    'Juillet','Août','Septembre','Octobre','Novembre','Décembre'
-  ];
-  return months[monthNum - 1];
-}
-
-// Generate PDF in /mnt/data
 async function generatePDF(reportData) {
   return new Promise((resolve, reject) => {
     try {
@@ -392,6 +335,7 @@ async function generatePDF(reportData) {
           Subject: `Rapport généré le ${reportData.date}`
         }
       });
+
       const stream = fs.createWriteStream(pdfPath);
       doc.pipe(stream);
 
@@ -424,11 +368,14 @@ async function generatePDF(reportData) {
 
       addPageHeader();
 
+      // Loop each section
       reportData.sections.forEach((section, idx) => {
         if (idx > 0) doc.moveDown();
-        doc.fontSize(16).fillColor(primaryColor).text(section.title.toUpperCase(), { underline: true });
+        doc.fontSize(16).fillColor(primaryColor)
+           .text(section.title.toUpperCase(), { underline: true });
         doc.moveDown();
 
+        // Summaries
         if (section.summary) {
           const summaryRows = Object.entries(section.summary).map(([k, v]) => [k, v]);
           const rowH = 25;
@@ -457,8 +404,10 @@ async function generatePDF(reportData) {
           doc.y = topY + 10;
         }
 
+        // Details
         if (section.details && section.details.length > 0) {
-          const headers = Object.keys(section.details[0]).filter(k => !['id','Description'].includes(k));
+          const headers = Object.keys(section.details[0])
+            .filter(k => !['id','Description'].includes(k));
           const rowH = 25;
           const startX = 50;
           const totalWidth = doc.page.width - 100;
@@ -467,6 +416,7 @@ async function generatePDF(reportData) {
           let topY = doc.y;
 
           checkPageBreak(rowH * 3);
+          // Table header
           doc.rect(startX, topY, totalWidth, rowH).fill(primaryColor);
           doc.fillColor('#fff').fontSize(10);
           let x = startX;
@@ -476,64 +426,65 @@ async function generatePDF(reportData) {
           });
           topY += rowH;
 
+          // Table rows
           section.details.forEach((detail, rowIdx) => {
             checkPageBreak(rowH);
             doc.rect(startX, topY, totalWidth, rowH)
                .fillAndStroke(rowIdx % 2 === 0 ? '#f9f9f9' : '#fff', borderColor);
             let cellX = startX;
             doc.fillColor('#000').fontSize(9);
+
             headers.forEach(h => {
-              doc.text(detail[h] || 'N/A', cellX + 5, topY + 8, { width: colW - 10 });
+              doc.text(detail[h] ?? 'N/A', cellX + 5, topY + 8, { width: colW - 10 });
               cellX += colW;
             });
             topY += rowH;
           });
+
           doc.y = topY + 10;
         }
       });
 
-      // Here’s the CRUCIAL FIX for page numbering:
-      // doc.bufferedPageRange() might be { start: 0, count: 1 } if there's only 1 page.
-      // We'll do a zero-based loop so we don't go out of bounds.
+      // Page numbers
       const pageRange = doc.bufferedPageRange();
       for (let i = 0; i < pageRange.count; i++) {
         doc.switchToPage(pageRange.start + i);
-        doc.fontSize(8)
-           .fillColor(secondaryColor)
-           .text(
-             `Page ${i + 1} / ${pageRange.count}`,
-             50,
-             doc.page.height - 50,
-             { align: 'center', width: doc.page.width - 100 }
-           );
+        doc.fontSize(8).fillColor(secondaryColor).text(
+          `Page ${i + 1} / ${pageRange.count}`,
+          50,
+          doc.page.height - 50,
+          { align: 'center', width: doc.page.width - 100 }
+        );
       }
 
       doc.end();
-
       stream.on('finish', () => resolve(pdfPath));
       stream.on('error', err => reject(err));
 
-    } catch (error) {
-      reject(error);
+    } catch (err) {
+      reject(err);
     }
   });
 }
 
-// Generate each section’s data
+/* ------------------------------------------------------------------
+   SECTION GENERATORS
+   ------------------------------------------------------------------ */
+
+// 1) Formations
 async function generateFormationSection(supermarkets, dateFilter) {
   let totalPersonnes = 0;
-  let formationByType = { 'Incendie': 0, 'SST': 0, 'Intégration': 0 };
+  let formationByType = { Incendie: 0, SST: 0, Intégration: 0 };
   let details = [];
 
   supermarkets.forEach(market => {
     if (!market.instances) return;
-    
     market.instances.forEach(instance => {
       if (!instance.formation) return;
       instance.formation.forEach(f => {
         const count = parseInt(f.nombrePersonnes) || 0;
         totalPersonnes += count;
-        if (formationByType[f.type] !== undefined) {
+        if (formationByType[f.type] != null) {
           formationByType[f.type] += count;
         }
         details.push({
@@ -558,6 +509,7 @@ async function generateFormationSection(supermarkets, dateFilter) {
   };
 }
 
+// 2) Accidents
 async function generateAccidentsSection(supermarkets, dateFilter) {
   let totalAccidents = 0;
   let totalJours = 0;
@@ -568,22 +520,29 @@ async function generateAccidentsSection(supermarkets, dateFilter) {
     market.instances.forEach(instance => {
       if (!instance.accidents) return;
       instance.accidents.forEach(a => {
+        // If we have a.date
         let accidentDate = null;
-        if (typeof a.date === 'string') accidentDate = new Date(a.date);
+        if (typeof a.date === 'string' && a.date.trim() !== '') {
+          const parsed = new Date(a.date);
+          if (!isNaN(parsed)) {
+            accidentDate = parsed;
+          }
+        }
+        // If dateFilter is used, you could skip items outside the range.
+        // For example:
+        // if (accidentDate && (accidentDate < dateFilter.$gte || accidentDate > dateFilter.$lte)) return;
 
-        // Check date filter if needed
-        if (accidentDate && dateFilter.$gte && accidentDate < dateFilter.$gte) return;
-        if (accidentDate && dateFilter.$lte && accidentDate > dateFilter.$lte) return;
-
-        const accidents = parseInt(a.nombreAccidents) || 0;
-        const jours = parseInt(a.joursArret) || 0;
-        totalAccidents += accidents;
-        totalJours += jours;
+        const accidentsNum = parseInt(a.nombreAccidents) || 0;
+        const joursNum = parseInt(a.joursArret) || 0;
+        totalAccidents += accidentsNum;
+        totalJours += joursNum;
 
         details.push({
           id: a._id,
           Supermarché: market.nom,
-          Date: accidentDate ? accidentDate.toLocaleDateString('fr-FR') : 'N/A',
+          Date: accidentDate
+            ? accidentDate.toLocaleDateString('fr-FR')
+            : 'N/A',
           'NAt': a.nombreAccidents,
           'Jours d\'arrêt': a.joursArret
         });
@@ -601,9 +560,9 @@ async function generateAccidentsSection(supermarkets, dateFilter) {
   };
 }
 
+// 3) Incidents
 async function generateIncidentsSection(supermarkets, dateFilter) {
   let totalIncidents = 0;
-  let incidentsByType = {};
   let details = [];
 
   supermarkets.forEach(market => {
@@ -612,19 +571,21 @@ async function generateIncidentsSection(supermarkets, dateFilter) {
       if (!instance.incidents) return;
       instance.incidents.forEach(i => {
         let incidentDate = null;
-        if (typeof i.date === 'string') incidentDate = new Date(i.date);
-
-        if (incidentDate && dateFilter.$gte && incidentDate < dateFilter.$gte) return;
-        if (incidentDate && dateFilter.$lte && incidentDate > dateFilter.$lte) return;
-
+        if (typeof i.date === 'string' && i.date.trim() !== '') {
+          const parsed = new Date(i.date);
+          if (!isNaN(parsed)) {
+            incidentDate = parsed;
+          }
+        }
         const count = parseInt(i.nombreIncidents) || 0;
         totalIncidents += count;
-        incidentsByType[i.typeIncident] = (incidentsByType[i.typeIncident] || 0) + count;
 
         details.push({
           id: i._id,
           Supermarché: market.nom,
-          Date: incidentDate ? incidentDate.toLocaleDateString('fr-FR') : 'N/A',
+          Date: incidentDate
+            ? incidentDate.toLocaleDateString('fr-FR')
+            : 'N/A',
           Type: i.typeIncident,
           'Nombre d\'incidents': i.nombreIncidents
         });
@@ -635,22 +596,26 @@ async function generateIncidentsSection(supermarkets, dateFilter) {
   return {
     title: 'Incidents',
     summary: {
-      'Total des incidents': totalIncidents,
-      ...incidentsByType
+      'Total des incidents': totalIncidents
+      // If you want a breakdown by type, do something similar to formation
     },
     details
   };
 }
 
+// 4) Interpellations
 async function generateInterpellationsSection(supermarkets, dateFilter) {
   let totalPersonnes = 0;
   let totalPoursuites = 0;
   let totalValeur = 0;
-  let interpellationsByType = {
-    'Client': { personnes: 0, poursuites: 0, valeur: 0 },
-    'Personnel': { personnes: 0, poursuites: 0, valeur: 0 },
-    'Prestataire': { personnes: 0, poursuites: 0, valeur: 0 }
+
+  // If you want them grouped by type:
+  const interpellationsByType = {
+    Client: { personnes: 0, poursuites: 0, valeur: 0 },
+    Personnel: { personnes: 0, poursuites: 0, valeur: 0 },
+    Prestataire: { personnes: 0, poursuites: 0, valeur: 0 }
   };
+
   let details = [];
 
   supermarkets.forEach(market => {
@@ -659,10 +624,12 @@ async function generateInterpellationsSection(supermarkets, dateFilter) {
       if (!instance.interpellations) return;
       instance.interpellations.forEach(inter => {
         let interDate = null;
-        if (typeof inter.date === 'string') interDate = new Date(inter.date);
-
-        if (interDate && dateFilter.$gte && interDate < dateFilter.$gte) return;
-        if (interDate && dateFilter.$lte && interDate > dateFilter.$lte) return;
+        if (typeof inter.date === 'string' && inter.date.trim() !== '') {
+          const parsed = new Date(inter.date);
+          if (!isNaN(parsed)) {
+            interDate = parsed;
+          }
+        }
 
         const personnes = parseInt(inter.nombrePersonnes) || 0;
         const poursuites = parseInt(inter.poursuites) || 0;
@@ -681,7 +648,9 @@ async function generateInterpellationsSection(supermarkets, dateFilter) {
         details.push({
           id: inter._id,
           Supermarché: market.nom,
-          Date: interDate ? interDate.toLocaleDateString('fr-FR') : 'N/A',
+          Date: interDate
+            ? interDate.toLocaleDateString('fr-FR')
+            : 'N/A',
           'TP': inter.typePersonne,
           'NPr': inter.nombrePersonnes,
           'Poursuites': inter.poursuites,
@@ -691,33 +660,37 @@ async function generateInterpellationsSection(supermarkets, dateFilter) {
     });
   });
 
+  // Summaries
   return {
     title: 'Interpellations',
     summary: {
       'Total des personnes': totalPersonnes,
       'Total des poursuites': totalPoursuites,
       'Valeur totale (kDH)': totalValeur.toFixed(3),
-      'Client - Personnes': interpellationsByType['Client'].personnes,
-      'Client - Poursuites': interpellationsByType['Client'].poursuites,
-      'Client - Valeur (kDH)': interpellationsByType['Client'].valeur.toFixed(3),
-      'Personnel - Personnes': interpellationsByType['Personnel'].personnes,
-      'Personnel - Poursuites': interpellationsByType['Personnel'].poursuites,
-      'Personnel - Valeur (kDH)': interpellationsByType['Personnel'].valeur.toFixed(3),
-      'Prestataire - Personnes': interpellationsByType['Prestataire'].personnes,
-      'Prestataire - Poursuites': interpellationsByType['Prestataire'].poursuites,
-      'Prestataire - Valeur (kDH)': interpellationsByType['Prestataire'].valeur.toFixed(3)
+
+      'Client - Personnes': interpellationsByType.Client.personnes,
+      'Client - Poursuites': interpellationsByType.Client.poursuites,
+      'Client - Valeur (kDH)': interpellationsByType.Client.valeur.toFixed(3),
+
+      'Personnel - Personnes': interpellationsByType.Personnel.personnes,
+      'Personnel - Poursuites': interpellationsByType.Personnel.poursuites,
+      'Personnel - Valeur (kDH)': interpellationsByType.Personnel.valeur.toFixed(3),
+
+      'Prestataire - Personnes': interpellationsByType.Prestataire.personnes,
+      'Prestataire - Poursuites': interpellationsByType.Prestataire.poursuites,
+      'Prestataire - Valeur (kDH)': interpellationsByType.Prestataire.valeur.toFixed(3)
     },
     details
   };
 }
 
 // Helper to get month name
-function getMonthName(monthNum) {
+function getMonthName(m) {
   const months = [
     'Janvier','Février','Mars','Avril','Mai','Juin',
     'Juillet','Août','Septembre','Octobre','Novembre','Décembre'
   ];
-  return months[monthNum - 1];
+  return months[m - 1];
 }
 
 module.exports = router;
