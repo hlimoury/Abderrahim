@@ -1,178 +1,187 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Générateur de Rapports</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <style>
-        .form-section {
-            margin-bottom: 2rem;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            background-color: #f8f9fa;
-            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
-        }
-        .report-options {
-            border-left: 4px solid #0d6efd;
-            padding-left: 1rem;
-            margin-top: 2rem;
-        }
-        .header-section {
-            background-color: #e9ecef;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 1.5rem;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Générateur de Rapports</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <style>
+    .form-section {
+      margin-bottom: 2rem;
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      background-color: #f8f9fa;
+      box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    }
+    .report-options {
+      border-left: 4px solid #0d6efd;
+      padding-left: 1rem;
+      margin-top: 2rem;
+    }
+    .header-section {
+      background-color: #e9ecef;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+  </style>
 </head>
 <body class="container mt-4">
-    <div class="d-flex justify-content-between mb-4 header-section">
-        <div>
-            <h1>Générateur de Rapports</h1>
-            <p class="text-muted">Sélectionnez les paramètres pour générer votre rapport</p>
-        </div>
-        <div>
-            <a href="/totals" class="btn btn-secondary">
-                <i class="bi bi-bar-chart-fill"></i> Statistiques
-            </a>
-            <a href="/logout" class="btn btn-danger">
-                <i class="bi bi-box-arrow-right"></i> Déconnexion
-            </a>
-        </div>
+  <div class="d-flex justify-content-between mb-4 header-section">
+    <div>
+      <h1>Générateur de Rapports</h1>
+      <p class="text-muted">Sélectionnez les paramètres pour générer votre rapport</p>
     </div>
-
-    <div class="form-section">
-        <form id="reportForm" action="/reports/generate" method="POST">
-            <!-- Report Type Selection -->
-            <div class="mb-4">
-                <h4>Type de Rapport</h4>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="reportType" id="typeSupermarket" value="supermarket" checked>
-                    <label class="form-check-label" for="typeSupermarket">Par Supermarché</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="reportType" id="typeMonth" value="month">
-                    <label class="form-check-label" for="typeMonth">Par Mois</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="reportType" id="typeAll" value="all">
-                    <label class="form-check-label" for="typeAll">Rapport Général</label>
-                </div>
-            </div>
-
-            <!-- Supermarket Selection (shown when typeSupermarket is selected) -->
-            <div class="mb-4" id="supermarketSection">
-                <label for="supermarketId" class="form-label">Sélectionner un Supermarché</label>
-                <select class="form-select" id="supermarketId" name="supermarketId">
-                    <% supermarkets.forEach(supermarket => { %>
-                        <option value="<%= supermarket._id %>"><%= supermarket.nom %></option>
-                    <% }); %>
-                </select>
-            </div>
-
-            <!-- Month/Year Selection (shown when typeMonth is selected) -->
-            <div class="mb-4 d-none" id="monthSection">
-                <div class="row">
-                    <div class="col-md-6">
-                        <label for="month" class="form-label">Mois</label>
-                        <select class="form-select" id="month" name="month">
-                            <% months.forEach(month => { %>
-                                <option value="<%= month.value %>"><%= month.name %></option>
-                            <% }); %>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="year" class="form-label">Année</label>
-                        <select class="form-select" id="year" name="year">
-                            <% years.forEach(year => { %>
-                                <option value="<%= year %>"><%= year %></option>
-                            <% }); %>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Report Content Options -->
-            <div class="report-options">
-                <h4>Contenu du Rapport</h4>
-                <p class="text-muted">Sélectionnez les éléments à inclure dans le rapport</p>
-                
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="includeFormation" name="includeFormation" checked>
-                            <label class="form-check-label" for="includeFormation">
-                                <i class="bi bi-mortarboard-fill"></i> Formations
-                            </label>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="includeAccidents" name="includeAccidents" checked>
-                            <label class="form-check-label" for="includeAccidents">
-                                <i class="bi bi-bandaid-fill"></i> Accidents
-                            </label>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="includeIncidents" name="includeIncidents" checked>
-                            <label class="form-check-label" for="includeIncidents">
-                                <i class="bi bi-exclamation-triangle-fill"></i> Incidents
-                            </label>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="includeInterpellations" name="includeInterpellations" checked>
-                            <label class="form-check-label" for="includeInterpellations">
-                                <i class="bi bi-shield-fill"></i> Interpellations
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="text-center mt-4">
-                <button type="submit" class="btn btn-primary btn-lg">
-                    <i class="bi bi-file-earmark-text"></i> Générer le Rapport
-                </button>
-            </div>
-        </form>
+    <div>
+      <a href="/totals" class="btn btn-secondary">
+        <i class="bi bi-bar-chart-fill"></i> Statistiques
+      </a>
+      <a href="/logout" class="btn btn-danger">
+        <i class="bi bi-box-arrow-right"></i> Déconnexion
+      </a>
     </div>
+  </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Handle report type selection
-        document.querySelectorAll('input[name="reportType"]').forEach(radio => {
-            radio.addEventListener('change', function() {
-                const supermarketSection = document.getElementById('supermarketSection');
-                const monthSection = document.getElementById('monthSection');
-                
-                // Hide all sections first
-                supermarketSection.classList.add('d-none');
-                monthSection.classList.add('d-none');
-                
-                // Show relevant section based on selection
-                if (this.value === 'supermarket') {
-                    supermarketSection.classList.remove('d-none');
-                } else if (this.value === 'month') {
-                    monthSection.classList.remove('d-none');
-                }
-            });
-        });
-        
-        // Show default section on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            const defaultType = document.querySelector('input[name="reportType"]:checked').value;
-            if (defaultType === 'supermarket') {
-                document.getElementById('supermarketSection').classList.remove('d-none');
-            } else if (defaultType === 'month') {
-                document.getElementById('monthSection').classList.remove('d-none');
-            }
-        });
-    </script>
+  <div class="form-section">
+    <form id="reportForm" action="/reports/generate" method="POST">
+      <!-- Report Type Selection -->
+      <div class="mb-4">
+        <h4>Type de Rapport</h4>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="reportType" id="typeSupermarket" value="supermarket" checked>
+          <label class="form-check-label" for="typeSupermarket">Par Supermarché</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="reportType" id="typeMonth" value="month">
+          <label class="form-check-label" for="typeMonth">Par Mois</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="reportType" id="typeAll" value="all">
+          <label class="form-check-label" for="typeAll">Rapport Général</label>
+        </div>
+      </div>
+
+      <!-- Supermarket Selection (shown when typeSupermarket is selected) -->
+      <div class="mb-4" id="supermarketSection">
+        <label for="supermarketId" class="form-label">Sélectionner un Supermarché</label>
+        <select class="form-select" id="supermarketId" name="supermarketId">
+          <% supermarkets.forEach(supermarket => { %>
+            <option value="<%= supermarket._id %>"><%= supermarket.nom %></option>
+          <% }); %>
+        </select>
+      </div>
+
+      <!-- Month/Year Selection (shown when typeMonth is selected) -->
+      <div class="mb-4 d-none" id="monthSection">
+        <div class="row">
+          <div class="col-md-6">
+            <label for="month" class="form-label">Mois</label>
+            <select class="form-select" id="month" name="month">
+              <% months.forEach(month => { %>
+                <option value="<%= month.value %>"><%= month.name %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label for="year" class="form-label">Année</label>
+            <select class="form-select" id="year" name="year">
+              <% years.forEach(year => { %>
+                <option value="<%= year %>"><%= year %></option>
+              <% }); %>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Report Content Options -->
+      <div class="report-options">
+        <h4>Contenu du Rapport</h4>
+        <p class="text-muted">Sélectionnez les éléments à inclure dans le rapport</p>
+        <div class="row">
+          <div class="col-md-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="includeFormation" name="includeFormation" checked>
+              <label class="form-check-label" for="includeFormation">
+                <i class="bi bi-mortarboard-fill"></i> Formations
+              </label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="includeAccidents" name="includeAccidents" checked>
+              <label class="form-check-label" for="includeAccidents">
+                <i class="bi bi-bandaid-fill"></i> Accidents
+              </label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="includeIncidents" name="includeIncidents" checked>
+              <label class="form-check-label" for="includeIncidents">
+                <i class="bi bi-exclamation-triangle-fill"></i> Incidents
+              </label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="includeInterpellations" name="includeInterpellations" checked>
+              <label class="form-check-label" for="includeInterpellations">
+                <i class="bi bi-shield-fill"></i> Interpellations
+              </label>
+            </div>
+          </div>
+        </div>
+        <!-- New Checkboxes for Scoring and DRL -->
+        <div class="row mt-3">
+          <div class="col-md-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="includeScoring" name="includeScoring" checked>
+              <label class="form-check-label" for="includeScoring">
+                <i class="bi bi-graph-up"></i> Scoring
+              </label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="includeDRL" name="includeDRL" checked>
+              <label class="form-check-label" for="includeDRL">
+                <i class="bi bi-file-earmark-text"></i> DRL
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center mt-4">
+        <button type="submit" class="btn btn-primary btn-lg">
+          <i class="bi bi-file-earmark-text"></i> Générer le Rapport
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Handle report type selection to show/hide relevant sections
+    document.querySelectorAll('input[name="reportType"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        const supermarketSection = document.getElementById('supermarketSection');
+        const monthSection = document.getElementById('monthSection');
+        supermarketSection.classList.add('d-none');
+        monthSection.classList.add('d-none');
+        if (this.value === 'supermarket') {
+          supermarketSection.classList.remove('d-none');
+        } else if (this.value === 'month') {
+          monthSection.classList.remove('d-none');
+        }
+      });
+    });
+    document.addEventListener('DOMContentLoaded', function() {
+      const defaultType = document.querySelector('input[name="reportType"]:checked').value;
+      document.getElementById('supermarketSection').classList.toggle('d-none', defaultType !== 'supermarket');
+      document.getElementById('monthSection').classList.toggle('d-none', defaultType !== 'month');
+    });
+  </script>
 </body>
 </html>
