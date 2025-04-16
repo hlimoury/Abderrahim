@@ -107,54 +107,71 @@ router.post('/generate', ensureLoggedIn, async (req, res) => {
     const { 
       reportType, 
       supermarketId, 
-      month, 
-      year, 
+      moisDebut, 
+      moisFin, 
+      annee, 
       includeFormation, 
       includeAccidents, 
       includeIncidents, 
-      includeInterpellations, 
-      includeScoring,       // NEW: checkbox name for scoring inclusion 
-      includeDRL            // NEW: checkbox name for DRL inclusion
+      includeInterpellations,
+      includeScoring,
+      includeDRL
     } = req.body;
     
     let filter = {};
     let dateFilter = {};
     let title = '';
-    
+
+    // 1) Filtrage par région
     if (req.session.region !== 'ALL') {
       filter.ville = req.session.region;
     }
     
-    if (reportType === 'supermarket' && supermarketId) {
-      if (!mongoose.Types.ObjectId.isValid(supermarketId))
+    // 2) Logique selon reportType
+    if (reportType === 'supermarket') {
+      // Vérifier ID du supermarché
+      if (!mongoose.Types.ObjectId.isValid(supermarketId)) {
         return res.status(400).send('ID de Magasin invalide');
+      }
       const supermarket = await Supermarket.findById(supermarketId);
       if (!supermarket) return res.status(404).send('Magasin non trouvé');
-      if (req.session.region !== 'ALL' && supermarket.ville !== req.session.region)
+      // Vérifier région
+      if (req.session.region !== 'ALL' && supermarket.ville !== req.session.region) {
         return res.status(403).send('Accès non autorisé à ce Magasin');
+      }
+      // Filtrage par supermarché
       filter = { _id: supermarketId };
-      title = `Rapport - ${supermarket.nom}`;
-    } else if (reportType === 'month' && month && year) {
-      const startDate = new Date(year, month - 1, 1);
-      const endDate = new Date(year, month, 0, 23, 59, 59);
-      dateFilter = { $gte: startDate, $lte: endDate };
-      title = `Rapport Mensuel - ${getMonthName(month)} ${year}`;
-    } else {
+      // Filtrage par période (si moisDebut, moisFin, annee fournis)
+      if (moisDebut && moisFin && annee) {
+        dateFilter = { start: parseInt(moisDebut), end: parseInt(moisFin), year: parseInt(annee) };
+        title = `Rapport - ${supermarket.nom} | Période: de ${getMonthName(moisDebut)} à ${getMonthName(moisFin)} ${annee}`;
+      } else {
+        title = `Rapport - ${supermarket.nom}`;
+      }
+    }
+    else if (reportType === 'month' && moisDebut && moisFin && annee) {
+      // Pas de supermarché précis, juste la période
+      dateFilter = { start: parseInt(moisDebut), end: parseInt(moisFin), year: parseInt(annee) };
+      title = `Rapport Mensuel - De ${getMonthName(moisDebut)} à ${getMonthName(moisFin)} ${annee}`;
+    }
+    else {
+      // Rapport Général
       title = 'Rapport Général';
     }
     
+    // 3) Récupération des supermarchés
     const supermarkets = await Supermarket.find(filter).populate('instances');
-    if (!supermarkets || supermarkets.length === 0)
+    if (!supermarkets || supermarkets.length === 0) {
       return res.status(404).send('Aucun Magasin trouvé avec ces critères');
+    }
     
-    // Use ISO string date so later the formatter works reliably
     let reportData = {
       title,
       date: new Date().toISOString(),
       sections: []
     };
     
-    // Only include sections if their checkbox is "on"
+    // 4) Génération des sections
     if (includeFormation === 'on') {
       reportData.sections.push(await generateFormationSection(supermarkets, dateFilter));
     }
@@ -174,8 +191,9 @@ router.post('/generate', ensureLoggedIn, async (req, res) => {
       reportData.sections.push(await generateDRLSection(supermarkets, dateFilter));
     }
     
+    // 5) Rendu final
     req.session.reportData = reportData;
-    res.render('reportView', {
+    res.render('reportView', { 
       reportData,
       formatDate: formatFrenchDate
     });
@@ -185,15 +203,7 @@ router.post('/generate', ensureLoggedIn, async (req, res) => {
   }
 });
 
-// GET: View current report
-router.get('/view', ensureLoggedIn, (req, res) => {
-  const reportData = req.session.reportData;
-  if (!reportData) return res.redirect('/reports');
-  res.render('reportView', {
-    reportData,
-    formatDate: formatFrenchDate
-  });
-});
+
 
 // GET: Modify report (edit view)
 router.get('/modifier', ensureLoggedIn, (req, res) => {
@@ -480,81 +490,72 @@ router.get('/adminArchive', ensureAdmin, async (req, res) => {
    ------------------------------------------------------------------ */
 
 // Generate Scoring Section (Niveau de Sécurité Global)
+// Fonction de génération de la section Scoring 
+// (méthode originale : moyenne des niveaux et moyenne des objectifs,
+// puis calcul du pourcentage à partir de ces moyennes)
 async function generateScoringSection(supermarkets, dateFilter) {
-  let scoringCategories = ['securiteIncendie', 'sst', 'surete'];
-  // We'll keep separate arrays to accumulate percentages per category
-  let categoryData = {};
-  // Also accumulate global values
-  let globalPercentages = [];
-  let details = [];
-
-  // If filtering by month, extract month and year from dateFilter.$gte
-  let filterMonth, filterYear;
-  if (dateFilter && dateFilter.$gte) {
-    const dt = new Date(dateFilter.$gte);
-    filterMonth = dt.getMonth() + 1; // 0-based
-    filterYear = dt.getFullYear();
-  }
-
-  // Initialize each category accumulator
+  const scoringCategories = ['securiteIncendie', 'sst', 'surete'];
+  // Pour chaque catégorie, nous accumulons la somme des niveaux et la somme des objectifs ainsi que le nombre d'indicateurs.
+  let categorySums = {};
   scoringCategories.forEach(cat => {
-    categoryData[cat] = { percentages: [], objectifs: [] };
+    categorySums[cat] = { sumNiveau: 0, sumObj: 0, count: 0 };
   });
-
+  
+  let globalSumNiveau = 0, globalSumObj = 0, globalCount = 0;
+  
+  // Si dateFilter est défini, il s'agit d'un objet { start, end, year }
+  let filterStart, filterEnd, filterYear;
+  if (dateFilter && dateFilter.start && dateFilter.end && dateFilter.year) {
+    filterStart = dateFilter.start;
+    filterEnd = dateFilter.end;
+    filterYear = dateFilter.year;
+  }
+  
   supermarkets.forEach(market => {
     if (!market.instances) return;
     market.instances.forEach(instance => {
-      // If filtering by month/year, skip if instance doesn't match.
-      if (filterMonth && filterYear) {
-        if (instance.mois !== filterMonth || instance.annee !== filterYear) return;
+      if (filterStart && filterEnd && filterYear) {
+        if (instance.annee !== filterYear || instance.mois < filterStart || instance.mois > filterEnd)
+          return;
       }
       if (!instance.scoring) return;
       scoringCategories.forEach(category => {
         if (!instance.scoring[category] || instance.scoring[category].length === 0) return;
         instance.scoring[category].forEach(item => {
-          // Only compute percentage if objectif > 0
-          const objectif = Number(item.objectif);
+          const niveau = parseFloat(item.niveau) || 0;
+          const objectif = parseFloat(item.objectif) || 0;
+          // On ne considère que les indicateurs avec objectif > 0
           if (objectif > 0) {
-            const niveau = Number(item.niveau);
-            let percent = (niveau / objectif) * 100;
-            // Cap percentage to maximum of 100%
-            percent = Math.min(percent, 100);
-            categoryData[category].percentages.push(percent);
-            categoryData[category].objectifs.push(objectif);
-            globalPercentages.push(percent);
-            details.push({
-              "Magasin": market.nom,
-              "Thème": 
-                  category === 'securiteIncendie' ? 'Sécurité Incendie'
-                : category === 'sst' ? 'Sécurité et Santé au Travail'
-                : 'Sûreté',
-              "Nom": item.nom,
-              "Niveau (%)": percent.toFixed(2) + '%'
-            });
+            categorySums[category].sumNiveau += niveau;
+            categorySums[category].sumObj += objectif;
+            categorySums[category].count++;
+            globalSumNiveau += niveau;
+            globalSumObj += objectif;
+            globalCount++;
           }
         });
       });
     });
   });
-
-  // Build summary rows for each scoring category
+  
+  // Calcul des moyennes pour chaque catégorie
   let summaryRows = [];
   scoringCategories.forEach(category => {
     let label;
     if (category === 'securiteIncendie') label = 'Sécurité Incendie';
     else if (category === 'sst') label = 'Sécurité et Santé au Travail';
     else if (category === 'surete') label = 'Sûreté';
-    const percents = categoryData[category].percentages;
-    const objectifs = categoryData[category].objectifs;
-    if (percents.length > 0) {
-      const avgNiveau = percents.reduce((sum, p) => sum + p, 0) / percents.length;
-      const avgObj = objectifs.reduce((sum, o) => sum + o, 0) / objectifs.length;
+    
+    const { sumNiveau, sumObj, count } = categorySums[category];
+    if (count > 0) {
+      const avgNiveau = sumNiveau / count;
+      const avgObj = sumObj / count;
       const diff = avgNiveau - avgObj;
       summaryRows.push({
         "Thème": label,
         "Niveau (%)": avgNiveau.toFixed(2) + '%',
         "Objectifs (%)": avgObj.toFixed(2) + '%',
-        "Écart (%)": diff.toFixed(2) + '%'
+        "Écart (%)": (diff >= 0 ? '+' : '') + diff.toFixed(2) + '%'
       });
     } else {
       summaryRows.push({
@@ -565,58 +566,62 @@ async function generateScoringSection(supermarkets, dateFilter) {
       });
     }
   });
-
-  // Global row computed from all percentages
+  
+  // Ligne globale calculée sur l'ensemble des indicateurs
   let globalRow = {
     "Thème": "Niveau de Sécurité Global",
     "Niveau (%)": 'N/A',
     "Objectifs (%)": 'N/A',
     "Écart (%)": 'N/A'
   };
-  if (globalPercentages.length > 0) {
-    const globalAvg = globalPercentages.reduce((sum, p) => sum + p, 0) / globalPercentages.length;
-    // For global objectives, we can compute the average of each category's average objective, if desired.
-    let globalObjTotal = 0, globalCount = 0;
-    scoringCategories.forEach(category => {
-      const objectifs = categoryData[category].objectifs;
-      if (objectifs.length > 0) {
-        const avgObj = objectifs.reduce((sum, o) => sum + o, 0) / objectifs.length;
-        globalObjTotal += avgObj;
-        globalCount++;
-      }
-    });
-    const globalAvgObj = globalCount ? (globalObjTotal / globalCount) : 0;
-    globalRow["Niveau (%)"] = globalAvg.toFixed(2) + '%';
-    globalRow["Objectifs (%)"] = globalAvgObj.toFixed(2) + '%';
-    globalRow["Écart (%)"] = (globalAvg - globalAvgObj).toFixed(2) + '%';
+  if (globalCount > 0) {
+    const globalAvg = globalSumNiveau / globalCount;
+    const globalAvgObj = globalSumObj / globalCount;
+    const globalDiff = globalAvg - globalAvgObj;
+    globalRow = {
+      "Thème": "Niveau de Sécurité Global",
+      "Niveau (%)": globalAvg.toFixed(2) + '%',
+      "Objectifs (%)": globalAvgObj.toFixed(2) + '%',
+      "Écart (%)": (globalDiff >= 0 ? '+' : '') + globalDiff.toFixed(2) + '%'
+    };
   }
   summaryRows.push(globalRow);
-
+  
   return {
     title: 'Scoring - Niveau de Sécurité Global',
     summary: summaryRows,
-    details: details
+    details: [] // Nous ne retournons pas de détails ici dans le rapport
   };
 }
+  
 
 
-
-// Generate DRL Section
+// Génération de la section DRL
 async function generateDRLSection(supermarkets, dateFilter) {
-  let totalValeur = 0;
+  let totalAccepted = 0;
+  let totalRefused = 0;
   let details = [];
+  
   supermarkets.forEach(market => {
     if (!market.instances) return;
     market.instances.forEach(instance => {
+      if (dateFilter && dateFilter.start && dateFilter.end && dateFilter.year) {
+        if (instance.annee !== dateFilter.year || instance.mois < dateFilter.start || instance.mois > dateFilter.end)
+          return;
+      }
       if (!instance.drl) return;
       instance.drl.forEach(drlItem => {
         const valeur = parseFloat(drlItem.valeur) || 0;
-        totalValeur += valeur;
+        if (drlItem.statut === 'Accepté') {
+          totalAccepted += valeur;
+        } else if (drlItem.statut === 'Refusé') {
+          totalRefused += valeur;
+        }
         details.push({
           "Magasin": market.nom,
-          Valeur: drlItem.valeur,
-          Statut: drlItem.statut,
-          Date: drlItem.date ? new Date(drlItem.date).toLocaleDateString('fr-FR') : 'N/A'
+          "Valeur": valeur.toFixed(2),
+          "Statut": drlItem.statut,
+          "Date": drlItem.date ? new Date(drlItem.date).toLocaleDateString('fr-FR') : 'N/A'
         });
       });
     });
@@ -625,84 +630,80 @@ async function generateDRLSection(supermarkets, dateFilter) {
   return {
     title: 'DRL',
     summary: {
-      'Total Valeur': totalValeur.toFixed(2)
+      "Accepté": totalAccepted.toFixed(2),
+      "Refusé": totalRefused.toFixed(2)
     },
-    details
+    details: details
   };
 }
 
 /* ------------------------------------------------------------------
    EXISTING SECTION GENERATORS (Formation, Accidents, Incidents, Interpellations)
    ------------------------------------------------------------------ */
-   async function generateFormationSection(supermarkets, dateFilter) {
-    let totalPersonnes = 0;
-    let formationByType = { 'Incendie': 0, 'SST': 0, 'Intégration': 0 };
-    let details = [];
+// Génération de la section Formation
+async function generateFormationSection(supermarkets, dateFilter) {
+  let totalPersonnes = 0;
+  let formationByType = { 'Incendie': 0, 'SST': 0, 'Intégration': 0 };
+  let details = [];
   
-    // If dateFilter exists, extract the month and year from the $gte value.
-    let filterMonth, filterYear;
-    if (dateFilter && dateFilter.$gte) {
-      const dt = new Date(dateFilter.$gte);
-      filterMonth = dt.getMonth() + 1;  // getMonth returns 0-based month.
-      filterYear = dt.getFullYear();
-    }
-    
-    supermarkets.forEach(market => {
-      if (!market.instances) return;
-      market.instances.forEach(instance => {
-        // If filtering by month is active, skip the instance if its month/year do not match.
-        if (filterMonth && filterYear) {
-          if (instance.mois !== filterMonth || instance.annee !== filterYear) {
-            return; // skip this instance entirely
-          }
+  // Si dateFilter existe, on s'attend à un objet { start, end, year }
+  supermarkets.forEach(market => {
+    if (!market.instances) return;
+    market.instances.forEach(instance => {
+      if (dateFilter && dateFilter.start && dateFilter.end && dateFilter.year) {
+        if (instance.annee !== dateFilter.year || instance.mois < dateFilter.start || instance.mois > dateFilter.end)
+          return; // on ignore l'instance
+      }
+      if (!instance.formation) return;
+      instance.formation.forEach(f => {
+        const count = parseInt(f.nombrePersonnes) || 0;
+        totalPersonnes += count;
+        if (formationByType[f.type] !== undefined) {
+          formationByType[f.type] += count;
         }
-        if (!instance.formation) return;
-        instance.formation.forEach(f => {
-          const count = parseInt(f.nombrePersonnes) || 0;
-          totalPersonnes += count;
-          if (formationByType[f.type] !== undefined) {
-            formationByType[f.type] += count;
-          }
-          details.push({
-            "Magasin": market.nom,
-            Type: f.type,
-            NPr: f.nombrePersonnes
-          });
+        details.push({
+          "Magasin": market.nom,
+          Type: f.type,
+          NPr: f.nombrePersonnes
         });
       });
     });
-    
-    return {
-      title: 'Formations',
-      summary: {
-        'Total des personnes formées': totalPersonnes,
-        'Incendie': formationByType['Incendie'],
-        'SST': formationByType['SST'],
-        'Intégration': formationByType['Intégration']
-      },
-      details
-    };
-  }
+  });
   
+  return {
+    title: 'Formations',
+    summary: {
+      'Total des personnes formées': totalPersonnes,
+      'Incendie': formationByType['Incendie'],
+      'SST': formationByType['SST'],
+      'Intégration': formationByType['Intégration']
+    },
+    details: details
+  };
+}
 
+// Génération de la section Accidents
 async function generateAccidentsSection(supermarkets, dateFilter) {
   let totalAccidents = 0;
   let totalJours = 0;
   let details = [];
+  
   supermarkets.forEach(market => {
     if (!market.instances) return;
     market.instances.forEach(instance => {
+      if (dateFilter && dateFilter.start && dateFilter.end && dateFilter.year) {
+        if (instance.annee !== dateFilter.year || instance.mois < dateFilter.start || instance.mois > dateFilter.end)
+          return;
+      }
       if (!instance.accidents) return;
       instance.accidents.forEach(a => {
+        // On peut se fier à l'instance pour la période ; sinon, on vérifie la date de l'accident si présente
         const accidentDate = a.date ? new Date(a.date) : null;
-        if (accidentDate && dateFilter.$gte && accidentDate < dateFilter.$gte) return;
-        if (accidentDate && dateFilter.$lte && accidentDate > dateFilter.$lte) return;
         const accidents = parseInt(a.nombreAccidents) || 0;
         const jours = parseInt(a.joursArret) || 0;
         totalAccidents += accidents;
         totalJours += jours;
         details.push({
-          id: a._id,
           "Magasin": market.nom,
           Date: accidentDate ? accidentDate.toLocaleDateString('fr-FR') : 'N/A',
           NAt: a.nombreAccidents,
@@ -711,33 +712,37 @@ async function generateAccidentsSection(supermarkets, dateFilter) {
       });
     });
   });
+  
   return {
     title: 'Accidents',
     summary: {
       'Total des accidents': totalAccidents,
       "Total des jours d'arrêt": totalJours
     },
-    details
+    details: details
   };
 }
 
+// Génération de la section Incidents
 async function generateIncidentsSection(supermarkets, dateFilter) {
   let totalIncidents = 0;
   let incidentsByType = {};
   let details = [];
+  
   supermarkets.forEach(market => {
     if (!market.instances) return;
     market.instances.forEach(instance => {
+      if (dateFilter && dateFilter.start && dateFilter.end && dateFilter.year) {
+        if (instance.annee !== dateFilter.year || instance.mois < dateFilter.start || instance.mois > dateFilter.end)
+          return;
+      }
       if (!instance.incidents) return;
       instance.incidents.forEach(i => {
         const incidentDate = i.date ? new Date(i.date) : null;
-        if (incidentDate && dateFilter.$gte && incidentDate < dateFilter.$gte) return;
-        if (incidentDate && dateFilter.$lte && incidentDate > dateFilter.$lte) return;
         const count = parseInt(i.nombreIncidents) || 0;
         totalIncidents += count;
         incidentsByType[i.typeIncident] = (incidentsByType[i.typeIncident] || 0) + count;
         details.push({
-          id: i._id,
           "Magasin": market.nom,
           Date: incidentDate ? incidentDate.toLocaleDateString('fr-FR') : 'N/A',
           Type: i.typeIncident,
@@ -746,16 +751,18 @@ async function generateIncidentsSection(supermarkets, dateFilter) {
       });
     });
   });
+  
   return {
     title: 'Incidents',
     summary: {
       'Total des incidents': totalIncidents,
       ...incidentsByType
     },
-    details
+    details: details
   };
 }
 
+// Génération de la section Interpellations
 async function generateInterpellationsSection(supermarkets, dateFilter) {
   let totalPersonnes = 0;
   let totalPoursuites = 0;
@@ -766,14 +773,17 @@ async function generateInterpellationsSection(supermarkets, dateFilter) {
     'Prestataire': { personnes: 0, poursuites: 0, valeur: 0 }
   };
   let details = [];
+  
   supermarkets.forEach(market => {
     if (!market.instances) return;
     market.instances.forEach(instance => {
+      if (dateFilter && dateFilter.start && dateFilter.end && dateFilter.year) {
+        if (instance.annee !== dateFilter.year || instance.mois < dateFilter.start || instance.mois > dateFilter.end)
+          return;
+      }
       if (!instance.interpellations) return;
       instance.interpellations.forEach(inter => {
         const interDate = inter.date ? new Date(inter.date) : null;
-        if (interDate && dateFilter.$gte && interDate < dateFilter.$gte) return;
-        if (interDate && dateFilter.$lte && interDate > dateFilter.$lte) return;
         const personnes = parseInt(inter.nombrePersonnes) || 0;
         const poursuites = parseInt(inter.poursuites) || 0;
         const valeur = parseFloat(inter.valeurMarchandise) || 0;
@@ -786,7 +796,6 @@ async function generateInterpellationsSection(supermarkets, dateFilter) {
           interByType[inter.typePersonne].valeur += valeur;
         }
         details.push({
-          id: inter._id,
           "Magasin": market.nom,
           Date: interDate ? interDate.toLocaleDateString('fr-FR') : 'N/A',
           TP: inter.typePersonne,
@@ -797,6 +806,7 @@ async function generateInterpellationsSection(supermarkets, dateFilter) {
       });
     });
   });
+  
   return {
     title: 'Interpellations',
     summary: {
@@ -813,7 +823,7 @@ async function generateInterpellationsSection(supermarkets, dateFilter) {
       'Prestataire - Poursuites': interByType['Prestataire'].poursuites,
       'Prestataire - Valeur (kDH)': interByType['Prestataire'].valeur.toFixed(3)
     },
-    details
+    details: details
   };
 }
 

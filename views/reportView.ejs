@@ -20,9 +20,7 @@
       border-left: 4px solid #0d6efd;
       border-radius: 0.25rem;
     }
-    .report-action-btn {
-      margin-right: 0.5rem;
-    }
+    .report-action-btn { margin-right: 0.5rem; }
     @media print {
       .no-print { display: none !important; }
       .section-header { background-color: #f8f9fa !important; -webkit-print-color-adjust: exact; }
@@ -35,7 +33,7 @@
     }
     .summary-card .card-header {
       background-color: #0d6efd;
-      color: white;
+      color: #fff;
       border-top-left-radius: 0.5rem;
       border-top-right-radius: 0.5rem;
     }
@@ -61,7 +59,7 @@
     </div>
   </div>
 
-  <!-- Report Content: Only the Summary of Each Section -->
+  <!-- Report Content: Only the Résumé (no details) -->
   <div id="reportContent">
     <% reportData.sections.forEach((section, sectionIndex) => { %>
       <div class="mb-5 <%= sectionIndex > 0 ? 'page-break-before' : '' %>">
@@ -73,7 +71,7 @@
             <div class="card-header">Résumé</div>
             <div class="card-body">
               <% if (Array.isArray(section.summary)) { %>
-                <!-- If summary is an array, render a table -->
+                <!-- If summary is an array (like scoring or DRL), render as a table -->
                 <div class="table-responsive">
                   <table class="table table-bordered">
                     <thead>
@@ -95,7 +93,7 @@
                   </table>
                 </div>
               <% } else { %>
-                <!-- Otherwise assume it's an object -->
+                <!-- If summary is an object, render key-value pairs -->
                 <div class="row">
                   <% Object.entries(section.summary)
                        .filter(([key]) => !['id', '_id', 'Description'].includes(key))

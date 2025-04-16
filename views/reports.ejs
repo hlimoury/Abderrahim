@@ -25,6 +25,13 @@
       border-radius: 0.5rem;
       margin-bottom: 1.5rem;
     }
+    /* Just an example style to highlight the new section. */
+    #monthSection {
+      border: 1px dashed #0d6efd;
+      padding: 1rem;
+      border-radius: 0.25rem;
+      margin-top: 1rem;
+    }
   </style>
 </head>
 <body class="container mt-4">
@@ -62,7 +69,7 @@
         </div>
       </div>
 
-      <!-- Supermarket Selection (shown when typeSupermarket is selected) -->
+      <!-- Supermarket Selection -->
       <div class="mb-4" id="supermarketSection">
         <label for="supermarketId" class="form-label">Sélectionner un Supermarché</label>
         <select class="form-select" id="supermarketId" name="supermarketId">
@@ -72,20 +79,29 @@
         </select>
       </div>
 
-      <!-- Month/Year Selection (shown when typeMonth is selected) -->
+      <!-- Month/Year Selection block - Now used for BOTH "supermarket" or "month" -->
       <div class="mb-4 d-none" id="monthSection">
+        <h5>Période (mois de début à mois de fin, pour une année donnée)</h5>
         <div class="row">
-          <div class="col-md-6">
-            <label for="month" class="form-label">Mois</label>
-            <select class="form-select" id="month" name="month">
+          <div class="col-md-4">
+            <label for="moisDebut" class="form-label">Mois de début</label>
+            <select class="form-select" id="moisDebut" name="moisDebut">
               <% months.forEach(month => { %>
                 <option value="<%= month.value %>"><%= month.name %></option>
               <% }); %>
             </select>
           </div>
-          <div class="col-md-6">
-            <label for="year" class="form-label">Année</label>
-            <select class="form-select" id="year" name="year">
+          <div class="col-md-4">
+            <label for="moisFin" class="form-label">Mois de fin</label>
+            <select class="form-select" id="moisFin" name="moisFin">
+              <% months.forEach(month => { %>
+                <option value="<%= month.value %>"><%= month.name %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="annee" class="form-label">Année</label>
+            <select class="form-select" id="annee" name="annee">
               <% years.forEach(year => { %>
                 <option value="<%= year %>"><%= year %></option>
               <% }); %>
@@ -132,7 +148,7 @@
             </div>
           </div>
         </div>
-        <!-- New Checkboxes for Scoring and DRL -->
+        <!-- New options for Scoring and DRL -->
         <div class="row mt-3">
           <div class="col-md-3">
             <div class="form-check">
@@ -163,24 +179,43 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // Handle report type selection to show/hide relevant sections
+    // Au changement de type de rapport, on affiche ou non supermarketSection et monthSection
     document.querySelectorAll('input[name="reportType"]').forEach(radio => {
       radio.addEventListener('change', function() {
         const supermarketSection = document.getElementById('supermarketSection');
         const monthSection = document.getElementById('monthSection');
+
+        // Cache tout d'abord
         supermarketSection.classList.add('d-none');
         monthSection.classList.add('d-none');
+
+        // Si "supermarket", on affiche la sélection du supermarché + la période
         if (this.value === 'supermarket') {
           supermarketSection.classList.remove('d-none');
-        } else if (this.value === 'month') {
           monthSection.classList.remove('d-none');
         }
+        // Si "month", on affiche uniquement la sélection de la période
+        else if (this.value === 'month') {
+          monthSection.classList.remove('d-none');
+        }
+        // Sinon (Rapport Général), on ne montre ni supermarché ni mois
       });
     });
+
+    // Au chargement initial
     document.addEventListener('DOMContentLoaded', function() {
-      const defaultType = document.querySelector('input[name="reportType"]:checked').value;
-      document.getElementById('supermarketSection').classList.toggle('d-none', defaultType !== 'supermarket');
-      document.getElementById('monthSection').classList.toggle('d-none', defaultType !== 'month');
+      const defaultType = document.querySelector('input[name="reportType"]:checked')?.value || 'supermarket';
+      const supermarketSection = document.getElementById('supermarketSection');
+      const monthSection = document.getElementById('monthSection');
+      supermarketSection.classList.add('d-none');
+      monthSection.classList.add('d-none');
+
+      if (defaultType === 'supermarket') {
+        supermarketSection.classList.remove('d-none');
+        monthSection.classList.remove('d-none');
+      } else if (defaultType === 'month') {
+        monthSection.classList.remove('d-none');
+      }
     });
   </script>
 </body>
