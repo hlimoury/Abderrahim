@@ -57,7 +57,7 @@
         <h4>Type de Rapport</h4>
         <div class="form-check form-check-inline">
           <input class="form-check-input" type="radio" name="reportType" id="typeSupermarket" value="supermarket" checked>
-          <label class="form-check-label" for="typeSupermarket">Par Supermarché</label>
+          <label class="form-check-label" for="typeSupermarket">Par Magasin</label>
         </div>
         <div class="form-check form-check-inline">
           <input class="form-check-input" type="radio" name="reportType" id="typeMonth" value="month">
@@ -71,7 +71,7 @@
 
       <!-- Supermarket Selection -->
       <div class="mb-4" id="supermarketSection">
-        <label for="supermarketId" class="form-label">Sélectionner un Supermarché</label>
+        <label for="supermarketId" class="form-label">Sélectionner un Magasin</label>
         <select class="form-select" id="supermarketId" name="supermarketId">
           <% supermarkets.forEach(supermarket => { %>
             <option value="<%= supermarket._id %>"><%= supermarket.nom %></option>
