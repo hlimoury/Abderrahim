@@ -7,28 +7,26 @@
 </head>
 <body class="container mt-4">
   <h1>Rapports Archivés</h1>
-  
+
   <% 
-    // Grouper les rapports par région
+    // Grouper par région
     const byRegion = archivedReports.reduce((acc, rpt) => {
-      (acc[rpt.region] = acc[rpt.region] || []).push(rpt);
+      (acc[rpt.region] = acc[rpt.region]||[]).push(rpt);
       return acc;
     }, {});
-    
-    // Fonction pour extraire et formater la période
+
+    // Extrait et formate la période depuis le titre
     function extractPeriod(title) {
       const parts = title.split('| Période:');
-      if (parts.length < 2) return '—';
-      const raw = parts[1].trim(); // ex: "De Janvier à Février 2025" ou "De Janvier à Janvier 2025"
+      if (parts.length<2) return '—';
+      const raw = parts[1].trim();
       const m = raw.match(/^De\s+(\S+)\s+à\s+(\S+)\s+(\d{4})$/);
-      if (m) {
-        const [, start, end, year] = m;
-        return start === end ? `${start} ${year}` : raw;
-      }
-      return raw;
+      return (m && m[1]===m[2])
+        ? `${m[1]} ${m[3]}`
+        : raw;
     }
   %>
-  
+
   <% Object.keys(byRegion).forEach(region => { %>
     <h2 class="mt-5">Région : <%= region %></h2>
     <table class="table table-bordered mt-2">
@@ -43,28 +41,28 @@
         </tr>
       </thead>
       <tbody>
-        <% 
-          byRegion[region]
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-            .forEach(report => {
-              const sentAt = new Date(report.createdAt);
-              const periodLabel = extractPeriod(report.title);
+        <% byRegion[region]
+            .sort((a,b)=> new Date(b.createdAt)-new Date(a.createdAt))
+            .forEach(rpt => {
+              const sent = new Date(rpt.createdAt);
+              const period = extractPeriod(rpt.title);
         %>
           <tr>
-            <td><%= report.title %></td>
+            <td><%= rpt.title %></td>
             <td>
-              <span class="badge bg-info text-white">
-                <%= periodLabel %>
-              </span>
+              <span class="badge bg-info text-white"><%= period %></span>
             </td>
-            <td><%= report.user %></td>
-            <td><%= sentAt.toLocaleString('fr-FR') %></td>
+            <td><%= rpt.user %></td>
+            <td><%= sent.toLocaleString('fr-FR') %></td>
             <td>
-              <a href="/admin/pdf/<%= report._id %>" class="btn btn-sm btn-primary">Télécharger</a>
+              <a href="/admin/pdf/<%= rpt._id %>" class="btn btn-sm btn-primary">
+                Télécharger
+              </a>
             </td>
             <td>
-              <form action="/admin/archived/<%= report._id %>/delete" method="POST" style="display:inline">
-                <button class="btn btn-danger btn-sm" onclick="return confirm('Supprimer définitivement ?');">
+              <form action="/admin/archived/<%= rpt._id %>/delete" method="POST" class="d-inline">
+                <button class="btn btn-danger btn-sm"
+                        onclick="return confirm('Confirmer suppression ?')">
                   Supprimer
                 </button>
               </form>
@@ -73,8 +71,8 @@
         <% }) %>
       </tbody>
     </table>
-  <% }); %>
-  
+  <% }) %>
+
   <a href="/stats" class="btn btn-secondary mt-4">← Retour Stats</a>
 </body>
 </html>

@@ -239,72 +239,45 @@ router.get('/api/search', async (req, res) => {
 
 
 
-
+// Liste archivés pour admin
 router.get('/admin/archived', ensureAdmin, async (req, res) => {
   try {
-    const archivedReports = await ArchivedReport.find().sort({ createdAt: -1 });
+    const archivedReports = await ArchivedReport.find()
+      .sort({ region:1, createdAt:-1 });
     res.render('adminArchivedReports', { archivedReports });
   } catch (err) {
     console.error(err);
-    res.status(500).send('Erreur lors du chargement des rapports archivés');
+    res.status(500).send('Erreur serveur');
   }
 });
 
+// Suppression archive
 router.post('/admin/archived/:id/delete', ensureAdmin, async (req, res) => {
   try {
-    const reportId = req.params.id;
-
-    // 1) Find the archived report
-    const archived = await ArchivedReport.findById(reportId);
-    if (!archived) {
-      return res.status(404).send('Rapport introuvable');
-    }
-
-    // 2) Delete the physical PDF file from disk
-    const fs = require('fs');
-    if (fs.existsSync(archived.filePath)) {
-      fs.unlinkSync(archived.filePath);
-    }
-
-    // 3) Remove from DB (replace old `archived.remove()`):
-    await archived.deleteOne();
-
-    // 4) Redirect or respond
+    const arch = await ArchivedReport.findById(req.params.id);
+    if (!arch) return res.status(404).send('Introuvable');
+    if (fs.existsSync(arch.filePath)) fs.unlinkSync(arch.filePath);
+    await arch.deleteOne();
     res.redirect('/admin/archived');
   } catch (err) {
     console.error(err);
-    res.status(500).send('Erreur lors de la suppression du rapport archivé');
+    res.status(500).send('Erreur suppression');
   }
 });
 
-
-
-
-// Serve PDF from /mnt/data to an admin at /admin/pdf/:filename
-router.get('/admin/pdf/:filename', ensureAdmin, (req, res) => {
+// Téléchargement PDF par ID
+router.get('/admin/pdf/:id', ensureAdmin, async (req, res) => {
   try {
-    const { filename } = req.params;
-    
-    // Construct full absolute path in /mnt/data
-    const filePath = path.join('/mnt/data', filename);
-
-    // Make sure the file exists
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).send('Fichier PDF introuvable');
+    const arch = await ArchivedReport.findById(req.params.id);
+    if (!arch || !fs.existsSync(arch.filePath)) {
+      return res.status(404).send('PDF introuvable');
     }
-
-    // Option A: Stream the file inline (browser will try to open it)
-    // res.sendFile(filePath);
-    
-    // Option B: Force download prompt
-    res.download(filePath);
-
+    res.download(arch.filePath, path.basename(arch.filePath));
   } catch (err) {
-    console.error('Error serving PDF to admin:', err);
-    res.status(500).send('Erreur lors de l\'accès au PDF');
+    console.error(err);
+    res.status(500).send('Erreur téléchargement');
   }
 });
-
 
 
 
