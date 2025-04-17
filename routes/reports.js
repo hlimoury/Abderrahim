@@ -118,90 +118,84 @@ router.post('/generate', ensureLoggedIn, async (req, res) => {
       includeDRL
     } = req.body;
     
-    let filter = {};
-    let dateFilter = {};
-    let title = '';
-
     // 1) Filtrage par région
+    let filter = {};
     if (req.session.region !== 'ALL') {
       filter.ville = req.session.region;
     }
-    
-    // 2) Logique selon reportType
+
+    // 2) Construction du filtre de date et du libellé de période
+    let dateFilter = {};
+    let periodLabel = '';
+    if (moisDebut && moisFin && annee) {
+      const start = parseInt(moisDebut, 10);
+      const end   = parseInt(moisFin,   10);
+      // on remplit dateFilter pour les sections
+      dateFilter = { start, end, year: parseInt(annee, 10) };
+      if (start === end) {
+        // même mois
+        periodLabel = `${getMonthName(start)} ${annee}`;
+      } else {
+        // période multi-mois
+        periodLabel = `De ${getMonthName(start)} à ${getMonthName(end)} ${annee}`;
+      }
+    }
+
+    // 3) Détermination du titre
+    let title = '';
     if (reportType === 'supermarket') {
-      // Vérifier ID du supermarché
+      // Vérifier et charger le supermarché
       if (!mongoose.Types.ObjectId.isValid(supermarketId)) {
         return res.status(400).send('ID de Magasin invalide');
       }
       const supermarket = await Supermarket.findById(supermarketId);
       if (!supermarket) return res.status(404).send('Magasin non trouvé');
-      // Vérifier région
       if (req.session.region !== 'ALL' && supermarket.ville !== req.session.region) {
         return res.status(403).send('Accès non autorisé à ce Magasin');
       }
-      // Filtrage par supermarché
       filter = { _id: supermarketId };
-      // Filtrage par période (si moisDebut, moisFin, annee fournis)
-      if (moisDebut && moisFin && annee) {
-        dateFilter = { start: parseInt(moisDebut), end: parseInt(moisFin), year: parseInt(annee) };
-        title = `Rapport - ${supermarket.nom} | Période: de ${getMonthName(moisDebut)} à ${getMonthName(moisFin)} ${annee}`;
-      } else {
-        title = `Rapport - ${supermarket.nom}`;
-      }
+      title = `Rapport - ${supermarket.nom}` + (periodLabel ? ` | Période: ${periodLabel}` : '');
     }
-    else if (reportType === 'month' && moisDebut && moisFin && annee) {
-      // Pas de supermarché précis, juste la période
-      dateFilter = { start: parseInt(moisDebut), end: parseInt(moisFin), year: parseInt(annee) };
-      title = `Rapport Mensuel - De ${getMonthName(moisDebut)} à ${getMonthName(moisFin)} ${annee}`;
+    else if (reportType === 'month' && periodLabel) {
+      title = `Rapport Mensuel - ${periodLabel}`;
     }
     else {
-      // Rapport Général
       title = 'Rapport Général';
     }
-    
-    // 3) Récupération des supermarchés
+
+    // 4) Chargement des supermarchés/instances
     const supermarkets = await Supermarket.find(filter).populate('instances');
-    if (!supermarkets || supermarkets.length === 0) {
+    if (!supermarkets.length) {
       return res.status(404).send('Aucun Magasin trouvé avec ces critères');
     }
-    
+
+    // 5) Assemblage du rapport
     let reportData = {
       title,
       date: new Date().toISOString(),
       sections: []
     };
-    
-    // 4) Génération des sections
-    if (includeFormation === 'on') {
-      reportData.sections.push(await generateFormationSection(supermarkets, dateFilter));
-    }
-    if (includeAccidents === 'on') {
-      reportData.sections.push(await generateAccidentsSection(supermarkets, dateFilter));
-    }
-    if (includeIncidents === 'on') {
-      reportData.sections.push(await generateIncidentsSection(supermarkets, dateFilter));
-    }
-    if (includeInterpellations === 'on') {
-      reportData.sections.push(await generateInterpellationsSection(supermarkets, dateFilter));
-    }
-    if (includeScoring === 'on') {
-      reportData.sections.push(await generateScoringSection(supermarkets, dateFilter));
-    }
-    if (includeDRL === 'on') {
-      reportData.sections.push(await generateDRLSection(supermarkets, dateFilter));
-    }
-    
-    // 5) Rendu final
+
+    if (includeFormation       === 'on') reportData.sections.push(await generateFormationSection(supermarkets, dateFilter));
+    if (includeAccidents       === 'on') reportData.sections.push(await generateAccidentsSection   (supermarkets, dateFilter));
+    if (includeIncidents       === 'on') reportData.sections.push(await generateIncidentsSection    (supermarkets, dateFilter));
+    if (includeInterpellations === 'on') reportData.sections.push(await generateInterpellationsSection(supermarkets, dateFilter));
+    if (includeScoring         === 'on') reportData.sections.push(await generateScoringSection      (supermarkets, dateFilter));
+    if (includeDRL             === 'on') reportData.sections.push(await generateDRLSection          (supermarkets, dateFilter));
+
+    // 6) Rendu
     req.session.reportData = reportData;
     res.render('reportView', { 
       reportData,
       formatDate: formatFrenchDate
     });
+
   } catch (err) {
     console.error('Error generating report:', err);
     res.status(500).send('Erreur lors de la génération du rapport');
   }
 });
+
 
 
 
@@ -257,6 +251,24 @@ router.post('/save', ensureLoggedIn, (req, res) => {
     res.redirect('/reports/modifier');
   }
 });
+
+
+
+
+
+// VIEW the last generated report
+router.get('/view', ensureLoggedIn, (req, res) => {
+  const reportData = req.session.reportData;
+  if (!reportData) {
+    // if there's no report in session, go back to the generator
+    return res.redirect('/reports');
+  }
+  res.render('reportView', {
+    reportData,
+    formatDate: formatFrenchDate
+  });
+});
+
 
 // POST: Email report
 router.post('/email', ensureLoggedIn, async (req, res) => {
@@ -327,6 +339,7 @@ router.get('/sendToAdmin', ensureLoggedIn, async (req, res) => {
     const archived = new ArchivedReport({
       title: reportData.title,
       user: req.session.user,
+      region: req.session.region,
       filePath: pdfPath
     });
     await archived.save();
@@ -341,8 +354,10 @@ router.get('/sendToAdmin', ensureLoggedIn, async (req, res) => {
 // NEW: Admin archive view
 router.get('/adminArchive', ensureAdmin, async (req, res) => {
   try {
-    const archivedReports = await ArchivedReport.find({}).sort({ createdAt: -1 });
-    res.render('archivedReports', { archivedReports });
+    const archivedReports = await ArchivedReport
+    .find({})
+    .sort({ region: 1, createdAt: -1 });    // ← first by region, then newest first
+  res.render('adminArchivedReports', { archivedReports });
   } catch (err) {
     console.error('Error fetching archived reports:', err);
     res.status(500).send('Erreur serveur');
