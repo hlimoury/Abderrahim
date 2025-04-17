@@ -331,28 +331,23 @@ router.get('/download', ensureLoggedIn, async (req, res) => {
 });
 
 // NEW: Send report to admin (archive the PDF)
-
-// Sauvegarde du PDF en base et sur disque
 router.get('/sendToAdmin', ensureLoggedIn, async (req, res) => {
   try {
     const reportData = req.session.reportData;
-    if (!reportData) return res.status(400).send('Aucun rapport en session');
-    const persist = ensurePersistPath();
-    const fileName = `rapport-${Date.now()}.pdf`;
-    const pdfPath = path.join(persist, fileName);
-    await createPDF(reportData, pdfPath);
-
-    await ArchivedReport.create({
+    if (!reportData) return res.status(400).send('Aucun rapport en session pour envoyer à l\'admin');
+    const pdfPath = await generatePDF(reportData);
+    const archived = new ArchivedReport({
       title: reportData.title,
       user: req.session.user,
       region: req.session.region,
       filePath: pdfPath
     });
-    req.session.success = 'Envoyé à l\'admin !';
+    await archived.save();
+    req.session.success = 'Rapport envoyé à l\'admin avec succès!';
     res.redirect('/reports/view');
   } catch (err) {
-    console.error(err);
-    res.status(500).send('Erreur archivage');
+    console.error('Error sending to admin:', err);
+    res.status(500).send('Erreur lors de l\'envoi du rapport à l\'admin');
   }
 });
 
