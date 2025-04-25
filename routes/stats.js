@@ -241,6 +241,34 @@ const paginated = filteredMarkets.slice((current - 1) * limit,
   }
 });
 
+// Suppression archive
+router.post('/admin/archived/:id/delete', ensureAdmin, async (req, res) => {
+  try {
+    const arch = await ArchivedReport.findById(req.params.id);
+    if (!arch) return res.status(404).send('Introuvable');
+    if (fs.existsSync(arch.filePath)) fs.unlinkSync(arch.filePath);
+    await arch.deleteOne();
+    res.redirect('/admin/archived');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Erreur suppression');
+  }
+});
+
+// Téléchargement PDF par ID
+router.get('/admin/pdf/:id', ensureAdmin, async (req, res) => {
+  try {
+    const arch = await ArchivedReport.findById(req.params.id);
+    if (!arch || !fs.existsSync(arch.filePath)) {
+      return res.status(404).send('PDF introuvable');
+    }
+    res.download(arch.filePath, path.basename(arch.filePath));
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Erreur téléchargement');
+  }
+});
+
 
 
 
