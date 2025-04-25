@@ -46,6 +46,21 @@
     <h1><%= reportData.title %></h1>
     <p>Généré le <%= formatDate(reportData.date) %></p>
   </div>
+<!-- alert for sending the pdf  -->
+  <% if (success) { %>
+    <div class="alert alert-success alert-dismissible fade show no-print" role="alert">
+      <%= success %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  <% } %>
+  <% if (error) { %>
+    <div class="alert alert-danger alert-dismissible fade show no-print" role="alert">
+      <%= error %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  <% } %>
+  
+
 
   <!-- Action Buttons -->
   <div class="d-flex justify-content-between mb-4 no-print">

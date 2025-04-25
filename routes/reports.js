@@ -185,10 +185,12 @@ router.post('/generate', ensureLoggedIn, async (req, res) => {
 
     // 6) Rendu
     req.session.reportData = reportData;
-    res.render('reportView', { 
-      reportData,
-      formatDate: formatFrenchDate
-    });
+    res.render('reportView', {
+         reportData,
+         success: null,
+         error  : null,
+         formatDate: formatFrenchDate
+       });
 
   } catch (err) {
     console.error('Error generating report:', err);
@@ -257,17 +259,27 @@ router.post('/save', ensureLoggedIn, (req, res) => {
 
 
 // VIEW the last generated report
+   /* ------------------------------------------------------------------
+   VIEW: affiche le dernier rapport + messages flash
+------------------------------------------------------------------ */
 router.get('/view', ensureLoggedIn, (req, res) => {
   const reportData = req.session.reportData;
-  if (!reportData) {
-    // if there's no report in session, go back to the generator
-    return res.redirect('/reports');
-  }
+  if (!reportData) return res.redirect('/reports');
+
+  // on récupère puis on efface les messages
+  const success = req.session.success;
+  const error   = req.session.error;
+  delete req.session.success;
+  delete req.session.error;
+
   res.render('reportView', {
     reportData,
+    success,             // <-- on transmet
+    error,
     formatDate: formatFrenchDate
   });
 });
+
 
 
 // POST: Email report
@@ -363,6 +375,37 @@ router.get('/adminArchive', ensureAdmin, async (req, res) => {
     res.status(500).send('Erreur serveur');
   }
 });
+
+/* -----------------------------------------------------------
+   API : /reports/api/supermarket/:id/stats
+   ↳ renvoie les 5 derniers rapports archivés pour le magasin
+----------------------------------------------------------- */
+router.get('/api/supermarket/:id/stats', ensureLoggedIn, async (req, res) => {
+  try {
+    const market = await Supermarket.findById(req.params.id);
+    if (!market) return res.status(404).json({ error: 'Magasin introuvable' });
+
+    // Tous les rapports correspondant au magasin, triés du plus récent
+    const regex = new RegExp(market.nom, 'i');
+    const all   = await ArchivedReport.find({ title: { $regex: regex } })
+                                      .sort({ createdAt: -1 });
+
+    /* ---- on ne renvoie que les 5 plus récents ---- */
+    const lastFive = all.slice(0, 5).map(d => ({
+      id    : d._id,
+      titre : d.title,
+      date  : d.createdAt,
+      region: d.region
+    }));
+
+    res.json({ count: all.length, reports: lastFive });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+
 
 /* ------------------------------------------------------------------
    HELPER FUNCTION: generatePDF

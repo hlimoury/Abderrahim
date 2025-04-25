@@ -79,6 +79,10 @@
         </select>
       </div>
 
+
+      <!-- carte d’infos (remplie en JS) -->
+<div id="reportStats" class="alert alert-info d-none"></div>
+
       <!-- Month/Year Selection block - Now used for BOTH "supermarket" or "month" -->
       <div class="mb-4 d-none" id="monthSection">
         <h5>Période (mois de début à mois de fin, pour une année donnée)</h5>
@@ -217,6 +221,45 @@
         monthSection.classList.remove('d-none');
       }
     });
+
+
+
+
+    // / ----- Affiche le nb de rapports envoyés pour le magasin sélectionné -----
+    const statsDiv = document.getElementById('reportStats');
+  const select   = document.getElementById('supermarketId');
+
+  async function loadStats(id) {
+    if (!id) return statsDiv.classList.add('d-none');
+
+    try {
+      const res  = await fetch(`/reports/api/supermarket/${id}/stats`);
+      const data = await res.json();
+      if (!res.ok) throw new Error();
+
+      if (data.count === 0) {
+        statsDiv.innerHTML = 'Aucun rapport archivé pour ce magasin.';
+      } else {
+        let html = `<strong>${data.count}</strong> rapport(s) déjà envoyés :<ul class="mb-0">`;
+        data.reports.forEach(r => {
+          const date = new Date(r.date)
+                       .toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric' });
+          html += `<li>${date} — ${r.titre}</li>`;
+        });
+        html += '</ul>';
+        statsDiv.innerHTML = html;
+      }
+      statsDiv.classList.remove('d-none');
+    } catch {
+      statsDiv.classList.add('d-none');   // masque si erreur
+    }
+  }
+
+  /* Mise à jour lors du changement de magasin */
+  select.addEventListener('change', e => loadStats(e.target.value));
+
+  /* Mise à jour initiale */
+  document.addEventListener('DOMContentLoaded', () => loadStats(select.value));
   </script>
 </body>
 </html>
