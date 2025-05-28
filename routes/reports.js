@@ -405,10 +405,8 @@ router.get('/api/supermarket/:id/stats', ensureLoggedIn, async (req, res) => {
   }
 });
 
-
-
 /* ------------------------------------------------------------------
-   HELPER FUNCTION: generatePDF
+   HELPER FUNCTION: generatePDF - Fixed Version with Better Page Breaks
    ------------------------------------------------------------------ */
    async function generatePDF(reportData) {
     return new Promise((resolve, reject) => {
@@ -416,8 +414,9 @@ router.get('/api/supermarket/:id/stats', ensureLoggedIn, async (req, res) => {
         const persistPath = ensurePersistPath();
         const fileName = `rapport-${Date.now()}.pdf`;
         const pdfPath = path.join(persistPath, fileName);
+        
         const doc = new PDFDocument({ 
-          margin: 50,
+          margin: 40,
           size: 'A4',
           info: {
             Title: reportData.title,
@@ -425,122 +424,319 @@ router.get('/api/supermarket/:id/stats', ensureLoggedIn, async (req, res) => {
             Subject: `Rapport généré le ${formatFrenchDate(reportData.date)}`
           }
         });
+        
         const stream = fs.createWriteStream(pdfPath);
         doc.pipe(stream);
-        const primaryColor = '#0d6efd';
-        const secondaryColor = '#6c757d';
-        const borderColor = '#dee2e6';
+  
+        // Enhanced color scheme
+        const colors = {
+          primary: '#2c3e50',
+          secondary: '#34495e', 
+          accent: '#3498db',
+          success: '#27ae60',
+          background: '#ecf0f1',
+          lightGray: '#f8f9fa',
+          mediumGray: '#e9ecef',
+          darkGray: '#6c757d',
+          border: '#dee2e6',
+          white: '#ffffff'
+        };
   
         function addPageHeader() {
-          doc.fontSize(18)
-             .fillColor(primaryColor)
-             .text(reportData.title, 50, 50);
-          doc.fontSize(10)
-             .fillColor(secondaryColor)
-             .text(`Généré le: ${formatFrenchDate(reportData.date)}`, 50, 75);
-          doc.moveTo(50, 110)
-             .lineTo(doc.page.width - 50, 110)
-             .stroke(borderColor);
-          doc.y = 130;
+          // Header background
+          doc.rect(0, 0, doc.page.width, 120)
+             .fill(colors.primary);
+  
+          // Title
+          doc.fontSize(22)
+             .fillColor(colors.white)
+             .font('Helvetica-Bold')
+             .text(reportData.title, 50, 35, { align: 'center' });
+  
+          // Subtitle with date
+          doc.fontSize(12)
+             .fillColor(colors.background)
+             .font('Helvetica')
+             .text(`Rapport généré le: ${formatFrenchDate(reportData.date)}`, 50, 65, { align: 'center' });
+  
+          // Decorative line
+          doc.rect(50, 90, doc.page.width - 100, 3)
+             .fill(colors.accent);
+  
+          doc.y = 140;
         }
   
         function checkPageBreak(extraHeight) {
-          const bottomMargin = 50;
+          const bottomMargin = 80;
           if (doc.y + extraHeight > doc.page.height - bottomMargin) {
             doc.addPage();
             addPageHeader();
+            return true;
           }
+          return false;
         }
   
+        // New function to calculate table height
+        function calculateTableHeight(data, isArrayData = false) {
+          if (!data || (Array.isArray(data) && data.length === 0)) return 0;
+          
+          const rowHeight = 35;
+          let totalHeight = rowHeight; // Header row
+          
+          if (isArrayData) {
+            totalHeight += data.length * rowHeight;
+            // Add separator space (every 3 rows)
+            const separators = Math.floor((data.length - 1) / 3);
+            totalHeight += separators * 8;
+          } else {
+            const entries = Object.entries(data)
+                                .filter(([key]) => !['id', '_id', 'Description'].includes(key));
+            totalHeight += entries.length * rowHeight;
+            // Add separator space (every 3 rows)
+            const separators = Math.floor((entries.length - 1) / 3);
+            totalHeight += separators * 10;
+          }
+          
+          return totalHeight + 20; // Extra spacing
+        }
+  
+        // New function to check if section fits on current page
+        function checkSectionFit(data, isArrayData = false) {
+          const sectionHeaderHeight = 60;
+          const tableHeight = calculateTableHeight(data, isArrayData);
+          const totalHeight = sectionHeaderHeight + tableHeight;
+          
+          return checkPageBreak(totalHeight);
+        }
+  
+        function drawSectionHeader(title) {
+          // Section background
+          doc.rect(30, doc.y - 5, doc.page.width - 60, 45)
+             .fill(colors.background);
+  
+          // Section border
+          doc.rect(30, doc.y - 5, doc.page.width - 60, 45)
+             .stroke(colors.border);
+  
+          // Section title
+          doc.fontSize(16)
+             .fillColor(colors.primary)
+             .font('Helvetica-Bold')
+             .text(title.toUpperCase(), 50, doc.y + 10);
+  
+          doc.y += 55;
+        }
+  
+        function drawTable(data, isArrayData = false) {
+          if (!data || (Array.isArray(data) && data.length === 0)) return;
+  
+          const startX = 50;
+          const tableWidth = doc.page.width - 100;
+          const rowHeight = 35;
+          
+          // Move currentY declaration outside conditional blocks
+          let currentY = doc.y;
+          
+          if (isArrayData) {
+            // Handle array data (like scoring tables)
+            const headers = Object.keys(data[0]);
+            const colWidth = tableWidth / headers.length;
+  
+            // Draw table header
+            doc.rect(startX, currentY, tableWidth, rowHeight)
+               .fill(colors.secondary);
+            
+            doc.rect(startX, currentY, tableWidth, rowHeight)
+               .stroke(colors.border);
+  
+            doc.fillColor(colors.white)
+               .fontSize(12)
+               .font('Helvetica-Bold');
+  
+            headers.forEach((header, i) => {
+              // Replace "Valeur" with "Nmbr"
+              const displayHeader = header.toLowerCase().includes('valeur') ? 'Nmbr' : header;
+              doc.text(displayHeader, startX + (i * colWidth) + 10, currentY + 12, {
+                width: colWidth - 20,
+                align: 'left'
+              });
+            });
+  
+            currentY += rowHeight;
+  
+            // Draw data rows with grouping
+            data.forEach((row, index) => {
+              // Add separator every 3 rows
+              if (index > 0 && index % 3 === 0) {
+                doc.rect(startX, currentY, tableWidth, 2)
+                   .fill(colors.accent);
+                currentY += 8;
+              }
+  
+              // Alternate row colors
+              const bgColor = index % 2 === 0 ? colors.white : colors.lightGray;
+              doc.rect(startX, currentY, tableWidth, rowHeight)
+                 .fill(bgColor);
+  
+              doc.rect(startX, currentY, tableWidth, rowHeight)
+                 .stroke(colors.border);
+  
+              doc.fillColor(colors.primary)
+                 .fontSize(10)
+                 .font('Helvetica');
+  
+              const values = Object.values(row);
+              values.forEach((value, i) => {
+                doc.text(String(value), startX + (i * colWidth) + 10, currentY + 12, {
+                  width: colWidth - 20,
+                  align: 'left'
+                });
+              });
+  
+              currentY += rowHeight;
+            });
+  
+          } else {
+            // Handle object data (key-value pairs)
+            const entries = Object.entries(data)
+                                .filter(([key]) => !['id', '_id', 'Description'].includes(key));
+            
+            const colWidth = tableWidth / 2;
+  
+            // Draw table header
+            doc.rect(startX, currentY, tableWidth, rowHeight)
+               .fill(colors.secondary);
+            
+            doc.rect(startX, currentY, tableWidth, rowHeight)
+               .stroke(colors.border);
+  
+            doc.fillColor(colors.white)
+               .fontSize(12)
+               .font('Helvetica-Bold');
+  
+            doc.text('Indicateur', startX + 10, currentY + 12, { width: colWidth - 20 });
+            doc.text('Nmbr', startX + colWidth + 10, currentY + 12, { width: colWidth - 20 });
+  
+            currentY += rowHeight;
+  
+            // Draw data rows with enhanced grouping
+            entries.forEach(([key, value], index) => {
+              // Add visual separator every 3 rows
+              if (index > 0 && index % 3 === 0) {
+                doc.rect(startX, currentY, tableWidth, 3)
+                   .fill(colors.accent);
+                currentY += 10;
+              }
+  
+              // Enhanced row styling
+              const bgColor = index % 2 === 0 ? colors.white : colors.lightGray;
+              doc.rect(startX, currentY, tableWidth, rowHeight)
+                 .fill(bgColor);
+  
+              // Add subtle left border for visual appeal
+              doc.rect(startX, currentY, 4, rowHeight)
+                 .fill(colors.accent);
+  
+              doc.rect(startX, currentY, tableWidth, rowHeight)
+                 .stroke(colors.border);
+  
+              // Text styling
+              doc.fillColor(colors.primary)
+                 .fontSize(11)
+                 .font('Helvetica');
+  
+              doc.text(key, startX + 15, currentY + 12, { 
+                width: colWidth - 25,
+                align: 'left'
+              });
+  
+              doc.fillColor(colors.secondary)
+                 .font('Helvetica-Bold')
+                 .text(String(value), startX + colWidth + 10, currentY + 12, { 
+                   width: colWidth - 20,
+                   align: 'right'
+                 });
+  
+              currentY += rowHeight;
+            });
+          }
+  
+          // Update doc.y to the final position
+          doc.y = currentY + 20;
+        }
+  
+        // Start document
         addPageHeader();
   
-        // Loop through each section – only render the section header and its summary.
-        reportData.sections.forEach((section, idx) => {
-          if (idx > 0) doc.moveDown();
-          doc.fontSize(16)
-             .fillColor(primaryColor)
-             .text(section.title.toUpperCase(), { underline: true });
-          doc.moveDown();
+        // Process sections with improved page break logic
+        reportData.sections.forEach((section, sectionIndex) => {
+          if (sectionIndex > 0) {
+            doc.moveDown(2);
+          }
+  
+          // Check if the entire section (header + table) fits on current page
           if (section.summary) {
-            // Check if summary is an array, e.g. for scoring.
+            const isArrayData = Array.isArray(section.summary);
+            checkSectionFit(section.summary, isArrayData);
+          } else {
+            // If no summary, just check for header space
+            checkPageBreak(60);
+          }
+  
+          // Draw section header
+          drawSectionHeader(section.title);
+  
+          // Draw table if exists
+          if (section.summary) {
             if (Array.isArray(section.summary)) {
-              const headers = Object.keys(section.summary[0]);
-              const rowH = 25;
-              checkPageBreak(rowH * (section.summary.length + 1));
-              const startX = 50;
-              const totalWidth = doc.page.width - 100;
-              const colW = totalWidth / headers.length;
-              let topY = doc.y;
-              // Draw header row
-              doc.rect(startX, topY, totalWidth, rowH).fill(primaryColor);
-              doc.fillColor('#fff').fontSize(12);
-              headers.forEach((header, i) => {
-                doc.text(header, startX + i * colW + 5, topY + 7, { width: colW - 10 });
-              });
-              topY += rowH;
-              // Draw summary rows
-              section.summary.forEach((row, i) => {
-                checkPageBreak(rowH);
-                doc.rect(startX, topY, totalWidth, rowH)
-                   .fillAndStroke(i % 2 === 0 ? '#f9f9f9' : '#fff', borderColor);
-                doc.fillColor('#000').fontSize(10);
-                const values = Object.values(row);
-                values.forEach((val, j) => {
-                  doc.text(val, startX + j * colW + 5, topY + 7, { width: colW - 10 });
-                });
-                topY += rowH;
-              });
-              doc.y = topY + 10;
+              drawTable(section.summary, true);
             } else {
-              // Otherwise, assume summary is an object
-              const summaryRows = Object.entries(section.summary)
-                                       .filter(([key]) => !['id', '_id', 'Description'].includes(key));
-              const rowH = 25;
-              checkPageBreak(rowH * (summaryRows.length + 1));
-              const startX = 50;
-              const totalWidth = doc.page.width - 100;
-              const colW = totalWidth / 2;
-              let topY = doc.y;
-              doc.rect(startX, topY, totalWidth, rowH).fill(primaryColor);
-              doc.fillColor('#fff').fontSize(12);
-              doc.text('Indicateur', startX + 10, topY + 7);
-              doc.text('Valeur', startX + colW + 10, topY + 7);
-              topY += rowH;
-              summaryRows.forEach(([key, val], i) => {
-                checkPageBreak(rowH);
-                doc.rect(startX, topY, totalWidth, rowH)
-                   .fillAndStroke(i % 2 === 0 ? '#f9f9f9' : '#fff', borderColor);
-                doc.fillColor('#000').fontSize(10);
-                doc.text(key, startX + 10, topY + 7, { width: colW - 20 });
-                doc.text(String(val), startX + colW + 10, topY + 7, { width: colW - 20 });
-                topY += rowH;
-              });
-              doc.y = topY + 10;
+              drawTable(section.summary, false);
             }
           }
-          // Notice that the details block is completely removed
+  
+          // Add spacing between sections
+          doc.moveDown(1.5);
         });
   
-        // Add page numbers
+        // Enhanced footer with page numbers
         const pageRange = doc.bufferedPageRange();
         for (let i = 0; i < pageRange.count; i++) {
           doc.switchToPage(pageRange.start + i);
-          doc.fontSize(8)
-             .fillColor(secondaryColor)
-             .text(`Page ${i + 1} / ${pageRange.count}`, 50, doc.page.height - 50, {
-               align: 'center',
-               width: doc.page.width - 100
-             });
+          
+          // Footer background
+          doc.rect(0, doc.page.height - 60, doc.page.width, 60)
+             .fill(colors.mediumGray);
+  
+          // Page number
+          doc.fontSize(10)
+             .fillColor(colors.darkGray)
+             .font('Helvetica')
+             .text(
+               `Page ${i + 1} sur ${pageRange.count}`, 
+               50, 
+               doc.page.height - 35, 
+               {
+                 align: 'center',
+                 width: doc.page.width - 100
+               }
+             );
+  
+          // Footer decoration
+          doc.rect(50, doc.page.height - 50, doc.page.width - 100, 2)
+             .fill(colors.accent);
         }
   
         doc.end();
         stream.on('finish', () => resolve(pdfPath));
         stream.on('error', err => reject(err));
+  
       } catch (error) {
         reject(error);
       }
     });
   }
+  
   
 
 /* ------------------------------------------------------------------
