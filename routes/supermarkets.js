@@ -1,3 +1,4 @@
+// supermarkets.js routes
 const express = require('express');
 const router = express.Router();
 const Supermarket = require('../models/Supermarket');
@@ -261,11 +262,13 @@ router.get('/:id/ajouter-instance', (req, res) => {
   res.render('monthInstance', { supermarketId: req.params.id });
 });
 
+// Update the route for adding a new instance in supermarkets.js
+
 router.post('/:id/ajouter-instance', async (req, res) => {
   const { mois, annee } = req.body;
   const supermarket = await Supermarket.findById(req.params.id);
 
-  // If there's at least one existing instance, copy its equipements.
+  // Initialize with defaults
   let equipementsToCopy = {
     extincteurs: 0,
     ria: 0,
@@ -277,12 +280,55 @@ router.post('/:id/ajouter-instance', async (req, res) => {
     ads: 0
   };
 
+  let scoringToCopy = {
+    securiteIncendie: [],
+    sst: [],
+    surete: [],
+    global: []
+  };
+
   if (supermarket.instances.length > 0) {
-    // For simplicity, let's copy from the LAST instance in the array.
+    // Find the most recent instance (you might want to sort by year/month)
     const lastInstance = supermarket.instances[supermarket.instances.length - 1];
-    equipementsToCopy = { ...lastInstance.equipements };
+    
+    // Copy equipements from last instance
+    if (lastInstance.equipements) {
+      equipementsToCopy = { ...lastInstance.equipements };
+    }
+    
+    // Copy scoring from last instance if it exists
+    if (lastInstance.scoring) {
+      // Deep copy the scoring to avoid reference issues
+      scoringToCopy = {
+        securiteIncendie: lastInstance.scoring.securiteIncendie ? 
+          lastInstance.scoring.securiteIncendie.map(item => ({
+            nom: item.nom,
+            niveau: item.niveau,
+            objectif: item.objectif
+          })) : [],
+        sst: lastInstance.scoring.sst ? 
+          lastInstance.scoring.sst.map(item => ({
+            nom: item.nom,
+            niveau: item.niveau,
+            objectif: item.objectif
+          })) : [],
+        surete: lastInstance.scoring.surete ? 
+          lastInstance.scoring.surete.map(item => ({
+            nom: item.nom,
+            niveau: item.niveau,
+            objectif: item.objectif
+          })) : [],
+        global: lastInstance.scoring.global ? 
+          lastInstance.scoring.global.map(item => ({
+            nom: item.nom,
+            niveau: item.niveau,
+            objectif: item.objectif
+          })) : []
+      };
+    }
   }
 
+  // Create the new instance with copied scoring and equipements
   supermarket.instances.push({
     mois,
     annee,
@@ -290,7 +336,9 @@ router.post('/:id/ajouter-instance', async (req, res) => {
     accidents: [],
     incidents: [],
     interpellations: [],
-    equipements: equipementsToCopy  // Copy from the last instance
+    drl: [],
+    equipements: equipementsToCopy,
+    scoring: scoringToCopy  // Include the copied scoring
   });
 
   await supermarket.save();
