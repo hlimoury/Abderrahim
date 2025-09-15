@@ -19,6 +19,13 @@ function getMonthName (m) {
                    'Juil.', 'Août', 'Sept.', 'Oct.', 'Nov.', 'Déc.' ];
   return months[m-1];
 }
+function getAdminRegionFilter(req) {
+  if (!req.session || !req.session.isAdmin) return {};
+  const allowed = req.session.adminRegions;
+  if (!allowed || allowed === 'ALL') return {};
+  if (Array.isArray(allowed)) return { ville: { $in: allowed } };
+  return {};
+}
 
 /* ──────────────────────────────────────────────────────────
    ARCHIVES (inchangé)
@@ -46,7 +53,9 @@ router.get('/stats', ensureAdmin, async (req,res)=>{
     };
 
     /* ── 2. Chargement des magasins ── */
-    const supermarkets = await Supermarket.find({});
+    const adminFilter = getAdminRegionFilter(req); // {} or { ville: { $in: [...] } }
+    const supermarkets = await Supermarket.find(adminFilter);
+    
 
     /* ── 3. Accumulateurs globaux ── */
     const globalTotals = {
@@ -196,19 +205,18 @@ const paginated = filteredMarkets.slice((current - 1) * limit,
       const query = (req.query.query || '').trim();
       if (!query) return res.json([]);
   
-      // ^query  ⇒ commence par les lettres tapées (plus rapide / plus pertinent)
+      const adminFilter = getAdminRegionFilter(req);
       const regex = new RegExp('^' + query, 'i');
   
-      // Cherche sur nom OU ville, limite 10 résultats
       const results = await Supermarket.find({
-        $or: [ { nom:   { $regex: regex } },
+        ...adminFilter,
+        $or: [ { nom: { $regex: regex } },
                { ville: { $regex: regex } } ]
       }).limit(10);
   
-      // Format léger
       const formatted = results.map(m => ({
-        id   : m._id,
-        nom  : m.nom,
+        id: m._id,
+        nom: m.nom,
         ville: m.ville,
         count: (m.instances || []).length
       }));
@@ -219,6 +227,7 @@ const paginated = filteredMarkets.slice((current - 1) * limit,
       res.status(500).json({ error: 'Search failed' });
     }
   });
+  
   
 
 

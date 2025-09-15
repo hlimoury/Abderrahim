@@ -34,7 +34,9 @@
                  'REGION SUD',
                  'REGION ORIENT',
                  'REGION CENTRE 1',
-                 'REGION NORD'
+                 'REGION NORD',
+                 'REGION CITY 1',   // NEW
+  'REGION CITY 2'    // NEW
                ];
                regions.forEach(r => { %>
               <option value="<%= r %>" <%= searchParams.ville===r ? 'selected' : '' %>>

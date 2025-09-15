@@ -1,15 +1,23 @@
+// auth.js
 const express = require('express');
 const router = express.Router();
 
 // Hard-coded accounts:
+// auth.js
 const accounts = {
   'REGION CENTRE 02': { password: 'M@rjane2003', region: 'REGION CENTRE 02' },
-  'REGION SUD': { password: 'M@rjane2003', region: 'REGION SUD' },
-  'REGION ORIENT': { password: 'M@rjane2003', region: 'REGION ORIENT' },
-  'REGION CENTRE 1': { password: 'M@rjane2003', region: 'REGION CENTRE 1' },
-  'REGION NORD': { password: 'M@rjane2003', region: 'REGION NORD' },
-  'MAIN': { password: 'M@rjane2003', region: 'ALL' } // main account sees all markets
+  'REGION SUD':       { password: 'M@rjane2003', region: 'REGION SUD' },
+  'REGION ORIENT':    { password: 'M@rjane2003', region: 'REGION ORIENT' },
+  'REGION CENTRE 1':  { password: 'M@rjane2003', region: 'REGION CENTRE 1' },
+  'REGION NORD':      { password: 'M@rjane2003', region: 'REGION NORD' },
+
+  // NEW: City regions
+  'REGION CITY 1':    { password: 'M@rjane2003', region: 'REGION CITY 1' },
+  'REGION CITY 2':    { password: 'M@rjane2003', region: 'REGION CITY 2' },
+
+  'MAIN':             { password: 'M@rjane2003', region: 'ALL' } // main account sees all markets
 };
+
 
 router.get('/login', (req, res) => {
   res.render('login', { error: null });
