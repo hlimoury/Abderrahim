@@ -36,7 +36,7 @@
                  'REGION CENTRE 1',
                  'REGION NORD',
                  'REGION CITY 1',   // NEW
-  'REGION CITY 2'    // NEW
+                 'REGION CITY 2'    // NEW
                ];
                regions.forEach(r => { %>
               <option value="<%= r %>" <%= searchParams.ville===r ? 'selected' : '' %>>
@@ -106,42 +106,56 @@
     <% } %>
   
     <% /* ───────────────────────── Cartes globales ───────────────────────── */ %>
-    <div class="row row-cols-1 row-cols-md-4 g-4 mb-4">
-      <div class="col">
-        <div class="card h-100">
-          <div class="card-header bg-primary text-white"><h5 class="mb-0">Formation</h5></div>
-          <div class="card-body"><h2><%= globalTotals.formation %> P</h2></div>
+    <!-- views/stats.ejs (REPLACE JUST THE 4 CARDS BLOCK WITH THIS to make them clickable) -->
+<% const qs = 
+    (searchParams.nom ? ('nom='+encodeURIComponent(searchParams.nom)+'&') : '') +
+    (searchParams.ville ? ('ville='+encodeURIComponent(searchParams.ville)+'&') : '') +
+    (searchParams.mois ? ('mois='+searchParams.mois+'&') : '') +
+    (searchParams.annee ? ('annee='+searchParams.annee+'&') : ''); %>
+
+<div class="row row-cols-1 row-cols-md-4 g-4 mb-4">
+  <div class="col">
+    <a class="text-decoration-none" href="/stats/category/formation?<%= qs %>">
+      <div class="card h-100">
+        <div class="card-header bg-primary text-white"><h5 class="mb-0">Formation</h5></div>
+        <div class="card-body text-dark"><h2><%= globalTotals.formation %> P</h2></div>
+      </div>
+    </a>
+  </div>
+  <div class="col">
+    <a class="text-decoration-none" href="/stats/category/accidents?<%= qs %>">
+      <div class="card h-100">
+        <div class="card-header bg-danger text-white"><h5 class="mb-0">Accidents</h5></div>
+        <div class="card-body text-dark">
+          <h2><%= globalTotals.accidents.count %></h2>
+          <p class="text-muted mb-0"><%= globalTotals.accidents.jours %> jours d'arrêt</p>
         </div>
       </div>
-      <div class="col">
-        <div class="card h-100">
-          <div class="card-header bg-danger text-white"><h5 class="mb-0">Accidents</h5></div>
-          <div class="card-body">
-            <h2><%= globalTotals.accidents.count %></h2>
-            <p class="text-muted mb-0"><%= globalTotals.accidents.jours %> jours d'arrêt</p>
-          </div>
+    </a>
+  </div>
+  <div class="col">
+    <a class="text-decoration-none" href="/stats/category/incidents?<%= qs %>">
+      <div class="card h-100">
+        <div class="card-header bg-warning text-dark"><h5 class="mb-0">Incidents</h5></div>
+        <div class="card-body text-dark"><h2><%= globalTotals.incidents %></h2></div>
+      </div>
+    </a>
+  </div>
+  <div class="col">
+    <a class="text-decoration-none" href="/stats/category/interpellations?<%= qs %>">
+      <div class="card h-100">
+        <div class="card-header bg-success text-white"><h5 class="mb-0">Interpellations</h5></div>
+        <div class="card-body text-dark">
+          <h2><%= globalTotals.interpellations.personnes %> P</h2>
+          <p class="text-muted mb-0">
+            <%= globalTotals.interpellations.poursuites %> PJ<br>
+            <%= globalTotals.interpellations.valeur.toFixed(3).replace('.',',') %> kDH
+          </p>
         </div>
       </div>
-      <div class="col">
-        <div class="card h-100">
-          <div class="card-header bg-warning text-dark"><h5 class="mb-0">Incidents</h5></div>
-          <div class="card-body"><h2><%= globalTotals.incidents %></h2></div>
-        </div>
-      </div>
-      <div class="col">
-        <div class="card h-100">
-          <div class="card-header bg-success text-white"><h5 class="mb-0">Interpellations</h5></div>
-          <div class="card-body">
-            <h2><%= globalTotals.interpellations.personnes %> P</h2>
-            <p class="text-muted mb-0">
-              <%= globalTotals.interpellations.poursuites %> PJ<br>
-              <%= globalTotals.interpellations.valeur.toFixed(3).replace('.',',') %> kDH
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  
+    </a>
+  </div>
+</div>
     <% /* ───────────────────────── Répartition par type ───────────────────────── */ %>
     <div class="row">
       <div class="col-md-6 mb-4">
