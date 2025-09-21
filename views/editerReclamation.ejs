@@ -50,12 +50,13 @@
   </div>
 
   <div class="form-group mb-3">
-    <label>Statut</label>
-    <select class="form-control" name="statut" required>
-      <option value="Non traité" <%= recItem.statut==='Non traité'?'selected':'' %>>Non traité</option>
-      <option value="Traité" <%= recItem.statut==='Traité'?'selected':'' %>>Traité</option>
-    </select>
-  </div>
+  <label>Statut</label>
+  <select class="form-control" name="statut" required>
+    <option value="Non traité" <%= recItem.statut==='Non traité'?'selected':'' %>>Non traité</option>
+    <option value="En cours"   <%= recItem.statut==='En cours'?'selected':'' %>>En cours</option>
+    <option value="Traité"     <%= recItem.statut==='Traité'?'selected':'' %>>Traité</option>
+  </select>
+</div>
 
   <button class="btn btn-primary">Enregistrer</button>
 </form>

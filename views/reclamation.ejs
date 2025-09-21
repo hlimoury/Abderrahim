@@ -49,6 +49,7 @@
     <label>Statut</label>
     <select class="form-control" name="statut" required>
       <option value="Non traité">Non traité</option>
+      <option value="En cours">En cours</option>
       <option value="Traité">Traité</option>
     </select>
   </div>
@@ -76,8 +77,10 @@
         <td><%= r.designationProduit || '—' %></td>
         <td class="small"><%= r.action || '—' %></td>
         <td>
-          <% if(r.statut === 'Traité') { %>
+          <% if (r.statut === 'Traité') { %>
             <span class="badge bg-success"><%= r.statut %></span>
+          <% } else if (r.statut === 'En cours') { %>
+            <span class="badge bg-info text-dark"><%= r.statut %></span>
           <% } else { %>
             <span class="badge bg-warning text-dark"><%= r.statut %></span>
           <% } %>

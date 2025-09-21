@@ -28,6 +28,7 @@
             <select class="form-select" name="statut">
               <option value="">Tous les statuts</option>
               <option value="Traité" <%= filters.statut==='Traité'?'selected':'' %>>Traité</option>
+              <option value="En cours" <%= filters.statut==='En cours'?'selected':'' %>>En cours</option>
               <option value="Non traité" <%= filters.statut==='Non traité'?'selected':'' %>>Non traité</option>
             </select>
           </div>
@@ -78,8 +79,10 @@
                   <td><%= item.rec.designationProduit || '—' %></td>
                   <td class="small"><%= item.rec.action || '—' %></td>
                   <td>
-                    <% if(item.rec.statut === 'Traité') { %>
+                    <% if (item.rec.statut === 'Traité') { %>
                       <span class="badge bg-success">Traité</span>
+                    <% } else if (item.rec.statut === 'En cours') { %>
+                      <span class="badge bg-info text-dark">En cours</span>
                     <% } else { %>
                       <span class="badge bg-warning text-dark">Non traité</span>
                     <% } %>

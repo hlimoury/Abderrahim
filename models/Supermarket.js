@@ -99,7 +99,7 @@ const ReclamationSchema = new Schema({
   designationProduit: { type: String, default: '' }, // optionnel
   dateHeure: { type: Date, required: true },
   action: { type: String, default: '' },             // action entreprise (texte libre)
-  statut: { type: String, enum: ['Traité', 'Non traité'], default: 'Non traité' }
+  statut: { type: String, enum: ['Traité', 'En cours', 'Non traité'], default: 'Non traité' }
 });
 
 // Instance mensuelle (pour un mois et une année donnés)
