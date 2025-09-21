@@ -3,6 +3,7 @@
    ────────────────────────────────────────────────────────── */ %>
    <nav>
     <a href="/stats" class="btn btn-primary">Stats Accueil</a>
+    <a href="/admin/reclamations" class="btn btn-info">Réclamations</a>
     <a href="/admin/archived" class="btn btn-secondary">Rapports Archivés</a>
     <a href="/adminlogout" class="btn btn-danger">Se Déconnecter</a>
   </nav>
@@ -254,50 +255,50 @@
                         <div class="table-responsive">
                           <table class="table table-sm table-bordered mb-0">
                             <thead class="table-secondary">
-                              <tr>
-                                <th>Mois</th>
-                                <th>Équipements</th>
-                                <th>Form.</th><th>Acc.</th><th>Inc.</th>
-                                <th>Interp.</th><th>DRL</th><th>Scoring</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <% m.instances.forEach(inst=>{ %>
-                                <tr>
-                                  <td><strong><%= inst.moisName %> <%= inst.annee %></strong></td>
-                                  <td class="text-center">
-                                    <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/equipements"
-                                       class="btn btn-outline-secondary btn-sm">Voir</a>
-                                  </td>
-                                  <td class="text-center">
-                                    <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/formation"
-                                       class="btn btn-outline-primary btn-sm"><%= inst.counts.formation %></a>
-                                  </td>
-                                  <td class="text-center">
-                                    <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/accidents"
-                                       class="btn btn-outline-danger btn-sm"><%= inst.counts.accidents %></a>
-                                  </td>
-                                  <td class="text-center">
-                                    <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/incidents"
-                                       class="btn btn-outline-warning btn-sm"><%= inst.counts.incidents %></a>
-                                  </td>
-                                  <td class="text-center">
-                                    <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/interpellations"
-                                       class="btn btn-outline-success btn-sm"><%= inst.counts.interpellations %></a>
-                                  </td>
-                                  <td class="text-center">
-                                    <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/drl"
-                                       class="btn btn-outline-dark btn-sm"><%= inst.counts.drl %></a>
-                                  </td>
-                                  <td class="text-center">
-                                    <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/scoring"
-                                       class="btn btn-outline-info btn-sm">
-                                      <i class="bi bi-bar-chart-line"></i>
-                                    </a>
-                                  </td>
-                                </tr>
-                              <% }) %>
-                            </tbody>
+  <tr>
+    <th>Mois</th>
+    <th>Équipements</th>
+    <th>Form.</th><th>Acc.</th><th>Inc.</th>
+    <th>Interp.</th><th>Récl.</th><th>Scoring</th>
+  </tr>
+</thead>
+<tbody>
+  <% m.instances.forEach(inst=>{ %>
+    <tr>
+      <td><strong><%= inst.moisName %> <%= inst.annee %></strong></td>
+      <td class="text-center">
+        <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/equipements"
+           class="btn btn-outline-secondary btn-sm">Voir</a>
+      </td>
+      <td class="text-center">
+        <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/formation"
+           class="btn btn-outline-primary btn-sm"><%= inst.counts.formation %></a>
+      </td>
+      <td class="text-center">
+        <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/accidents"
+           class="btn btn-outline-danger btn-sm"><%= inst.counts.accidents %></a>
+      </td>
+      <td class="text-center">
+        <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/incidents"
+           class="btn btn-outline-warning btn-sm"><%= inst.counts.incidents %></a>
+      </td>
+      <td class="text-center">
+        <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/interpellations"
+           class="btn btn-outline-success btn-sm"><%= inst.counts.interpellations %></a>
+      </td>
+      <td class="text-center">
+        <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/reclamations"
+           class="btn btn-outline-dark btn-sm"><%= inst.counts.reclamations %></a>
+      </td>
+      <td class="text-center">
+        <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/scoring"
+           class="btn btn-outline-info btn-sm">
+          <i class="bi bi-bar-chart-line"></i>
+        </a>
+      </td>
+    </tr>
+  <% }) %>
+</tbody>
                           </table>
                         </div>
                       <% } else { %>

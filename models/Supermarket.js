@@ -69,11 +69,37 @@ const EquipementSchema = new Schema({
   ads: Number
 });
 
-// DRL - Demande de Règlement Litige
-const DRLSchema = new Schema({
-  valeur: Number,
-  statut: { type: String, enum: ['Accepté', 'Refusé'] },
-  date: Date
+/* ───────── Reclamations (REMPLACE DRL) ───────── */
+const ReclamationSchema = new Schema({
+  motif: { 
+    type: String, 
+    enum: [
+      'Produit périmé',
+      'Produit impropre (abîmé, moisi, odeur suspecte, rupture de la chaîne du froid)',
+      'Produits endommagés (emballage déchiré, boîte cabossée, etc.)',
+      'Produits non conformes (étiquette, poids indiqué, etc.)',
+      'Produit manquant dans un pack ou une boîte',
+      'Erreur de prix en caisse (écart entre prix affiché et facturé)',
+      'Promotions non appliquées ou mal expliquées',
+      'Attente trop longue aux caisses',
+      'Erreur de rendu monnaie',
+      'Problème avec les moyens de paiement (CB, chèques, bons d’achat, cartes de fidélité…)',
+      'Double facturation ou oubli d’annulation d’un article',
+      'Manque d’accueil (courtoisie, indifférence)',
+      'Comportement inapproprié d’un employé ou agent de sécurité',
+      'Manque de disponibilité du personnel pour aider',
+      'Hygiène insuffisante (sol, odeurs, toilettes, etc.)',
+      'Hygiène et nuisibles (présence de cafards, moucherons, charançons, rats, souris)',
+      'Sécurité du magasin (vols, sentiment d’insécurité)',
+      'Problèmes de stationnement (parking plein, sécurité, produits manquants)',
+      'Nuisances sonores (musique trop forte, annonces trop fréquentes)'
+    ],
+    required: true
+  },
+  designationProduit: { type: String, default: '' }, // optionnel
+  dateHeure: { type: Date, required: true },
+  action: { type: String, default: '' },             // action entreprise (texte libre)
+  statut: { type: String, enum: ['Traité', 'Non traité'], default: 'Non traité' }
 });
 
 // Instance mensuelle (pour un mois et une année donnés)
@@ -85,7 +111,7 @@ const InstanceSchema = new Schema({
   incidents: [IncidentSchema],
   interpellations: [InterpellationSchema],
   equipements: EquipementSchema,
-  drl: [DRLSchema],
+  reclamations: [ReclamationSchema],
   scoring: ScoringSchema
 });
 

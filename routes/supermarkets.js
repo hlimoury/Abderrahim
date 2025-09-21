@@ -336,7 +336,7 @@ router.post('/:id/ajouter-instance', async (req, res) => {
     accidents: [],
     incidents: [],
     interpellations: [],
-    drl: [],
+    reclamations: [], 
     equipements: equipementsToCopy,
     scoring: scoringToCopy  // Include the copied scoring
   });
@@ -774,76 +774,74 @@ router.get('/:id/instance/:instanceId/equipements/supprimer', async (req, res) =
 
 
 
-// ===============================
-//   DRL - FULL CRUD
-// ===============================
 
-// Affichage des DRL pour une instance
-router.get('/:id/instance/:instanceId/drl', async (req, res) => {
+/* ──────────────────────────────────────────────────────────
+   RECLAMATIONS - FULL CRUD (REPLACES DRL ROUTES)
+   ────────────────────────────────────────────────────────── */
+
+// List reclamations for an instance
+router.get('/:id/instance/:instanceId/reclamations', async (req, res) => {
   const supermarket = await Supermarket.findById(req.params.id);
   const instance = supermarket.instances.id(req.params.instanceId);
   const fromPage = req.query.fromPage || 1;
-  res.render('drl', {
-    supermarketId: req.params.id,
-    instance,
-    drls: instance.drl,
-    fromPage
-  });
+  res.render('reclamation', { supermarketId: req.params.id, instance, reclamations: instance.reclamations, fromPage });
 });
 
-// Ajout d'un DRL
-router.post('/:id/instance/:instanceId/drl/ajouter', async (req, res) => {
-  const { valeur, statut, date } = req.body;
+// Add reclamation
+router.post('/:id/instance/:instanceId/reclamations/ajouter', async (req, res) => {
+  const { motif, designationProduit, dateHeure, action, statut } = req.body;
   const supermarket = await Supermarket.findById(req.params.id);
   const instance = supermarket.instances.id(req.params.instanceId);
-  
-  instance.drl.push({
-    valeur: parseNumber(valeur),
-    statut,
-    date
+
+  instance.reclamations.push({
+    motif,
+    designationProduit: designationProduit || '',
+    dateHeure: dateHeure ? new Date(dateHeure) : new Date(),
+    action: action || '',
+    statut: statut || 'Non traité'
   });
-  
+
   await supermarket.save();
-  res.redirect(`/supermarkets/${req.params.id}/instance/${req.params.instanceId}/drl`);
+  res.redirect(`/supermarkets/${req.params.id}/instance/${req.params.instanceId}/reclamations`);
 });
 
-// Formulaire d'édition d'un DRL
-router.get('/:id/instance/:instanceId/drl/editer/:drlId', async (req, res) => {
+// Edit form
+router.get('/:id/instance/:instanceId/reclamations/editer/:recId', async (req, res) => {
   const supermarket = await Supermarket.findById(req.params.id);
   const instance = supermarket.instances.id(req.params.instanceId);
-  const drlItem = instance.drl.id(req.params.drlId);
-  res.render('editerDRL', {
+  const recItem = instance.reclamations.id(req.params.recId);
+  res.render('editerReclamation', {
     supermarketId: req.params.id,
     instanceId: req.params.instanceId,
-    drlItem
+    recItem
   });
 });
 
-// Traitement de l'édition d'un DRL
-router.post('/:id/instance/:instanceId/drl/editer/:drlId', async (req, res) => {
-  const { valeur, statut, date } = req.body;
+// Edit submit
+router.post('/:id/instance/:instanceId/reclamations/editer/:recId', async (req, res) => {
+  const { motif, designationProduit, dateHeure, action, statut } = req.body;
   const supermarket = await Supermarket.findById(req.params.id);
   const instance = supermarket.instances.id(req.params.instanceId);
-  const drlItem = instance.drl.id(req.params.drlId);
+  const recItem = instance.reclamations.id(req.params.recId);
 
-  drlItem.valeur = parseNumber(valeur);
-  drlItem.statut = statut;
-  drlItem.date = date;
+  recItem.motif = motif;
+  recItem.designationProduit = designationProduit || '';
+  recItem.dateHeure = dateHeure ? new Date(dateHeure) : recItem.dateHeure;
+  recItem.action = action || '';
+  recItem.statut = statut || 'Non traité';
 
   await supermarket.save();
-  res.redirect(`/supermarkets/${req.params.id}/instance/${req.params.instanceId}/drl`);
+  res.redirect(`/supermarkets/${req.params.id}/instance/${req.params.instanceId}/reclamations`);
 });
 
-// Suppression d'un DRL
-router.get('/:id/instance/:instanceId/drl/supprimer/:drlId', async (req, res) => {
+// Delete reclamation
+router.get('/:id/instance/:instanceId/reclamations/supprimer/:recId', async (req, res) => {
   const supermarket = await Supermarket.findById(req.params.id);
   const instance = supermarket.instances.id(req.params.instanceId);
-  instance.drl.pull({ _id: req.params.drlId });
+  instance.reclamations.pull({ _id: req.params.recId });
   await supermarket.save();
-  res.redirect(`/supermarkets/${req.params.id}/instance/${req.params.instanceId}/drl`);
+  res.redirect(`/supermarkets/${req.params.id}/instance/${req.params.instanceId}/reclamations`);
 });
-
-
 
 
 
