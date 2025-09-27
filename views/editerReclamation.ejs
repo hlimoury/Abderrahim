@@ -1,11 +1,12 @@
-<!-- views/editerReclamation.ejs  (NEW) -->
+<!-- views/editerReclamation.ejs -->
+<!-- REPLACE the entire file with this version (adds dynamic Sous-motif + preselect) -->
 <h1>Modifier la Réclamation</h1>
 <a href="/supermarkets/<%= supermarketId %>/instance/<%= instanceId %>/reclamations" class="btn btn-secondary mb-3">Retour</a>
 
 <form action="/supermarkets/<%= supermarketId %>/instance/<%= instanceId %>/reclamations/editer/<%= recItem._id %>" method="POST">
   <div class="form-group mb-2">
     <label>Motif</label>
-    <select class="form-control" name="motif" required>
+    <select class="form-control" name="motif" id="motifEdit" required>
       <% const motifs = [
         'Produit périmé',
         'Produit impropre (abîmé, moisi, odeur suspecte, rupture de la chaîne du froid)',
@@ -33,6 +34,11 @@
     </select>
   </div>
 
+  <div class="form-group mb-2" id="sousMotifEditGroup" style="display:none;">
+    <label>Détail</label>
+    <select class="form-control" name="sousMotif" id="sousMotifEdit"></select>
+  </div>
+
   <div class="form-group mb-2">
     <label>Désignation du produit (optionnel)</label>
     <input type="text" class="form-control" name="designationProduit" value="<%= recItem.designationProduit || '' %>" />
@@ -50,15 +56,81 @@
   </div>
 
   <div class="form-group mb-3">
-  <label>Statut</label>
-  <select class="form-control" name="statut" required>
-    <option value="Non traité" <%= recItem.statut==='Non traité'?'selected':'' %>>Non traité</option>
-    <option value="En cours"   <%= recItem.statut==='En cours'?'selected':'' %>>En cours</option>
-    <option value="Traité"     <%= recItem.statut==='Traité'?'selected':'' %>>Traité</option>
-  </select>
-</div>
+    <label>Statut</label>
+    <select class="form-control" name="statut" required>
+      <option value="Non traité" <%= recItem.statut==='Non traité'?'selected':'' %>>Non traité</option>
+      <option value="En cours"   <%= recItem.statut==='En cours'?'selected':'' %>>En cours</option>
+      <option value="Traité"     <%= recItem.statut==='Traité'?'selected':'' %>>Traité</option>
+    </select>
+  </div>
 
   <button class="btn btn-primary">Enregistrer</button>
 </form>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script>
+  const SUB_MOTIFS = {
+    'Produit impropre (abîmé, moisi, odeur suspecte, rupture de la chaîne du froid)': [
+      'Abîmé', 'Moisi', 'Odeur suspecte', 'Rupture de la chaîne du froid', 'Autre'
+    ],
+    'Produits endommagés (emballage déchiré, boîte cabossée, etc.)': [
+      'Emballage déchiré', 'Boîte cabossée', 'Scellé endommagé', 'Autre'
+    ],
+    'Produits non conformes (étiquette, poids indiqué, etc.)': [
+    'Étiquette', 'Poids indiqué', 'Autre'
+    ],
+    'Problème avec les moyens de paiement (CB, chèques, bons d’achat, cartes de fidélité…)': [
+      'Carte bancaire (CB)', 'Chèque', 'Bon d’achat', 'Carte de fidélité', 'Autre'
+    ],
+    'Hygiène insuffisante (sol, odeurs, toilettes, etc.)': [
+      'Sol', 'Odeurs', 'Toilettes', 'Autre'
+    ],
+    'Hygiène et nuisibles (présence de cafards, moucherons, charançons, rats, souris)': [
+      'Cafards', 'Moucherons', 'Charançons', 'Rats', 'Souris', 'Autre'
+    ],
+    'Problèmes de stationnement (parking plein, sécurité, produits manquants)': [
+      'Parking plein', 'Sécurité du parking', 'Signalisation', 'Autre'
+    ],
+    'Nuisances sonores (musique trop forte, annonces trop fréquentes)': [
+      'Musique trop forte', 'Annonces trop fréquentes', 'Autre'
+    ],
+    'Manque d’accueil (courtoisie, indifférence)': [
+      'Courtoisie', 'Indifférence', 'Autre'
+    ],
+    'Sécurité du magasin (vols, sentiment d’insécurité)': [
+      'vols', 'sentiment d’insécurité', 'Autre'
+    ],
+    'Erreur de prix en caisse (écart entre prix affiché et facturé)': [
+      'Écart entre prix affiché et facturé'
+    ]
+  };
+
+  const motifEl = document.getElementById('motifEdit');
+  const sousGroup = document.getElementById('sousMotifEditGroup');
+  const sousEl = document.getElementById('sousMotifEdit');
+  const currentSous = `<%= recItem.sousMotif || '' %>`;
+
+  function populate() {
+    const motif = motifEl.value;
+    const list = SUB_MOTIFS[motif] || null;
+    sousEl.innerHTML = '';
+    if (list) {
+      list.forEach(v=>{
+        const o=document.createElement('option'); o.value=v; o.textContent=v;
+        if (v === currentSous) o.selected = true;
+        sousEl.appendChild(o);
+      });
+      sousGroup.style.display='';
+    } else {
+      sousGroup.style.display='none';
+    }
+  }
+  motifEl.addEventListener('change', ()=>{ 
+    // when motif changes, clear selected sous-motif
+    window.currentSous = '';
+    populate(); 
+  });
+
+  // initial
+  populate();
+</script>

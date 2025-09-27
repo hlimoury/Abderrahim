@@ -96,6 +96,7 @@ const ReclamationSchema = new Schema({
     ],
     required: true
   },
+  sousMotif: { type: String, default: '' }, 
   designationProduit: { type: String, default: '' }, // optionnel
   dateHeure: { type: Date, required: true },
   action: { type: String, default: '' },             // action entreprise (texte libre)

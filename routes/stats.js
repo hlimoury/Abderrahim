@@ -199,6 +199,42 @@ const paginated = filteredMarkets.slice((current - 1) * limit,
    ADMIN: Réclamations list with filters
    URL: GET /admin/reclamations
    ────────────────────────────────────────────────────────── */
+
+   const SUB_MOTIFS = {
+    'Produit impropre (abîmé, moisi, odeur suspecte, rupture de la chaîne du froid)': [
+      'Abîmé', 'Moisi', 'Odeur suspecte', 'Rupture de la chaîne du froid', 'Autre'
+    ],
+    'Produits endommagés (emballage déchiré, boîte cabossée, etc.)': [
+      'Emballage déchiré', 'Boîte cabossée', 'Scellé endommagé', 'Autre'
+    ],
+    'Produits non conformes (étiquette, poids indiqué, etc.)': [
+      'Étiquette', 'Poids indiqué', 'Autre'
+    ],
+    'Problème avec les moyens de paiement (CB, chèques, bons d’achat, cartes de fidélité…)': [
+      'Carte bancaire (CB)', 'Chèque', 'Bon d’achat', 'Carte de fidélité', 'Autre'
+    ],
+    'Hygiène insuffisante (sol, odeurs, toilettes, etc.)': [
+      'Sol', 'Odeurs', 'Toilettes', 'Autre'
+    ],
+    'Hygiène et nuisibles (présence de cafards, moucherons, charançons, rats, souris)': [
+      'Cafards', 'Moucherons', 'Charançons', 'Rats', 'Souris', 'Autre'
+    ],
+    'Problèmes de stationnement (parking plein, sécurité, produits manquants)': [
+      'Parking plein', 'Sécurité du parking', 'Signalisation', 'Autre'
+    ],
+    'Nuisances sonores (musique trop forte, annonces trop fréquentes)': [
+      'Musique trop forte', 'Annonces trop fréquentes', 'Autre'
+    ],
+    'Manque d’accueil (courtoisie, indifférence)': [
+      'Courtoisie', 'Indifférence', 'Autre'
+    ],
+    'Sécurité du magasin (vols, sentiment d’insécurité)': [
+      'vols', 'sentiment d’insécurité', 'Autre'
+    ],
+    'Erreur de prix en caisse (écart entre prix affiché et facturé)': [
+      'Écart entre prix affiché et facturé'
+    ]
+  };
    router.get('/admin/reclamations', ensureAdmin, async (req, res) => {
     try {
       const adminFilter = getAdminRegionFilter(req);
@@ -249,29 +285,11 @@ const paginated = filteredMarkets.slice((current - 1) * limit,
   
       res.render('adminReclamations', {
         items: results,
-        filters: { q, motif, statut, from: req.query.from || '', to: req.query.to || '' },
-        motifs: [
-          'Produit périmé',
-          'Produit impropre (abîmé, moisi, odeur suspecte, rupture de la chaîne du froid)',
-          'Produits endommagés (emballage déchiré, boîte cabossée, etc.)',
-          'Produits non conformes (étiquette, poids indiqué, etc.)',
-          'Produit manquant dans un pack ou une boîte',
-          'Erreur de prix en caisse (écart entre prix affiché et facturé)',
-          'Promotions non appliquées ou mal expliquées',
-          'Attente trop longue aux caisses',
-          'Erreur de rendu monnaie',
-          'Problème avec les moyens de paiement (CB, chèques, bons d’achat, cartes de fidélité…)',
-          'Double facturation ou oubli d’annulation d’un article',
-          'Manque d’accueil (courtoisie, indifférence)',
-          'Comportement inapproprié d’un employé ou agent de sécurité',
-          'Manque de disponibilité du personnel pour aider',
-          'Hygiène insuffisante (sol, odeurs, toilettes, etc.)',
-          'Hygiène et nuisibles (présence de cafards, moucherons, charançons, rats, souris)',
-          'Sécurité du magasin (vols, sentiment d’insécurité)',
-          'Problèmes de stationnement (parking plein, sécurité, produits manquants)',
-          'Nuisances sonores (musique trop forte, annonces trop fréquentes)'
-        ]
+        filters: { q, motif, sousMotif, statut, from: req.query.from || '', to: req.query.to || '' },
+        motifs,
+        subMotifsMap: SUB_MOTIFS
       });
+    
     } catch (err) {
       console.error(err);
       res.status(500).send('Erreur serveur');

@@ -1,105 +1,150 @@
-<!-- views/adminReclamations.ejs  (NEW: admin listing with filters) -->
+<!-- views/adminReclamations.ejs -->
+<!-- REPLACE the entire file with this version (adds Sous-motif filter + column, auto-population) -->
 <nav class="p-3">
-    <a href="/stats" class="btn btn-primary">Stats Accueil</a>
-    <a href="/admin/archived" class="btn btn-secondary">Rapports Archivés</a>
-    <a href="/adminlogout" class="btn btn-danger">Se Déconnecter</a>
-  </nav>
-  
-  <div class="container-fluid mt-3">
-    <h2>Réclamations - Administration</h2>
-  
-    <div class="card mb-3">
-      <div class="card-header">Recherche / Filtres</div>
-      <div class="card-body">
-        <form method="GET" class="row g-3">
-          <div class="col-md-3">
-            <input class="form-control" name="q" placeholder="Rechercher (magasin, ville, produit, action)"
-                   value="<%= filters.q || '' %>" />
-          </div>
-          <div class="col-md-3">
-            <select class="form-select" name="motif">
-              <option value="">Tous les motifs</option>
-              <% motifs.forEach(m=>{ %>
-                <option value="<%= m %>" <%= filters.motif===m?'selected':'' %>><%= m %></option>
-              <% }) %>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <select class="form-select" name="statut">
-              <option value="">Tous les statuts</option>
-              <option value="Traité" <%= filters.statut==='Traité'?'selected':'' %>>Traité</option>
-              <option value="En cours" <%= filters.statut==='En cours'?'selected':'' %>>En cours</option>
-              <option value="Non traité" <%= filters.statut==='Non traité'?'selected':'' %>>Non traité</option>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <input type="datetime-local" class="form-control" name="from" value="<%= filters.from || '' %>" />
-          </div>
-          <div class="col-md-2">
-            <input type="datetime-local" class="form-control" name="to" value="<%= filters.to || '' %>" />
-          </div>
-          <div class="col-md-2 d-grid">
-            <button class="btn btn-primary">Filtrer</button>
-          </div>
-          <div class="col-md-2 d-grid">
-            <a class="btn btn-outline-secondary" href="/admin/reclamations">Réinitialiser</a>
-          </div>
-        </form>
-      </div>
-    </div>
-  
-    <div class="card">
-      <div class="card-header">Résultats (<%= items.length %>)</div>
-      <div class="card-body">
-        <div class="table-responsive">
-          <table class="table table-hover align-middle">
-            <thead class="table-light">
-              <tr>
-                <th>Magasin</th>
-                <th>Ville</th>
-                <th>Mois</th>
-                <th>Année</th>
-                <th>Date & Heure</th>
-                <th>Motif</th>
-                <th>Produit</th>
-                <th>Action</th>
-                <th>Statut</th>
-                <th>Voir Instance</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% items.forEach(item=>{ %>
-                <tr>
-                  <td><%= item.supermarketName %></td>
-                  <td><%= item.ville %></td>
-                  <td><%= item.mois %></td>
-                  <td><%= item.annee %></td>
-                  <td><%= item.rec.dateHeure ? new Date(item.rec.dateHeure).toLocaleString('fr-FR') : '—' %></td>
-                  <td><%= item.rec.motif %></td>
-                  <td><%= item.rec.designationProduit || '—' %></td>
-                  <td class="small"><%= item.rec.action || '—' %></td>
-                  <td>
-                    <% if (item.rec.statut === 'Traité') { %>
-                      <span class="badge bg-success">Traité</span>
-                    <% } else if (item.rec.statut === 'En cours') { %>
-                      <span class="badge bg-info text-dark">En cours</span>
-                    <% } else { %>
-                      <span class="badge bg-warning text-dark">Non traité</span>
-                    <% } %>
-                  </td>
-                  <td>
-                    <a class="btn btn-sm btn-outline-primary"
-                       href="/supermarkets/<%= item.supermarketId %>/instance/<%= item.instanceId %>/reclamations">
-                      Ouvrir
-                    </a>
-                  </td>
-                </tr>
-              <% }) %>
-            </tbody>
-          </table>
+  <a href="/stats" class="btn btn-primary">Stats Accueil</a>
+  <a href="/admin/archived" class="btn btn-secondary">Rapports Archivés</a>
+  <a href="/adminlogout" class="btn btn-danger">Se Déconnecter</a>
+</nav>
+
+<div class="container-fluid mt-3">
+  <h2>Réclamations - Administration</h2>
+
+  <div class="card mb-3">
+    <div class="card-header">Recherche / Filtres</div>
+    <div class="card-body">
+      <form method="GET" class="row g-3" id="filtersForm">
+        <div class="col-md-3">
+          <input class="form-control" name="q" placeholder="Rechercher (magasin, ville, produit, action)"
+                 value="<%= filters.q || '' %>" />
         </div>
+        <div class="col-md-3">
+          <select class="form-select" name="motif" id="motifFilter">
+            <option value="">Tous les motifs</option>
+            <% motifs.forEach(m=>{ %>
+              <option value="<%= m %>" <%= filters.motif===m?'selected':'' %>><%= m %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <select class="form-select" name="sousMotif" id="sousMotifFilter" style="display:none;">
+            <!-- dynamically filled -->
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" name="statut">
+            <option value="">Tous les statuts</option>
+            <option value="Traité" <%= filters.statut==='Traité'?'selected':'' %>>Traité</option>
+            <option value="En cours" <%= filters.statut==='En cours'?'selected':'' %>>En cours</option>
+            <option value="Non traité" <%= filters.statut==='Non traité'?'selected':'' %>>Non traité</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <input type="datetime-local" class="form-control" name="from" value="<%= filters.from || '' %>" />
+        </div>
+        <div class="col-md-2">
+          <input type="datetime-local" class="form-control" name="to" value="<%= filters.to || '' %>" />
+        </div>
+        <div class="col-md-2 d-grid">
+          <button class="btn btn-primary">Filtrer</button>
+        </div>
+        <div class="col-md-2 d-grid">
+          <a class="btn btn-outline-secondary" href="/admin/reclamations">Réinitialiser</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Résultats (<%= items.length %>)</div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Magasin</th>
+              <th>Ville</th>
+              <th>Mois</th>
+              <th>Année</th>
+              <th>Date & Heure</th>
+              <th>Motif</th>
+              <th>Sous-motif</th>
+              <th>Produit</th>
+              <th>Action</th>
+              <th>Statut</th>
+              <th>Voir Instance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% items.forEach(item=>{ %>
+              <tr>
+                <td><%= item.supermarketName %></td>
+                <td><%= item.ville %></td>
+                <td><%= item.mois %></td>
+                <td><%= item.annee %></td>
+                <td><%= item.rec.dateHeure ? new Date(item.rec.dateHeure).toLocaleString('fr-FR') : '—' %></td>
+                <td><%= item.rec.motif %></td>
+                <td><%= item.rec.sousMotif || '—' %></td>
+                <td><%= item.rec.designationProduit || '—' %></td>
+                <td class="small"><%= item.rec.action || '—' %></td>
+                <td>
+                  <% if (item.rec.statut === 'Traité') { %>
+                    <span class="badge bg-success">Traité</span>
+                  <% } else if (item.rec.statut === 'En cours') { %>
+                    <span class="badge bg-info text-dark">En cours</span>
+                  <% } else { %>
+                    <span class="badge bg-warning text-dark">Non traité</span>
+                  <% } %>
+                </td>
+                <td>
+                  <a class="btn btn-sm btn-outline-primary"
+                     href="/supermarkets/<%= item.supermarketId %>/instance/<%= item.instanceId %>/reclamations">
+                    Ouvrir
+                  </a>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
-  
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</div>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script>
+  // Mapping sent from server
+  const SUB_MOTIFS = <%- JSON.stringify(subMotifsMap || {}) %>;
+  const motifFilter = document.getElementById('motifFilter');
+  const sousFilter = document.getElementById('sousMotifFilter');
+  const selectedSous = "<%= filters.sousMotif || '' %>";
+
+  function fillSousMotifs() {
+    const motif = motifFilter.value;
+    const list = SUB_MOTIFS[motif] || null;
+    sousFilter.innerHTML = '';
+    if (list && list.length) {
+      const opt0 = document.createElement('option');
+      opt0.value = '';
+      opt0.textContent = 'Tous les sous-motifs';
+      sousFilter.appendChild(opt0);
+      list.forEach(v=>{
+        const o=document.createElement('option'); o.value=v; o.textContent=v;
+        if (v === selectedSous) o.selected = true;
+        sousFilter.appendChild(o);
+      });
+      sousFilter.style.display='';
+    } else {
+      sousFilter.style.display='none';
+      sousFilter.value = '';
+    }
+  }
+
+  motifFilter.addEventListener('change', ()=>{ 
+    // reset sous-motif when motif changes
+    sousFilter.value = '';
+    fillSousMotifs(); 
+  });
+
+  // initial
+  fillSousMotifs();
+</script>

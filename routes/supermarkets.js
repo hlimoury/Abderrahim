@@ -789,12 +789,13 @@ router.get('/:id/instance/:instanceId/reclamations', async (req, res) => {
 
 // Add reclamation
 router.post('/:id/instance/:instanceId/reclamations/ajouter', async (req, res) => {
-  const { motif, designationProduit, dateHeure, action, statut } = req.body;
+  const { motif, sousMotif, designationProduit, dateHeure, action, statut } = req.body;
   const supermarket = await Supermarket.findById(req.params.id);
   const instance = supermarket.instances.id(req.params.instanceId);
 
   instance.reclamations.push({
     motif,
+    sousMotif: sousMotif || '',
     designationProduit: designationProduit || '',
     dateHeure: dateHeure ? new Date(dateHeure) : new Date(),
     action: action || '',
@@ -817,14 +818,14 @@ router.get('/:id/instance/:instanceId/reclamations/editer/:recId', async (req, r
   });
 });
 
-// Edit submit
 router.post('/:id/instance/:instanceId/reclamations/editer/:recId', async (req, res) => {
-  const { motif, designationProduit, dateHeure, action, statut } = req.body;
+  const { motif, sousMotif, designationProduit, dateHeure, action, statut } = req.body;
   const supermarket = await Supermarket.findById(req.params.id);
   const instance = supermarket.instances.id(req.params.instanceId);
   const recItem = instance.reclamations.id(req.params.recId);
 
   recItem.motif = motif;
+  recItem.sousMotif = sousMotif || '';
   recItem.designationProduit = designationProduit || '';
   recItem.dateHeure = dateHeure ? new Date(dateHeure) : recItem.dateHeure;
   recItem.action = action || '';
@@ -833,7 +834,6 @@ router.post('/:id/instance/:instanceId/reclamations/editer/:recId', async (req, 
   await supermarket.save();
   res.redirect(`/supermarkets/${req.params.id}/instance/${req.params.instanceId}/reclamations`);
 });
-
 // Delete reclamation
 router.get('/:id/instance/:instanceId/reclamations/supprimer/:recId', async (req, res) => {
   const supermarket = await Supermarket.findById(req.params.id);
