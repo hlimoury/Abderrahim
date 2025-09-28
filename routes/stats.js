@@ -235,35 +235,30 @@ const paginated = filteredMarkets.slice((current - 1) * limit,
       'Écart entre prix affiché et facturé'
     ]
   };
-   router.get('/admin/reclamations', ensureAdmin, async (req, res) => {
+  router.get('/admin/reclamations', ensureAdmin, async (req, res) => {
     try {
       const adminFilter = getAdminRegionFilter(req);
-      const q       = (req.query.q || '').trim();               // search by magasin/ville
-      const motif   = req.query.motif || '';                    // exact motif
-      const statut  = req.query.statut || '';                   // 'Traité' | 'Non traité'
-      const from    = req.query.from ? new Date(req.query.from) : null; // ISO datetime
-      const to      = req.query.to   ? new Date(req.query.to)   : null;
+      const q         = (req.query.q || '').trim();
+      const motif     = req.query.motif || '';
+      const sousMotif = req.query.sousMotif || '';
+      const statut    = req.query.statut || '';
+      const from      = req.query.from ? new Date(req.query.from) : null;
+      const to        = req.query.to   ? new Date(req.query.to)   : null;
   
       const supermarkets = await Supermarket.find(adminFilter);
   
       let results = [];
       for (const sm of supermarkets) {
-        if (q) {
-          const hay = (sm.nom + ' ' + sm.ville).toLowerCase();
-          if (!hay.includes(q.toLowerCase())) {
-            // we still need to check instances content? keep simple: continue
-          }
-        }
         for (const inst of sm.instances) {
           for (const rec of (inst.reclamations || [])) {
-            // Filters
             if (motif && rec.motif !== motif) continue;
+            if (sousMotif && (rec.sousMotif || '') !== sousMotif) continue;
             if (statut && rec.statut !== statut) continue;
             if (from && (!rec.dateHeure || new Date(rec.dateHeure) < from)) continue;
             if (to   && (!rec.dateHeure || new Date(rec.dateHeure) > to)) continue;
   
             if (q) {
-              const hay = (sm.nom + ' ' + sm.ville + ' ' + (rec.designationProduit||'') + ' ' + (rec.action||'')).toLowerCase();
+              const hay = (sm.nom + ' ' + sm.ville + ' ' + (rec.designationProduit||'') + ' ' + (rec.action||'') + ' ' + (rec.motif||'') + ' ' + (rec.sousMotif||'')).toLowerCase();
               if (!hay.includes(q.toLowerCase())) continue;
             }
   
@@ -280,8 +275,30 @@ const paginated = filteredMarkets.slice((current - 1) * limit,
         }
       }
   
-      // Sort by date desc
       results.sort((a,b)=> new Date(b.rec.dateHeure||0) - new Date(a.rec.dateHeure||0));
+  
+      // flat motifs list for the dropdown
+      const motifs = [
+        'Produit périmé',
+        'Produit impropre (abîmé, moisi, odeur suspecte, rupture de la chaîne du froid)',
+        'Produits endommagés (emballage déchiré, boîte cabossée, etc.)',
+        'Produits non conformes (étiquette, poids indiqué, etc.)',
+        'Produit manquant dans un pack ou une boîte',
+        'Erreur de prix en caisse (écart entre prix affiché et facturé)',
+        'Promotions non appliquées ou mal expliquées',
+        'Attente trop longue aux caisses',
+        'Erreur de rendu monnaie',
+        'Problème avec les moyens de paiement (CB, chèques, bons d’achat, cartes de fidélité…)',
+        'Double facturation ou oubli d’annulation d’un article',
+        'Manque d’accueil (courtoisie, indifférence)',
+        'Comportement inapproprié d’un employé ou agent de sécurité',
+        'Manque de disponibilité du personnel pour aider',
+        'Hygiène insuffisante (sol, odeurs, toilettes, etc.)',
+        'Hygiène et nuisibles (présence de cafards, moucherons, charançons, rats, souris)',
+        'Sécurité du magasin (vols, sentiment d’insécurité)',
+        'Problèmes de stationnement (parking plein, sécurité, produits manquants)',
+        'Nuisances sonores (musique trop forte, annonces trop fréquentes)'
+      ];
   
       res.render('adminReclamations', {
         items: results,
@@ -289,7 +306,6 @@ const paginated = filteredMarkets.slice((current - 1) * limit,
         motifs,
         subMotifsMap: SUB_MOTIFS
       });
-    
     } catch (err) {
       console.error(err);
       res.status(500).send('Erreur serveur');
