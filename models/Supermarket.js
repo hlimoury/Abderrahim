@@ -66,7 +66,10 @@ const EquipementSchema = new Schema({
   skydomes: Number,
   cameras: Number,
   nvr: Number,
-  ads: Number
+  ads: Number,
+  superviseurSecurite: { type: Number, default: 0 },
+  renfortSecurite: { type: Number, default: 0 },
+  periodeRenfort: { type: Number, default: 0 }
 });
 
 /* ───────── Reclamations (REMPLACE DRL) ───────── */
