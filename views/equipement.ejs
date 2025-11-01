@@ -38,6 +38,18 @@
         <th>ADS</th>
         <td><%= instance.equipements.ads %></td>
       </tr>
+      <tr>
+        <th>Superviseur(s) de Sécurité</th>
+        <td><%= (instance.equipements.superviseurSecurite ?? 0) %></td>
+      </tr>
+      <tr>
+        <th>Renfort Sécurité</th>
+        <td><%= instance.equipements.renfortSecurite || 0 %></td>
+      </tr>
+      <tr>
+        <th>Période du Renfort</th>
+        <td><%= instance.equipements.periodeRenfort || 0 %> jours</td>
+      </tr>
     </table>
 
     <div class="mt-3">

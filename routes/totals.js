@@ -38,6 +38,10 @@ router.get('/', ensureLoggedIn, async (req, res) => {
           Personnel: { personnes: 0, poursuites: 0, valeur: 0 },
           Prestataire: { personnes: 0, poursuites: 0, valeur: 0 }
         }
+      },
+      reclamations: {
+        total: 0,
+        parMotif: {}
       }
     };
 
@@ -90,12 +94,21 @@ router.get('/', ensureLoggedIn, async (req, res) => {
             totals.interpellations.parType[type].valeur += Number(inter.valeurMarchandise);
           }
         });
+        instance.reclamations.forEach(rec => {
+          totals.reclamations.total += 1;
+          
+          const motif = rec.motif || 'Autre';
+          if (!totals.reclamations.parMotif[motif]) {
+            totals.reclamations.parMotif[motif] = 0;
+          }
+          totals.reclamations.parMotif[motif] += 1;
+        });
       });
     });
 
     res.render('totals', {
       totals,
-      formationByType, // Now included in the template data
+      formationByType,
       region: userRegion === 'ALL' ? 'Toutes les régions' : userRegion,
       currentUser: req.session.user
     });

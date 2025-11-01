@@ -35,5 +35,25 @@
     <label for="ads">ADS</label>
     <input type="text" class="form-control" id="ads" name="ads" value="<%= equipement.ads %>">
   </div>
+  <div class="form-group">
+    <label for="superviseurSecurite">Superviseur de Sécurité (nombre)</label>
+    <input type="number" min="0" step="1" class="form-control" id="superviseurSecurite" name="superviseurSecurite" 
+           value="<%= Number.isFinite(+equipement.superviseurSecurite) ? equipement.superviseurSecurite : 0 %>">
+    <small class="form-text text-muted">Saisir le nombre de superviseurs de sécurité.</small>
+  </div>
+  
+  <div class="form-group">
+    <label for="renfortSecurite">Renfort Sécurité</label>
+    <input type="number" class="form-control" id="renfortSecurite" name="renfortSecurite" 
+           value="<%= equipement.renfortSecurite || 0 %>">
+  </div>
+  
+  <div class="form-group">
+    <label for="periodeRenfort">Période du Renfort (jours)</label>
+    <input type="number" class="form-control" id="periodeRenfort" name="periodeRenfort" 
+           value="<%= equipement.periodeRenfort || 0 %>" 
+           placeholder="Nombre de jours">
+    <small class="form-text text-muted">Combien de temps le renfort va rester (en jours)</small>
+  </div>
   <button type="submit" class="btn btn-primary">Mettre à jour</button>
 </form>

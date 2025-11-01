@@ -277,7 +277,10 @@ router.post('/:id/ajouter-instance', async (req, res) => {
     skydomes: 0,
     cameras: 0,
     nvr: 0,
-    ads: 0
+    ads: 0,
+    superviseurSecurite: 0,   // <-- number now
+    renfortSecurite: 0,
+    periodeRenfort: 0
   };
 
   let scoringToCopy = {
@@ -294,8 +297,9 @@ router.post('/:id/ajouter-instance', async (req, res) => {
     // Copy equipements from last instance
     if (lastInstance.equipements) {
       equipementsToCopy = { ...lastInstance.equipements };
+      // Enforce number for superviseur
+      equipementsToCopy.superviseurSecurite = parseNumber(equipementsToCopy.superviseurSecurite);
     }
-    
     // Copy scoring from last instance if it exists
     if (lastInstance.scoring) {
       // Deep copy the scoring to avoid reference issues
@@ -739,9 +743,14 @@ router.get('/:id/instance/:instanceId/equipements/editer', async (req, res) => {
   res.render('editerEquipement', { supermarketId: req.params.id, instance, equipement: instance.equipements });
 });
 
+
 // Traitement de la mise à jour de l'équipement
 router.post('/:id/instance/:instanceId/equipements/editer', async (req, res) => {
-  const { extincteurs, ria, portes, issuesSecours, skydomes, cameras, nvr, ads } = req.body;
+  const { 
+    extincteurs, ria, portes, issuesSecours, skydomes, 
+    cameras, nvr, ads, superviseurSecurite, renfortSecurite, periodeRenfort 
+  } = req.body;
+  
   const supermarket = await Supermarket.findById(req.params.id);
   const instance = supermarket.instances.id(req.params.instanceId);
 
@@ -753,23 +762,33 @@ router.post('/:id/instance/:instanceId/equipements/editer', async (req, res) => 
     skydomes: parseNumber(skydomes),
     cameras: parseNumber(cameras),
     nvr: parseNumber(nvr),
-    ads: parseNumber(ads)
+    ads: parseNumber(ads),
+    superviseurSecurite: parseNumber(superviseurSecurite), // <-- number now
+    renfortSecurite: parseNumber(renfortSecurite),
+    periodeRenfort: parseNumber(periodeRenfort)
   };
 
   await supermarket.save();
   res.redirect(`/supermarkets/${req.params.id}/instance/${req.params.instanceId}/equipements`);
 });
 
+
 // Suppression de l'équipement (réinitialisation)
 router.get('/:id/instance/:instanceId/equipements/supprimer', async (req, res) => {
   const supermarket = await Supermarket.findById(req.params.id);
   const instance = supermarket.instances.id(req.params.instanceId);
-  // Reset to default values (all set to zero)
-  instance.equipements = { extincteurs: 0, ria: 0, portes: 0, issuesSecours: 0, skydomes: 0, cameras: 0, nvr: 0, ads: 0 };
+  
+  instance.equipements = { 
+    extincteurs: 0, ria: 0, portes: 0, issuesSecours: 0, 
+    skydomes: 0, cameras: 0, nvr: 0, ads: 0,
+    superviseurSecurite: '',
+    renfortSecurite: 0,
+    periodeRenfort: 0
+  };
+  
   await supermarket.save();
   res.redirect(`/supermarkets/${req.params.id}/instance/${req.params.instanceId}/equipements`);
 });
-
 
 
 

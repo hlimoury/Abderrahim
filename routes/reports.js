@@ -115,7 +115,7 @@ router.post('/generate', ensureLoggedIn, async (req, res) => {
       includeIncidents, 
       includeInterpellations,
       includeScoring,
-      includeDRL
+      includeReclamations
     } = req.body;
     
     // 1) Filtrage par région
@@ -176,12 +176,14 @@ router.post('/generate', ensureLoggedIn, async (req, res) => {
       sections: []
     };
 
-    if (includeFormation       === 'on') reportData.sections.push(await generateFormationSection(supermarkets, dateFilter));
-    if (includeAccidents       === 'on') reportData.sections.push(await generateAccidentsSection   (supermarkets, dateFilter));
-    if (includeIncidents       === 'on') reportData.sections.push(await generateIncidentsSection    (supermarkets, dateFilter));
-    if (includeInterpellations === 'on') reportData.sections.push(await generateInterpellationsSection(supermarkets, dateFilter));
-    if (includeScoring         === 'on') reportData.sections.push(await generateScoringSection      (supermarkets, dateFilter));
-    if (includeDRL             === 'on') reportData.sections.push(await generateDRLSection          (supermarkets, dateFilter));
+   // routes/reports.js
+// In POST '/generate' — REPLACE the section push block with this
+if (includeFormation       === 'on') reportData.sections.push(await generateFormationSection(supermarkets, dateFilter));
+if (includeAccidents       === 'on') reportData.sections.push(await generateAccidentsSection   (supermarkets, dateFilter));
+if (includeIncidents       === 'on') reportData.sections.push(await generateIncidentsSection    (supermarkets, dateFilter));
+if (includeInterpellations === 'on') reportData.sections.push(await generateInterpellationsSection(supermarkets, dateFilter));
+if (includeScoring         === 'on') reportData.sections.push(await generateScoringSection      (supermarkets, dateFilter));
+if (includeReclamations    === 'on') reportData.sections.push(await generateReclamationsSection (supermarkets, dateFilter)); // <── NEW
 
     // 6) Rendu
     req.session.reportData = reportData;
@@ -414,9 +416,9 @@ router.get('/api/supermarket/:id/stats', ensureLoggedIn, async (req, res) => {
         const persistPath = ensurePersistPath();
         const fileName = `rapport-${Date.now()}.pdf`;
         const pdfPath = path.join(persistPath, fileName);
-        
-        const doc = new PDFDocument({ 
-          margin: 40,
+  
+        const doc = new PDFDocument({
+          margin: 50,
           size: 'A4',
           info: {
             Title: reportData.title,
@@ -424,319 +426,436 @@ router.get('/api/supermarket/:id/stats', ensureLoggedIn, async (req, res) => {
             Subject: `Rapport généré le ${formatFrenchDate(reportData.date)}`
           }
         });
-        
         const stream = fs.createWriteStream(pdfPath);
         doc.pipe(stream);
   
-        // Enhanced color scheme
+        // Enhanced color palette with gradients
         const colors = {
-          primary: '#2c3e50',
-          secondary: '#34495e', 
-          accent: '#3498db',
-          success: '#27ae60',
-          background: '#ecf0f1',
-          lightGray: '#f8f9fa',
-          mediumGray: '#e9ecef',
-          darkGray: '#6c757d',
-          border: '#dee2e6',
-          white: '#ffffff'
+          primary: '#1A1F3A',
+          primaryLight: '#2A3554',
+          secondary: '#3B4A6B',
+          accent: '#3B82F6',
+          accentLight: '#60A5FA',
+          success: '#10B981',
+          successLight: '#34D399',
+          warning: '#F59E0B',
+          warningLight: '#FBBF24',
+          danger: '#EF4444',
+          dangerLight: '#F87171',
+          purple: '#8B5CF6',
+          purpleLight: '#A78BFA',
+          bgCard: '#F9FAFB',
+          bgPage: '#FFFFFF',
+          border: '#E5E7EB',
+          borderDark: '#D1D5DB',
+          text: '#1F2937',
+          textLight: '#6B7280',
+          textMuted: '#9CA3AF',
+          white: '#FFFFFF'
         };
   
-        function addPageHeader() {
-          // Header background
-          doc.rect(0, 0, doc.page.width, 120)
-             .fill(colors.primary);
+        const page = {
+          top: doc.page.margins.top,
+          bottom: doc.page.height - doc.page.margins.bottom,
+          width: doc.page.width - 100
+        };
   
-          // Title
-          doc.fontSize(22)
-             .fillColor(colors.white)
-             .font('Helvetica-Bold')
-             .text(reportData.title, 50, 35, { align: 'center' });
-  
-          // Subtitle with date
-          doc.fontSize(12)
-             .fillColor(colors.background)
-             .font('Helvetica')
-             .text(`Rapport généré le: ${formatFrenchDate(reportData.date)}`, 50, 65, { align: 'center' });
-  
-          // Decorative line
-          doc.rect(50, 90, doc.page.width - 100, 3)
-             .fill(colors.accent);
-  
-          doc.y = 140;
-        }
-  
-        function checkPageBreak(extraHeight) {
-          const bottomMargin = 80;
-          if (doc.y + extraHeight > doc.page.height - bottomMargin) {
-            doc.addPage();
-            addPageHeader();
-            return true;
+        // Utility: Draw gradient effect (simulated with overlapping rectangles)
+        function drawGradientRect(x, y, width, height, color1, color2) {
+          const steps = 20;
+          for (let i = 0; i < steps; i++) {
+            const alpha = 1 - (i / steps) * 0.3;
+            doc.rect(x, y + (height / steps) * i, width, height / steps)
+               .fillOpacity(alpha)
+               .fill(i < steps / 2 ? color1 : color2);
           }
-          return false;
+          doc.fillOpacity(1);
         }
   
-        // New function to calculate table height
-        function calculateTableHeight(data, isArrayData = false) {
-          if (!data || (Array.isArray(data) && data.length === 0)) return 0;
-          
-          const rowHeight = 35;
-          let totalHeight = rowHeight; // Header row
-          
-          if (isArrayData) {
-            totalHeight += data.length * rowHeight;
-            // Add separator space (every 3 rows)
-            const separators = Math.floor((data.length - 1) / 3);
-            totalHeight += separators * 8;
-          } else {
-            const entries = Object.entries(data)
-                                .filter(([key]) => !['id', '_id', 'Description'].includes(key));
-            totalHeight += entries.length * rowHeight;
-            // Add separator space (every 3 rows)
-            const separators = Math.floor((entries.length - 1) / 3);
-            totalHeight += separators * 10;
-          }
-          
-          return totalHeight + 20; // Extra spacing
-        }
-  
-        // New function to check if section fits on current page
-        function checkSectionFit(data, isArrayData = false) {
-          const sectionHeaderHeight = 60;
-          const tableHeight = calculateTableHeight(data, isArrayData);
-          const totalHeight = sectionHeaderHeight + tableHeight;
-          
-          return checkPageBreak(totalHeight);
-        }
-  
-        function drawSectionHeader(title) {
-          // Section background
-          doc.rect(30, doc.y - 5, doc.page.width - 60, 45)
-             .fill(colors.background);
-  
-          // Section border
-          doc.rect(30, doc.y - 5, doc.page.width - 60, 45)
-             .stroke(colors.border);
-  
-          // Section title
-          doc.fontSize(16)
-             .fillColor(colors.primary)
-             .font('Helvetica-Bold')
-             .text(title.toUpperCase(), 50, doc.y + 10);
-  
-          doc.y += 55;
-        }
-  
-        function drawTable(data, isArrayData = false) {
-          if (!data || (Array.isArray(data) && data.length === 0)) return;
-  
-          const startX = 50;
-          const tableWidth = doc.page.width - 100;
-          const rowHeight = 35;
-          
-          // Move currentY declaration outside conditional blocks
-          let currentY = doc.y;
-          
-          if (isArrayData) {
-            // Handle array data (like scoring tables)
-            const headers = Object.keys(data[0]);
-            const colWidth = tableWidth / headers.length;
-  
-            // Draw table header
-            doc.rect(startX, currentY, tableWidth, rowHeight)
-               .fill(colors.secondary);
+        // Enhanced footer with design elements
+        function footer() {
+          const range = doc.bufferedPageRange();
+          for (let i = 0; i < range.count; i++) {
+            doc.switchToPage(range.start + i);
+            const y = doc.page.height - 35;
             
-            doc.rect(startX, currentY, tableWidth, rowHeight)
-               .stroke(colors.border);
+            doc.save();
+            // Subtle top border
+            doc.moveTo(50, y - 5).lineTo(doc.page.width - 50, y - 5)
+               .strokeColor(colors.border).lineWidth(0.5).stroke();
+            
+            // Page number
+            doc.fillColor(colors.textMuted).fontSize(9).font('Helvetica')
+               .text(`Page ${i + 1} / ${range.count}`, 50, y, { 
+                 width: doc.page.width - 100, 
+                 align: 'center' 
+               });
+            
+            // Decorative elements
+            doc.circle(50, y + 4, 2).fill(colors.accent);
+            doc.circle(doc.page.width - 50, y + 4, 2).fill(colors.accent);
+            
+            doc.restore();
+          }
+        }
   
-            doc.fillColor(colors.white)
-               .fontSize(12)
-               .font('Helvetica-Bold');
+        // Modern cover page with design elements
+        function addCover() {
+          // Gradient background header
+          drawGradientRect(0, 0, doc.page.width, 220, colors.primary, colors.primaryLight);
+          
+          // Decorative circles
+          doc.circle(doc.page.width - 80, 40, 60)
+             .fillOpacity(0.1).fill(colors.accent);
+          doc.circle(60, 180, 40)
+             .fillOpacity(0.1).fill(colors.accentLight);
+          doc.fillOpacity(1);
   
-            headers.forEach((header, i) => {
-              // Replace "Valeur" with "Nmbr"
-              const displayHeader = header.toLowerCase().includes('valeur') ? 'Nmbr' : header;
-              doc.text(displayHeader, startX + (i * colWidth) + 10, currentY + 12, {
-                width: colWidth - 20,
-                align: 'left'
-              });
-            });
+          // Title with shadow effect
+          doc.fillColor(colors.white).font('Helvetica-Bold').fontSize(32)
+             .text(reportData.title, 50, 70, { 
+               width: doc.page.width - 100, 
+               align: 'center' 
+             });
+          
+          // Subtitle with icon-like element
+          doc.fontSize(11).font('Helvetica').fillColor('#CBD5E1')
+             .text('📊 ' + `Rapport généré le ${formatFrenchDate(reportData.date)}`, 
+                   50, 130, { width: doc.page.width - 100, align: 'center' });
   
-            currentY += rowHeight;
+          // Professional summary section
+          doc.moveDown(8);
+          const sections = reportData.sections || [];
+          
+          if (sections.length) {
+            // Section title with accent bar
+            const titleY = doc.y;
+            doc.rect(50, titleY, 4, 24).fill(colors.accent);
+            doc.fillColor(colors.text).font('Helvetica-Bold').fontSize(16)
+               .text('Sommaire Exécutif', 62, titleY + 4);
+            doc.moveDown(1.5);
   
-            // Draw data rows with grouping
-            data.forEach((row, index) => {
-              // Add separator every 3 rows
-              if (index > 0 && index % 3 === 0) {
-                doc.rect(startX, currentY, tableWidth, 2)
-                   .fill(colors.accent);
-                currentY += 8;
+            // Modern card grid
+            const cardW = (page.width - 20) / 2;
+            const cardH = 75;
+            let x = 50, y = doc.y;
+  
+            sections.forEach((s, idx) => {
+              if (y + cardH > page.bottom - 50) {
+                doc.addPage();
+                x = 50; 
+                y = page.top;
               }
   
-              // Alternate row colors
-              const bgColor = index % 2 === 0 ? colors.white : colors.lightGray;
-              doc.rect(startX, currentY, tableWidth, rowHeight)
-                 .fill(bgColor);
+              doc.save();
+              
+              // Card shadow
+              doc.roundedRect(x + 2, y + 2, cardW, cardH, 10)
+                 .fillOpacity(0.05).fill('#000000');
+              doc.fillOpacity(1);
+              
+              // Card background
+              doc.roundedRect(x, y, cardW, cardH, 10).fill(colors.white);
+              doc.roundedRect(x, y, cardW, cardH, 10)
+                 .strokeColor(colors.border).lineWidth(1).stroke();
+              
+              // Accent top border
+              doc.roundedRect(x, y, cardW, 5, 10).fill(getSectionColor(s.title));
+              
+              // Icon area (colored circle)
+              const iconX = x + 15, iconY = y + 20;
+              doc.circle(iconX, iconY, 12)
+                 .fillOpacity(0.15).fill(getSectionColor(s.title));
+              doc.fillOpacity(1);
+              
+              // Section title
+              doc.fillColor(colors.text).font('Helvetica-Bold').fontSize(11)
+                 .text(s.title, x + 35, y + 14, { width: cardW - 45, height: 30 });
+              
+              // Summary info
+              doc.fillColor(colors.textLight).font('Helvetica').fontSize(9);
+              const sub = Array.isArray(s.summary) 
+                ? `${s.summary.length} entrées` 
+                : (s.summary ? `${Object.keys(s.summary).length} indicateurs` : 'Aucune donnée');
+              doc.text(sub, x + 15, y + 50, { width: cardW - 30 });
+              
+              doc.restore();
   
-              doc.rect(startX, currentY, tableWidth, rowHeight)
-                 .stroke(colors.border);
+              if ((idx + 1) % 2 === 0) { 
+                x = 50; 
+                y += cardH + 15; 
+              } else { 
+                x += cardW + 20; 
+              }
+            });
+          }
   
-              doc.fillColor(colors.primary)
-                 .fontSize(10)
-                 .font('Helvetica');
+          doc.addPage();
+        }
   
-              const values = Object.values(row);
-              values.forEach((value, i) => {
-                doc.text(String(value), startX + (i * colWidth) + 10, currentY + 12, {
-                  width: colWidth - 20,
-                  align: 'left'
+        // Helper to get section-specific colors
+        function getSectionColor(title) {
+          if (/formation/i.test(title)) return colors.primary;
+          if (/accident/i.test(title)) return colors.danger;
+          if (/incident/i.test(title)) return colors.warning;
+          if (/interpellation/i.test(title)) return colors.success;
+          if (/réclamation|reclamation/i.test(title)) return colors.purple;
+          if (/scoring/i.test(title)) return colors.secondary;
+          return colors.accent;
+        }
+  
+        function ensure(nextHeight = 80) {
+          if (doc.y + nextHeight > page.bottom) {
+            doc.addPage();
+          }
+        }
+  
+        // Modern section header
+        function sectionHeader(title, color = colors.accent) {
+          ensure(100);
+          
+          doc.save();
+          const headerY = doc.y;
+          
+          // Background with subtle gradient effect
+          doc.rect(40, headerY, doc.page.width - 80, 55).fill(colors.bgCard);
+          
+          // Accent side bar with gradient
+          doc.rect(40, headerY, 8, 55).fill(color);
+          
+          // Top accent line
+          doc.moveTo(48, headerY).lineTo(doc.page.width - 40, headerY)
+             .strokeColor(color).lineWidth(2).stroke();
+          
+          // Section icon (decorative circle)
+          doc.circle(70, headerY + 27, 15)
+             .fillOpacity(0.2).fill(color);
+          doc.fillOpacity(1);
+          
+          // Title
+          doc.fillColor(colors.text).font('Helvetica-Bold').fontSize(15)
+             .text(title.toUpperCase(), 95, headerY + 18);
+          
+          doc.restore();
+          doc.moveDown(3);
+        }
+  
+        // Enhanced KPI cards with better visuals
+        function kpiCards(summaryObj, accent = colors.accent) {
+          const entries = Object.entries(summaryObj)
+            .filter(([k]) => !['id', '_id', 'Description'].includes(k));
+  
+          const cols = 3;
+          const gap = 15;
+          const cardW = (page.width - (gap * (cols - 1))) / cols;
+          const cardH = 100;
+  
+          let x = 50;
+          let y = doc.y;
+  
+          entries.forEach(([label, value], i) => {
+            if (y + cardH > page.bottom - 50) {
+              doc.addPage();
+              y = page.top; 
+              x = 50;
+            }
+  
+            doc.save();
+            
+            // Card shadow
+            doc.roundedRect(x + 1, y + 1, cardW, cardH, 8)
+               .fillOpacity(0.03).fill('#000000');
+            doc.fillOpacity(1);
+            
+            // Card background
+            doc.roundedRect(x, y, cardW, cardH, 8).fill(colors.white);
+            doc.roundedRect(x, y, cardW, cardH, 8)
+               .strokeColor(colors.border).lineWidth(1).stroke();
+            
+            // Accent indicator (top bar)
+            doc.roundedRect(x, y, cardW, 4, 8).fill(accent);
+            
+            // Icon circle
+            doc.circle(x + 15, y + 25, 8)
+               .fillOpacity(0.15).fill(accent);
+            doc.fillOpacity(1);
+            
+            // Label
+            doc.fillColor(colors.textLight).font('Helvetica').fontSize(8)
+               .text(label.toUpperCase(), x + 12, y + 45, { 
+                 width: cardW - 24, 
+                 height: 30,
+                 lineGap: 2
+               });
+            
+            // Value
+            doc.fillColor(colors.text).font('Helvetica-Bold').fontSize(20)
+               .text(String(value), x + 12, y + 70, { 
+                 width: cardW - 24, 
+                 align: 'left' 
+               });
+  
+            doc.restore();
+  
+            if ((i + 1) % cols === 0) { 
+              x = 50; 
+              y += cardH + gap; 
+            } else { 
+              x += cardW + gap; 
+            }
+          });
+  
+          doc.y = y + cardH + 10;
+        }
+  
+        // Modern table with better styling
+        function tableFromArray(rows, accent = colors.accent) {
+          if (!rows || !rows.length) return;
+          
+          const headers = Object.keys(rows[0]);
+          const colW = page.width / headers.length;
+          const rowH = 32;
+  
+          ensure(100);
+  
+          // Table header
+          doc.save();
+          const headerY = doc.y;
+          
+          // Header background with gradient effect
+          doc.rect(50, headerY, page.width, rowH).fill(colors.primary);
+          
+          // Header text
+          doc.fillColor(colors.white).font('Helvetica-Bold').fontSize(9);
+          headers.forEach((h, i) => {
+            doc.text(h.toUpperCase(), 50 + i * colW + 10, headerY + 10, { 
+              width: colW - 20,
+              lineGap: 1
+            });
+          });
+          doc.restore();
+          
+          let y = headerY + rowH;
+  
+          // Table rows
+          rows.forEach((r, idx) => {
+            if (y + rowH > page.bottom - 50) {
+              doc.addPage();
+              y = page.top;
+              
+              // Redraw header
+              doc.save();
+              doc.rect(50, y, page.width, rowH).fill(colors.primary);
+              doc.fillColor(colors.white).font('Helvetica-Bold').fontSize(9);
+              headers.forEach((h, i) => {
+                doc.text(h.toUpperCase(), 50 + i * colW + 10, y + 10, { 
+                  width: colW - 20 
                 });
               });
+              doc.restore();
+              y += rowH;
+            }
   
-              currentY += rowHeight;
+            const bg = idx % 2 === 0 ? colors.white : colors.bgCard;
+            doc.save();
+            
+            // Row background
+            doc.rect(50, y, page.width, rowH).fill(bg);
+            
+            // Row border
+            doc.moveTo(50, y + rowH).lineTo(50 + page.width, y + rowH)
+               .strokeColor(colors.border).lineWidth(0.5).stroke();
+            
+            // Cell content
+            doc.fillColor(colors.text).font('Helvetica').fontSize(8.5);
+            const vals = Object.values(r);
+            vals.forEach((val, i) => {
+              doc.text(String(val), 50 + i * colW + 10, y + 10, { 
+                width: colW - 20,
+                height: rowH - 10
+              });
             });
-  
-          } else {
-            // Handle object data (key-value pairs)
-            const entries = Object.entries(data)
-                                .filter(([key]) => !['id', '_id', 'Description'].includes(key));
             
-            const colWidth = tableWidth / 2;
+            doc.restore();
+            y += rowH;
+          });
   
-            // Draw table header
-            doc.rect(startX, currentY, tableWidth, rowHeight)
-               .fill(colors.secondary);
-            
-            doc.rect(startX, currentY, tableWidth, rowHeight)
-               .stroke(colors.border);
+          doc.y = y + 15;
+        }
   
-            doc.fillColor(colors.white)
-               .fontSize(12)
-               .font('Helvetica-Bold');
+        // Build document
+        addCover();
   
-            doc.text('Indicateur', startX + 10, currentY + 12, { width: colWidth - 20 });
-            doc.text('Nmbr', startX + colWidth + 10, currentY + 12, { width: colWidth - 20 });
+        (reportData.sections || []).forEach(section => {
+          const accent = getSectionColor(section.title);
+          sectionHeader(section.title, accent);
   
-            currentY += rowHeight;
-  
-            // Draw data rows with enhanced grouping
-            entries.forEach(([key, value], index) => {
-              // Add visual separator every 3 rows
-              if (index > 0 && index % 3 === 0) {
-                doc.rect(startX, currentY, tableWidth, 3)
-                   .fill(colors.accent);
-                currentY += 10;
-              }
-  
-              // Enhanced row styling
-              const bgColor = index % 2 === 0 ? colors.white : colors.lightGray;
-              doc.rect(startX, currentY, tableWidth, rowHeight)
-                 .fill(bgColor);
-  
-              // Add subtle left border for visual appeal
-              doc.rect(startX, currentY, 4, rowHeight)
-                 .fill(colors.accent);
-  
-              doc.rect(startX, currentY, tableWidth, rowHeight)
-                 .stroke(colors.border);
-  
-              // Text styling
-              doc.fillColor(colors.primary)
-                 .fontSize(11)
-                 .font('Helvetica');
-  
-              doc.text(key, startX + 15, currentY + 12, { 
-                width: colWidth - 25,
-                align: 'left'
+          if (Array.isArray(section.summary)) {
+            tableFromArray(section.summary, accent);
+          } else if (section.summary && typeof section.summary === 'object') {
+            // Special handling for Réclamations
+            if (/réclamation|reclamation/i.test(section.title)) {
+              const kpiData = {};
+              const topMotifs = [];
+              
+              Object.entries(section.summary).forEach(([key, value]) => {
+                if (key.startsWith('Top Motif')) {
+                  const match = String(value).match(/^(.+?)\s*\((\d+)\)$/);
+                  if (match) {
+                    topMotifs.push({ 
+                      "Rang": key.replace('Top Motif ', ''), 
+                      "Motif": match[1], 
+                      "Nombre": match[2] 
+                    });
+                  }
+                } else {
+                  kpiData[key] = value;
+                }
               });
   
-              doc.fillColor(colors.secondary)
-                 .font('Helvetica-Bold')
-                 .text(String(value), startX + colWidth + 10, currentY + 12, { 
-                   width: colWidth - 20,
-                   align: 'right'
-                 });
+              if (Object.keys(kpiData).length > 0) {
+                kpiCards(kpiData, accent);
+              }
   
-              currentY += rowHeight;
-            });
-          }
+              if (topMotifs.length > 0) {
+                doc.moveDown(1);
+                const subHeaderY = doc.y;
+                doc.rect(50, subHeaderY, 4, 20).fill(accent);
+                doc.fillColor(colors.text).font('Helvetica-Bold').fontSize(13)
+                   .text('Top Motifs de Réclamation', 62, subHeaderY + 2);
+                doc.moveDown(1);
+                tableFromArray(topMotifs, accent);
+              }
   
-          // Update doc.y to the final position
-          doc.y = currentY + 20;
-        }
-  
-        // Start document
-        addPageHeader();
-  
-        // Process sections with improved page break logic
-        reportData.sections.forEach((section, sectionIndex) => {
-          if (sectionIndex > 0) {
+              if (section.details && section.details.length > 0) {
+                doc.moveDown(1);
+                const subHeaderY = doc.y;
+                doc.rect(50, subHeaderY, 4, 20).fill(accent);
+                doc.fillColor(colors.text).font('Helvetica-Bold').fontSize(13)
+                   .text('Détails des Réclamations', 62, subHeaderY + 2);
+                doc.moveDown(1);
+                tableFromArray(section.details, accent);
+              }
+            } else {
+              kpiCards(section.summary, accent);
+            }
+          } else {
+            doc.fillColor(colors.textMuted).font('Helvetica-Oblique').fontSize(10)
+               .text('Aucune donnée disponible pour cette section.', 50);
             doc.moveDown(2);
           }
-  
-          // Check if the entire section (header + table) fits on current page
-          if (section.summary) {
-            const isArrayData = Array.isArray(section.summary);
-            checkSectionFit(section.summary, isArrayData);
-          } else {
-            // If no summary, just check for header space
-            checkPageBreak(60);
-          }
-  
-          // Draw section header
-          drawSectionHeader(section.title);
-  
-          // Draw table if exists
-          if (section.summary) {
-            if (Array.isArray(section.summary)) {
-              drawTable(section.summary, true);
-            } else {
-              drawTable(section.summary, false);
-            }
-          }
-  
-          // Add spacing between sections
-          doc.moveDown(1.5);
         });
   
-        // Enhanced footer with page numbers
-        const pageRange = doc.bufferedPageRange();
-        for (let i = 0; i < pageRange.count; i++) {
-          doc.switchToPage(pageRange.start + i);
-          
-          // Footer background
-          doc.rect(0, doc.page.height - 60, doc.page.width, 60)
-             .fill(colors.mediumGray);
-  
-          // Page number
-          doc.fontSize(10)
-             .fillColor(colors.darkGray)
-             .font('Helvetica')
-             .text(
-               `Page ${i + 1} sur ${pageRange.count}`, 
-               50, 
-               doc.page.height - 35, 
-               {
-                 align: 'center',
-                 width: doc.page.width - 100
-               }
-             );
-  
-          // Footer decoration
-          doc.rect(50, doc.page.height - 50, doc.page.width - 100, 2)
-             .fill(colors.accent);
-        }
+        footer();
   
         doc.end();
         stream.on('finish', () => resolve(pdfPath));
         stream.on('error', err => reject(err));
-  
-      } catch (error) {
-        reject(error);
+      } catch (err) {
+        reject(err);
       }
     });
   }
-  
   
 
 /* ------------------------------------------------------------------
@@ -850,46 +969,52 @@ async function generateScoringSection(supermarkets, dateFilter) {
   
 
 
-// Génération de la section DRL
-async function generateDRLSection(supermarkets, dateFilter) {
-  let totalAccepted = 0;
-  let totalRefused = 0;
+// routes/reports.js
+// ADD this (and REMOVE generateDRLSection)
+async function generateReclamationsSection(supermarkets, dateFilter) {
+  let total = 0;
+  let byStatut = { 'Traité': 0, 'En cours': 0, 'Non traité': 0 };
+  let byMotif = {};
   let details = [];
-  
+
   supermarkets.forEach(market => {
-    if (!market.instances) return;
-    market.instances.forEach(instance => {
+    (market.instances || []).forEach(instance => {
       if (dateFilter && dateFilter.start && dateFilter.end && dateFilter.year) {
         if (instance.annee !== dateFilter.year || instance.mois < dateFilter.start || instance.mois > dateFilter.end)
           return;
       }
-      if (!instance.drl) return;
-      instance.drl.forEach(drlItem => {
-        const valeur = parseFloat(drlItem.valeur) || 0;
-        if (drlItem.statut === 'Accepté') {
-          totalAccepted += valeur;
-        } else if (drlItem.statut === 'Refusé') {
-          totalRefused += valeur;
-        }
+      (instance.reclamations || []).forEach(r => {
+        total += 1;
+        const st = r.statut || 'Non traité';
+        byStatut[st] = (byStatut[st] || 0) + 1;
+        const motif = r.motif || 'Autre';
+        byMotif[motif] = (byMotif[motif] || 0) + 1;
+
         details.push({
-          "Magasin": market.nom,
-          "Valeur": valeur.toFixed(2),
-          "Statut": drlItem.statut,
-          "Date": drlItem.date ? new Date(drlItem.date).toLocaleDateString('fr-FR') : 'N/A'
+          'Magasin': market.nom,
+          'Date & Heure': r.dateHeure ? new Date(r.dateHeure).toLocaleString('fr-FR') : 'N/A',
+          'Motif': motif,
+          'Sous-motif': r.sousMotif || '—',
+          'Produit': r.designationProduit || '—',
+          'Action': r.action || '—',
+          'Statut': st
         });
       });
     });
   });
-  
-  return {
-    title: 'DRL',
-    summary: {
-      "Accepté": totalAccepted.toFixed(2),
-      "Refusé": totalRefused.toFixed(2)
-    },
-    details: details
+
+  const topMotifs = Object.entries(byMotif).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  let summary = {
+    'Total réclamations': total,
+    'Traité': byStatut['Traité'] || 0,
+    'En cours': byStatut['En cours'] || 0,
+    'Non traité': byStatut['Non traité'] || 0
   };
+  topMotifs.forEach(([label, n], i) => { summary[`Top Motif ${i+1}`] = `${label} (${n})`; });
+
+  return { title: 'Réclamations', summary, details };
 }
+
 
 /* ------------------------------------------------------------------
    EXISTING SECTION GENERATORS (Formation, Accidents, Incidents, Interpellations)
