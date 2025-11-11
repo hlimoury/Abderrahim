@@ -1,0 +1,75 @@
+<h2>Anomalies Marché — <small>Instance <%= instance.mois %>/<%= instance.annee %></small></h2>
+
+<div class="mb-3">
+  <a href="/supermarkets/<%= supermarketId %>" class="btn btn-secondary">Retour</a>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">Ajouter une Anomalie</div>
+  <div class="card-body">
+    <form action="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/anomalies/ajouter" method="POST" class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Date de détection</label>
+        <input type="date" name="dateDetection" class="form-control" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Heure de détection</label>
+        <input type="time" name="heureDetection" class="form-control">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Anomalie détectée</label>
+        <select name="anomalieDetectee" class="form-select" required>
+          <option value="" disabled selected>Choisir...</option>
+          <% (options||[]).forEach(o=>{ %>
+            <option value="<%= o %>"><%= o %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-12">
+        <label class="form-label">Produits (texte libre)</label>
+        <input type="text" name="produits" class="form-control" placeholder="Ex: Tomates, Pêche plate, ...">
+      </div>
+      <div class="col-12">
+        <button class="btn btn-primary" type="submit">Ajouter</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">Liste des Anomalies</div>
+  <div class="card-body">
+    <% if ((anomalies||[]).length === 0) { %>
+      <div class="alert alert-info mb-0">Aucune anomalie enregistrée.</div>
+    <% } else { %>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Date</th>
+              <th>Heure</th>
+              <th>Anomalie détectée</th>
+              <th>Produits</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% anomalies.forEach(a => { %>
+              <tr>
+                <td><%= a.dateDetection ? new Date(a.dateDetection).toLocaleDateString('fr-FR') : '—' %></td>
+                <td><%= a.heureDetection || '—' %></td>
+                <td><%= a.anomalieDetectee %></td>
+                <td><%= a.produits || '—' %></td>
+                <td>
+                  <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/anomalies/editer/<%= a._id %>" class="btn btn-sm btn-outline-primary">Éditer</a>
+                  <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/anomalies/supprimer/<%= a._id %>" class="btn btn-sm btn-outline-danger"
+                     onclick="return confirm('Supprimer cette anomalie ?');">Supprimer</a>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</div>

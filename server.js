@@ -51,6 +51,11 @@ app.use((req, res, next) => {
   res.locals.session = req.session;
   next();
 });
+// ADD in app.js after session middleware
+app.use((req, res, next) => {
+  res.locals.anomaliesOnly = Boolean(req.session && req.session.anomaliesOnly);
+  next();
+});
 
 // quick favicon route (avoid 404 noise)
 app.get('/favicon.ico', (req, res) => res.status(204).end());

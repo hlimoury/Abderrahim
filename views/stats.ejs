@@ -126,7 +126,7 @@
 </style>
 
 <div class="sticky-summary mb-3">
-  <div class="row row-cols-1 row-cols-md-4 g-4">
+  <div class="row row-cols-1 row-cols-md-5 g-4"><!-- 5 columns now -->
     <div class="col">
       <a class="text-decoration-none" href="/stats/category/formation?<%= qs %>">
         <div class="card h-100">
@@ -165,6 +165,15 @@
               <%= globalTotals.interpellations.valeur.toFixed(3).replace('.',',') %> kDH
             </p>
           </div>
+        </div>
+      </a>
+    </div>
+    <!-- NEW: Anomalies Marché -->
+    <div class="col">
+      <a class="text-decoration-none" href="/stats/category/anomalies?<%= qs %>">
+        <div class="card h-100">
+          <div class="card-header bg-info text-white"><h5 class="mb-0">Anomalies Marché</h5></div>
+          <div class="card-body text-dark"><h2><%= globalTotals.anomalies || 0 %></h2></div>
         </div>
       </a>
     </div>
@@ -253,53 +262,57 @@
                     <td colspan="6" class="p-3">
                       <% if (m.instances.length) { %>
                         <div class="table-responsive">
-                          <table class="table table-sm table-bordered mb-0">
-                            <thead class="table-secondary">
-  <tr>
-    <th>Mois</th>
-    <th>Équipements</th>
-    <th>Form.</th><th>Acc.</th><th>Inc.</th>
-    <th>Interp.</th><th>Récl.</th><th>Scoring</th>
-  </tr>
-</thead>
-<tbody>
-  <% m.instances.forEach(inst=>{ %>
+                          
+<table class="table table-sm table-bordered mb-0">
+  <thead class="table-secondary">
     <tr>
-      <td><strong><%= inst.moisName %> <%= inst.annee %></strong></td>
-      <td class="text-center">
-        <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/equipements"
-           class="btn btn-outline-secondary btn-sm">Voir</a>
-      </td>
-      <td class="text-center">
-        <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/formation"
-           class="btn btn-outline-primary btn-sm"><%= inst.counts.formation %></a>
-      </td>
-      <td class="text-center">
-        <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/accidents"
-           class="btn btn-outline-danger btn-sm"><%= inst.counts.accidents %></a>
-      </td>
-      <td class="text-center">
-        <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/incidents"
-           class="btn btn-outline-warning btn-sm"><%= inst.counts.incidents %></a>
-      </td>
-      <td class="text-center">
-        <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/interpellations"
-           class="btn btn-outline-success btn-sm"><%= inst.counts.interpellations %></a>
-      </td>
-      <td class="text-center">
-        <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/reclamations"
-           class="btn btn-outline-dark btn-sm"><%= inst.counts.reclamations %></a>
-      </td>
-      <td class="text-center">
-        <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/scoring"
-           class="btn btn-outline-info btn-sm">
-          <i class="bi bi-bar-chart-line"></i>
-        </a>
-      </td>
+      <th>Mois</th>
+      <th>Équipements</th>
+      <th>Form.</th>
+      <th>Acc.</th>
+      <th>Inc.</th>
+      <th>Interp.</th>
+      <th>Anom.</th> <!-- NEW -->
+      <th>Récl.</th>
+      <th>Scoring</th>
     </tr>
-  <% }) %>
-</tbody>
-                          </table>
+  </thead>
+  <tbody>
+    <% m.instances.forEach(inst=>{ %>
+      <tr>
+        <td><strong><%= inst.moisName %> <%= inst.annee %></strong></td>
+        <td class="text-center">
+          <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/equipements" class="btn btn-outline-secondary btn-sm">Voir</a>
+        </td>
+        <td class="text-center">
+          <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/formation" class="btn btn-outline-primary btn-sm"><%= inst.counts.formation %></a>
+        </td>
+        <td class="text-center">
+          <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/accidents" class="btn btn-outline-danger btn-sm"><%= inst.counts.accidents %></a>
+        </td>
+        <td class="text-center">
+          <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/incidents" class="btn btn-outline-warning btn-sm"><%= inst.counts.incidents %></a>
+        </td>
+        <td class="text-center">
+          <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/interpellations" class="btn btn-outline-success btn-sm"><%= inst.counts.interpellations %></a>
+        </td>
+        <!-- NEW: Anomalies Marché -->
+        <td class="text-center">
+          <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/anomalies" class="btn btn-outline-info btn-sm"><%= inst.counts.anomalies || 0 %></a>
+        </td>
+        <td class="text-center">
+          <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/reclamations" class="btn btn-outline-dark btn-sm"><%= inst.counts.reclamations %></a>
+        </td>
+        <td class="text-center">
+          <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/scoring" class="btn btn-outline-info btn-sm">
+            <i class="bi bi-bar-chart-line"></i>
+          </a>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+
                         </div>
                       <% } else { %>
                         <em>Aucune instance pour ce magasin.</em>

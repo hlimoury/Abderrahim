@@ -20,9 +20,11 @@
 </form>
 
 <!-- Add this line in index.ejs -->
+<% if (!anomaliesOnly) { %>
 <a href="/totals" class="btn btn-success mb-3">Voir les Totaux de ma Région</a>
-<a href="/ajouter" class="btn btn-primary mb-3">Ajouter un Magasin</a>
 
+<a href="/ajouter" class="btn btn-primary mb-3">Ajouter un Magasin</a>
+<% } %>
 <table class="table">
   <thead>
     <tr>
@@ -41,12 +43,14 @@
       <!-- Pass the current page as a query parameter -->
       <a href="/supermarkets/<%= market._id %>?fromPage=<%= currentPage %><%= searchQuery ? '&search=' + searchQuery : '' %>" 
          class="btn btn-info btn-sm">Voir</a>
+         <% if (!anomaliesOnly) { %>
       <a href="/supermarkets/<%= market._id %>/editer" class="btn btn-warning btn-sm">Modifier</a>
       <a href="/supermarkets/<%= market._id %>/supprimer" 
          class="btn btn-danger btn-sm" 
          onclick="return confirm('Voulez-vous vraiment supprimer ce supermarché ?');">
         Supprimer
       </a>
+      <% } %>
     </td>
   </tr>
 <% }); %>

@@ -12,7 +12,9 @@
       <div class="collapse navbar-collapse">
         <ul class="navbar-nav mr-auto">
           <li class="nav-item"><a class="nav-link" href="/">Accueil</a></li>
+          <% if (!anomaliesOnly) { %>
           <li class="nav-item"><a class="nav-link" href="/totals">Totaux</a></li>
+          <% } %>
         </ul>
       </div>
     </nav>

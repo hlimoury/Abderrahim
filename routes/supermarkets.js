@@ -5,12 +5,48 @@ const Supermarket = require('../models/Supermarket');
 
 
 
-
+const ANOMALIE_OPTIONS = [
+  'Moucherons',
+  'Sol mal nettoyé',
+  'Cagettes sales',
+  'Qualité dégradée',
+  'Produit abîmé',
+  'Rupture',
+  'Comportement inadapté',
+  "Non respect règles d'hygiène",
+  'Présence des insectes'
+];
 
 function parseNumber(str) {
   if (!str) return 0;
   return parseFloat(str.replace(',', '.'));
 }
+
+// ADD near the top of routes/supermarkets.js
+function denyStructureIfAnomaliesAccount(req, res, next) {
+  if (req.session && req.session.anomaliesOnly) {
+    return res.status(403).send('Action non autorisée pour ce compte');
+  }
+  next();
+}
+
+// IMPORTANT: Place these BEFORE your route handlers so they intercept first.
+// Supermarket structure: add/edit/delete
+router.use('/ajouter', denyStructureIfAnomaliesAccount);
+router.use('/editer/:id', denyStructureIfAnomaliesAccount);
+router.use('/:id/editer', denyStructureIfAnomaliesAccount);
+router.use('/supprimer/:id', denyStructureIfAnomaliesAccount);
+router.use('/:id/supprimer', denyStructureIfAnomaliesAccount);
+
+// Instance structure: add/edit/delete
+router.use('/:id/ajouter-instance', denyStructureIfAnomaliesAccount);
+router.use('/:id/instance/editer/:instanceId', denyStructureIfAnomaliesAccount);
+router.use('/:id/instance/supprimer/:instanceId', denyStructureIfAnomaliesAccount);
+
+// If you have other structure routes (duplicate/copy/reset), add them here too.
+
+
+
 // ==========================
 // SCORING ROUTES
 // ==========================
@@ -200,7 +236,8 @@ router.get('/:id', async (req, res) => {
       mois, 
       annee,
       fromPage,
-      searchQuery
+      searchQuery,
+      anomaliesOnly: Boolean(req.session && req.session.anomaliesOnly)  // <-- NEW
     });
   } catch (err) {
     console.error(err);
@@ -340,9 +377,10 @@ router.post('/:id/ajouter-instance', async (req, res) => {
     accidents: [],
     incidents: [],
     interpellations: [],
-    reclamations: [], 
+    reclamations: [],
+    anomaliesMarche: [],            // <-- NEW
     equipements: equipementsToCopy,
-    scoring: scoringToCopy  // Include the copied scoring
+    scoring: scoringToCopy
   });
 
   await supermarket.save();
@@ -411,6 +449,94 @@ router.get('/:id/instance/supprimer/:instanceId', async (req, res) => {
   await supermarket.save();
 
   res.redirect(`/supermarkets/${id}`);
+});
+/* ──────────────────────────────────────────────────────────
+   ANOMALIES MARCHÉ - FULL CRUD
+   ────────────────────────────────────────────────────────── */
+
+// LIST anomalies for an instance
+router.get('/:id/instance/:instanceId/anomalies', async (req, res) => {
+  const supermarket = await Supermarket.findById(req.params.id);
+  if (!supermarket) return res.status(404).send('Supermarché introuvable');
+  const instance = supermarket.instances.id(req.params.instanceId);
+  if (!instance) return res.status(404).send('Instance introuvable');
+  const fromPage = req.query.fromPage || 1;
+  res.render('anomalieMarche', {
+    supermarketId: req.params.id,
+    instance,
+    anomalies: instance.anomaliesMarche || [],
+    options: ANOMALIE_OPTIONS,
+    fromPage
+  });
+});
+
+// ADD anomaly
+router.post('/:id/instance/:instanceId/anomalies/ajouter', async (req, res) => {
+  const { dateDetection, heureDetection, anomalieDetectee, produits } = req.body;
+  const supermarket = await Supermarket.findById(req.params.id);
+  if (!supermarket) return res.status(404).send('Supermarché introuvable');
+  const instance = supermarket.instances.id(req.params.instanceId);
+  if (!instance) return res.status(404).send('Instance introuvable');
+
+  instance.anomaliesMarche.push({
+    dateDetection: dateDetection ? new Date(dateDetection) : new Date(),
+    heureDetection: (heureDetection || '').trim(),
+    anomalieDetectee,
+    produits: (produits || '').trim()
+  });
+
+  await supermarket.save();
+  res.redirect(`/supermarkets/${req.params.id}/instance/${req.params.instanceId}/anomalies`);
+});
+
+// EDIT form
+router.get('/:id/instance/:instanceId/anomalies/editer/:anomId', async (req, res) => {
+  const supermarket = await Supermarket.findById(req.params.id);
+  if (!supermarket) return res.status(404).send('Supermarché introuvable');
+  const instance = supermarket.instances.id(req.params.instanceId);
+  if (!instance) return res.status(404).send('Instance introuvable');
+
+  const anomItem = instance.anomaliesMarche.id(req.params.anomId);
+  if (!anomItem) return res.status(404).send('Anomalie introuvable');
+
+  res.render('editerAnomalieMarche', {
+    supermarketId: req.params.id,
+    instanceId: req.params.instanceId,
+    anomItem,
+    options: ANOMALIE_OPTIONS
+  });
+});
+
+// EDIT submit
+router.post('/:id/instance/:instanceId/anomalies/editer/:anomId', async (req, res) => {
+  const { dateDetection, heureDetection, anomalieDetectee, produits } = req.body;
+  const supermarket = await Supermarket.findById(req.params.id);
+  if (!supermarket) return res.status(404).send('Supermarché introuvable');
+  const instance = supermarket.instances.id(req.params.instanceId);
+  if (!instance) return res.status(404).send('Instance introuvable');
+
+  const anomItem = instance.anomaliesMarche.id(req.params.anomId);
+  if (!anomItem) return res.status(404).send('Anomalie introuvable');
+
+  anomItem.dateDetection = dateDetection ? new Date(dateDetection) : anomItem.dateDetection;
+  anomItem.heureDetection = (heureDetection || '').trim();
+  anomItem.anomalieDetectee = anomalieDetectee;
+  anomItem.produits = (produits || '').trim();
+
+  await supermarket.save();
+  res.redirect(`/supermarkets/${req.params.id}/instance/${req.params.instanceId}/anomalies`);
+});
+
+// DELETE
+router.get('/:id/instance/:instanceId/anomalies/supprimer/:anomId', async (req, res) => {
+  const supermarket = await Supermarket.findById(req.params.id);
+  if (!supermarket) return res.status(404).send('Supermarché introuvable');
+  const instance = supermarket.instances.id(req.params.instanceId);
+  if (!instance) return res.status(404).send('Instance introuvable');
+
+  instance.anomaliesMarche.pull({ _id: req.params.anomId });
+  await supermarket.save();
+  res.redirect(`/supermarkets/${req.params.id}/instance/${req.params.instanceId}/anomalies`);
 });
 
 // ------------------------------

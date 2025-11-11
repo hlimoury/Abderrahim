@@ -106,6 +106,31 @@ const ReclamationSchema = new Schema({
   statut: { type: String, enum: ['Traité', 'En cours', 'Non traité'], default: 'Non traité' }
 });
 
+
+// ───────── Anomalies Marché ─────────
+const AnomalieMarcheSchema = new Schema({
+  dateDetection:   { type: Date, required: true },
+  heureDetection:  { type: String, default: '' },
+  anomalieDetectee: {
+    type: String,
+    enum: [
+      'Moucherons',
+      'Sol mal nettoyé',
+      'Cagettes sales',
+      'Qualité dégradée',
+      'Produit abîmé',
+      'Rupture',
+      'Comportement inadapté',
+      "Non respect règles d'hygiène",
+      'Présence des insectes'
+    ],
+    required: true
+  },
+  produits:        { type: String, default: '' }
+});
+
+
+
 // Instance mensuelle (pour un mois et une année donnés)
 const InstanceSchema = new Schema({
   mois: Number,
@@ -116,8 +141,10 @@ const InstanceSchema = new Schema({
   interpellations: [InterpellationSchema],
   equipements: EquipementSchema,
   reclamations: [ReclamationSchema],
+  anomaliesMarche: [AnomalieMarcheSchema],  // <-- NEW
   scoring: ScoringSchema
 });
+
 
 const SupermarketSchema = new Schema({
   nom: { type: String, required: true },

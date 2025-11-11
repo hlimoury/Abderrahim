@@ -56,13 +56,15 @@ router.get('/stats', ensureAdmin, async (req,res)=>{
     const adminFilter = getAdminRegionFilter(req); // {} or { ville: { $in: [...] } }
     const supermarkets = await Supermarket.find(adminFilter);
     
-
+// ADD after formationByType / incidentByType declarations
+const anomaliesByType = ANOMALIE_TYPES.reduce((acc, t)=>{ acc[t] = { total: 0 }; return acc; }, {});
     /* ── 3. Accumulateurs globaux ── */
     const globalTotals = {
       formation      : 0,
       accidents      : { count:0, jours:0 },
       incidents      : 0,
-      interpellations: { personnes:0, poursuites:0, valeur:0 }
+      interpellations: { personnes:0, poursuites:0, valeur:0 },
+      anomalies      : 0  // <-- NEW
     };
 
     const interpellationByType = {
@@ -89,12 +91,13 @@ router.get('/stats', ensureAdmin, async (req,res)=>{
           (searchParams.ville && !market.ville.toLowerCase().includes(searchParams.ville.toLowerCase())))
         continue;
 
-      const marketTotals = {
-        formation:0,
-        accidents:{count:0, jours:0},
-        incidents:0,
-        interpellations:{ personnes:0, poursuites:0, valeur:0 }
-      };
+        const marketTotals = {
+          formation:0,
+          accidents:{count:0, jours:0},
+          incidents:0,
+          interpellations:{ personnes:0, poursuites:0, valeur:0 },
+          anomalies:0 // <-- NEW
+        };
 
       /* tableau pour stocker stats instance */
       const instanceStats = [];
@@ -112,7 +115,8 @@ router.get('/stats', ensureAdmin, async (req,res)=>{
           accidents       : 0,
           incidents       : 0,
           interpellations : 0,
-          reclamations    : instance.reclamations ? instance.reclamations.length : 0
+          reclamations    : instance.reclamations ? instance.reclamations.length : 0,
+          anomalies       : instance.anomaliesMarche ? instance.anomaliesMarche.length : 0 // <-- NEW
         };
 
         /* formation */
@@ -163,7 +167,15 @@ router.get('/stats', ensureAdmin, async (req,res)=>{
             interpellationByType[type].valeur     += v;
           }
         });
-
+// ADD inside the instance loop, after interpellations counting
+(instance.anomaliesMarche || []).forEach(a => {
+  instCounts.anomalies += 1;
+  marketTotals.anomalies += 1;
+  globalTotals.anomalies += 1;
+  if (a.anomalieDetectee && anomaliesByType[a.anomalieDetectee]) {
+    anomaliesByType[a.anomalieDetectee].total += 1;
+  }
+});
         /* Push dans tableau instanceStats */
         instanceStats.push({
           id           : instance._id,
@@ -394,6 +406,17 @@ router.get('/admin/pdf/:id', ensureAdmin, async (req, res) => {
   }
 });
 
+const ANOMALIE_TYPES = [
+  'Moucherons',
+  'Sol mal nettoyé',
+  'Cagettes sales',
+  'Qualité dégradée',
+  'Produit abîmé',
+  'Rupture',
+  'Comportement inadapté',
+  "Non respect règles d'hygiène",
+  'Présence des insectes'
+];
 
 /* routes/stats.js  — REPLACE the whole /stats/category/:category route with this (no pagination) */
 const INCIDENT_TYPES = [
@@ -415,14 +438,15 @@ function zeroIncidentMap(){
 router.get('/stats/category/:category', ensureAdmin, async (req, res) => {
   try {
     const category = (req.params.category || '').toLowerCase();
-    const allowed = ['formation','accidents','incidents','interpellations'];
+    const allowed = ['formation','accidents','incidents','interpellations','anomalies']; // + anomalies
     if (!allowed.includes(category)) return res.status(400).send('Catégorie invalide');
 
     const categoryLabel = {
       formation:'Formation',
       accidents:'Accidents',
       incidents:'Incidents',
-      interpellations:'Interpellations'
+      interpellations:'Interpellations',
+      anomalies:'Anomalies Marché' // NEW
     }[category];
 
     // Filters
@@ -433,26 +457,20 @@ router.get('/stats/category/:category', ensureAdmin, async (req, res) => {
       annee : req.query.annee ? parseInt(req.query.annee) : null
     };
 
-    // Load supermarkets respecting admin scope
     const adminFilter = getAdminRegionFilter(req);
     const supermarkets = await Supermarket.find(adminFilter);
 
-    // Global totals (all rows, all checked)
     const totalsAll = {
-      // formation
       formationTotal: 0,
       formationByType: { Incendie:0, SST:0, Intégration:0 },
 
-      // accidents
       accidentsCount: 0,
       accidentsJours: 0,
       accidentByCause: {},
 
-      // incidents
       incidentsTotal: 0,
-      incidentByType: zeroIncidentMap(),
+      incidentByType: INCIDENT_TYPES.reduce((acc,t)=>{ acc[t.key]=0; return acc; },{}),
 
-      // interpellations
       interPersonnes: 0,
       interPoursuites: 0,
       interValeur: 0,
@@ -460,13 +478,15 @@ router.get('/stats/category/:category', ensureAdmin, async (req, res) => {
         Client:{personnes:0,poursuites:0,valeur:0},
         Personnel:{personnes:0,poursuites:0,valeur:0},
         Prestataire:{personnes:0,poursuites:0,valeur:0}
-      }
+      },
+
+      anomaliesTotal: 0,
+      anomaliesByType: ANOMALIE_TYPES.reduce((acc,t)=>{ acc[t]=0; return acc; },{}) // NEW
     };
 
     const rows = [];
 
     for (const m of supermarkets) {
-      // name/ville filter
       if (searchParams.nom && !m.nom.toLowerCase().includes(searchParams.nom.toLowerCase())) continue;
       if (searchParams.ville && !m.ville.toLowerCase().includes(searchParams.ville.toLowerCase())) continue;
 
@@ -475,20 +495,16 @@ router.get('/stats/category/:category', ensureAdmin, async (req, res) => {
         nom: m.nom,
         ville: m.ville,
 
-        // formation
         fTotal: 0,
         fTypes: { Incendie:0, SST:0, Intégration:0 },
 
-        // accidents
         aCount: 0,
         aJours: 0,
         aCauses: {},
 
-        // incidents
         iTotal: 0,
-        iTypes: zeroIncidentMap(),
+        iTypes: INCIDENT_TYPES.reduce((acc,t)=>{ acc[t.key]=0; return acc; },{}),
 
-        // interpellations
         itPersonnes: 0,
         itPoursuites: 0,
         itValeur: 0,
@@ -496,33 +512,31 @@ router.get('/stats/category/:category', ensureAdmin, async (req, res) => {
           Client:{personnes:0,poursuites:0,valeur:0},
           Personnel:{personnes:0,poursuites:0,valeur:0},
           Prestataire:{personnes:0,poursuites:0,valeur:0}
-        }
+        },
+
+        amTotal: 0,
+        amByType: ANOMALIE_TYPES.reduce((acc,t)=>{ acc[t]=0; return acc; },{})
       };
 
       for (const inst of (m.instances || [])) {
         if ((searchParams.mois  && inst.mois  !== searchParams.mois) ||
             (searchParams.annee && inst.annee !== searchParams.annee)) continue;
 
-        // Formation
         (inst.formation || []).forEach(f=>{
           const n = Number(f.nombrePersonnes)||0;
           per.fTotal += n;
           if (per.fTypes[f.type] !== undefined) per.fTypes[f.type] += n;
-
           totalsAll.formationTotal += n;
           if (totalsAll.formationByType[f.type] !== undefined) totalsAll.formationByType[f.type] += n;
         });
 
-        // Accidents
         (inst.accidents || []).forEach(a=>{
           const n = Number(a.nombreAccidents)||0;
           const j = Number(a.joursArret)||0;
           per.aCount += n;
           per.aJours += j;
-
           totalsAll.accidentsCount += n;
           totalsAll.accidentsJours += j;
-
           const cause = (a.cause || '').trim();
           if (cause) {
             per.aCauses[cause] = (per.aCauses[cause]||0) + n;
@@ -530,7 +544,6 @@ router.get('/stats/category/:category', ensureAdmin, async (req, res) => {
           }
         });
 
-        // Incidents
         (inst.incidents || []).forEach(i=>{
           const n = Number(i.nombreIncidents)||0;
           per.iTotal += n;
@@ -540,62 +553,49 @@ router.get('/stats/category/:category', ensureAdmin, async (req, res) => {
           totalsAll.incidentByType[key] = (totalsAll.incidentByType[key]||0) + n;
         });
 
-        // Interpellations
         (inst.interpellations || []).forEach(it=>{
           const p  = Number(it.nombrePersonnes)||0;
           const pj = Number(it.poursuites)||0;
           const v  = Number(it.valeurMarchandise)||0;
-
           per.itPersonnes += p;
           per.itPoursuites += pj;
           per.itValeur     += v;
-
           totalsAll.interPersonnes += p;
           totalsAll.interPoursuites += pj;
           totalsAll.interValeur     += v;
-
           if (INTER_TYPES.includes(it.typePersonne)) {
             per.itTypes[it.typePersonne].personnes += p;
             per.itTypes[it.typePersonne].poursuites += pj;
             per.itTypes[it.typePersonne].valeur     += v;
-
             totalsAll.interByType[it.typePersonne].personnes += p;
             totalsAll.interByType[it.typePersonne].poursuites += pj;
             totalsAll.interByType[it.typePersonne].valeur     += v;
           }
+        });
+
+        (inst.anomaliesMarche || []).forEach(a=>{
+          per.amTotal += 1;
+          totalsAll.anomaliesTotal += 1;
+          const t = a.anomalieDetectee || '';
+          if (t && per.amByType[t] !== undefined) per.amByType[t] += 1;
+          if (t && totalsAll.anomaliesByType[t] !== undefined) totalsAll.anomaliesByType[t] += 1;
         });
       }
 
       rows.push(per);
     }
 
-    // Initial "selected" totals = all rows checked by default
     let selectedInit = {};
     if (category === 'formation') {
-      selectedInit = {
-        formationTotal: totalsAll.formationTotal,
-        formationByType: totalsAll.formationByType
-      };
+      selectedInit = { formationTotal: totalsAll.formationTotal, formationByType: totalsAll.formationByType };
     } else if (category === 'accidents') {
-      selectedInit = {
-        accidentsCount: totalsAll.accidentsCount,
-        accidentsJours: totalsAll.accidentsJours,
-        accidentByCause: totalsAll.accidentByCause,
-        incidentsTotal: totalsAll.incidentsTotal,
-        incidentByType: totalsAll.incidentByType
-      };
+      selectedInit = { accidentsCount: totalsAll.accidentsCount, accidentsJours: totalsAll.accidentsJours, accidentByCause: totalsAll.accidentByCause };
     } else if (category === 'incidents') {
-      selectedInit = {
-        incidentsTotal: totalsAll.incidentsTotal,
-        incidentByType: totalsAll.incidentByType
-      };
+      selectedInit = { incidentsTotal: totalsAll.incidentsTotal, incidentByType: totalsAll.incidentByType };
     } else if (category === 'interpellations') {
-      selectedInit = {
-        interPersonnes: totalsAll.interPersonnes,
-        interPoursuites: totalsAll.interPoursuites,
-        interValeur: totalsAll.interValeur,
-        interByType: totalsAll.interByType
-      };
+      selectedInit = { interPersonnes: totalsAll.interPersonnes, interPoursuites: totalsAll.interPoursuites, interValeur: totalsAll.interValeur, interByType: totalsAll.interByType };
+    } else if (category === 'anomalies') {
+      selectedInit = { anomaliesTotal: totalsAll.anomaliesTotal, anomaliesByType: totalsAll.anomaliesByType };
     }
 
     const availableRegions = [...new Set(supermarkets.map(s => s.ville))].sort();
@@ -607,13 +607,13 @@ router.get('/stats/category/:category', ensureAdmin, async (req, res) => {
       totalsAll,
       selectedInit,
       availableRegions,
-      incidentTypes: INCIDENT_TYPES
+      incidentTypes: INCIDENT_TYPES,
+      anomalieTypes: ANOMALIE_TYPES
     });
   } catch(err) {
     console.error(err);
     res.status(500).send('Erreur serveur');
   }
 });
-
 
 module.exports = router;

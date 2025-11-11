@@ -1,0 +1,32 @@
+<h3>Éditer Anomalie Marché</h3>
+
+<div class="mb-3">
+  <a href="/supermarkets/<%= supermarketId %>/instance/<%= instanceId %>/anomalies" class="btn btn-secondary">Retour</a>
+</div>
+
+<form action="/supermarkets/<%= supermarketId %>/instance/<%= instanceId %>/anomalies/editer/<%= anomItem._id %>" method="POST" class="row g-3">
+  <div class="col-md-4">
+    <label class="form-label">Date de détection</label>
+    <input type="date" name="dateDetection" class="form-control"
+      value="<%= anomItem.dateDetection ? new Date(anomItem.dateDetection).toISOString().substring(0,10) : '' %>" required>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Heure de détection</label>
+    <input type="time" name="heureDetection" class="form-control" value="<%= anomItem.heureDetection || '' %>">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Anomalie détectée</label>
+    <select name="anomalieDetectee" class="form-select" required>
+      <% (options||[]).forEach(o=>{ %>
+        <option value="<%= o %>" <%= anomItem.anomalieDetectee===o?'selected':'' %>><%= o %></option>
+      <% }) %>
+    </select>
+  </div>
+  <div class="col-12">
+    <label class="form-label">Produits</label>
+    <input type="text" name="produits" class="form-control" value="<%= anomItem.produits || '' %>">
+  </div>
+  <div class="col-12">
+    <button class="btn btn-primary" type="submit">Enregistrer</button>
+  </div>
+</form>
