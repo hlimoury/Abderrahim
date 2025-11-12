@@ -9,11 +9,11 @@
 
 <!-- Button to add a new instance and view instance totals -->
 <div class="mb-3">
-  <% if (!anomaliesOnly) { %>
+  
   
   <a href="/supermarkets/<%= supermarket._id %>/ajouter-instance?fromPage=<%= fromPage || 1 %>" class="btn btn-primary">Ajouter Instance (Mois/Année)</a>
   <!-- <a href="/supermarkets/<%= supermarket._id %>/instances/totaux?fromPage=<%= fromPage || 1 %>" class="btn btn-info">Total Indicateurs</a> -->
-  <% } %>
+  
   <!-- Return button that will be updated via JS -->
   <a href="/" id="returnButton" class="btn btn-secondary">Retour à la liste</a>
 </div>

@@ -240,7 +240,35 @@
           </div>
         </div>
       </div>
-    <% } %>
+      <% } else if (category === 'anomalies') { %>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header bg-dark text-white">Anomalies - Total (sélection)</div>
+      <div class="card-body">
+        <h2 id="am-total"><%= selectedInit.anomaliesTotal %></h2>
+        <div class="small mt-2" id="am-types-sel">
+          <% (anomalieTypes||[]).forEach(t=>{ %>
+            <span class="badge bg-light text-dark border me-1 mb-1"><%= t %>: <%= selectedInit.anomaliesByType[t] %></span>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">Anomalies - Total (tous cochés)</div>
+      <div class="card-body">
+        <h3><%= totalsAll.anomaliesTotal %></h3>
+        <div class="small text-muted">
+          <% (anomalieTypes||[]).forEach(t=>{ %>
+            <span class="badge bg-light text-dark border me-1 mb-1"><%= t %>: <%= totalsAll.anomaliesByType[t] %></span>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% } %>
+
   </div>
 </div>
 
@@ -301,7 +329,13 @@
                   <th>Client (P/PJ/kDH)</th>
                   <th>Personnel (P/PJ/kDH)</th>
                   <th>Prestataire (P/PJ/kDH)</th>
+                  <% } else if (category === 'anomalies') { %>
+                  <th>Anomalies</th>
+                  <% (anomalieTypes||[]).forEach(t=>{ %>
+                    <th><%= t %></th>
+                  <% }) %>
                 <% } %>
+
               </tr>
             </thead>
             <tbody id="markets-tbody">
@@ -336,6 +370,9 @@
                   data-it-prestataire-p="<%= r.itTypes.Prestataire.personnes %>"
                   data-it-prestataire-pj="<%= r.itTypes.Prestataire.poursuites %>"
                   data-it-prestataire-v="<%= r.itTypes.Prestataire.valeur %>"
+                  data-am-total="<%= r.amTotal %>"
+                  data-am-bytype="<%= encodeURIComponent(JSON.stringify(r.amByType||{})) %>"
+
                 >
                   <td>
                     <input type="checkbox" class="form-check-input market-select" checked>
@@ -383,7 +420,13 @@
                       <%= r.itTypes.Prestataire.personnes %> / <%= r.itTypes.Prestataire.poursuites %> /
                       <%= r.itTypes.Prestataire.valeur.toFixed(3).replace('.',',') %>
                     </td>
+                    <% } else if (category === 'anomalies') { %>
+                    <td><%= r.amTotal %></td>
+                    <% (anomalieTypes||[]).forEach(t=>{ %>
+                      <td><%= r.amByType[t] %></td>
+                    <% }) %>
                   <% } %>
+
                 </tr>
               <% }) %>
             </tbody>
@@ -400,7 +443,8 @@
   <script>
   (function(){
     const category = '<%= category %>';
-    const incidentTypes = <%- JSON.stringify(incidentTypes) %>; // [{key,label},...]
+    const incidentTypes = <%- JSON.stringify(incidentTypes) %>; 
+    const anomalieTypes = <%- JSON.stringify(anomalieTypes || []) %>;// [{key,label},...]
   
     const fmtKD = (v)=> (Number(v)||0).toFixed(3).replace('.',',');
   
@@ -412,7 +456,15 @@
         '<span class="badge bg-light text-dark border me-1 mb-1">'+c+': '+v+'</span>'
       ).join(' ');
     }
-  
+    function renderAnomalieBadges(containerId, counts){
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const html = (anomalieTypes||[]).map(t =>
+      '<span class="badge bg-light text-dark border me-1 mb-1">'+t+': '+(counts[t]||0)+'</span>'
+    ).join(' ');
+    el.innerHTML = html;
+  }
+
     function compute() {
       const rows = Array.from(document.querySelectorAll('#markets-tbody tr'));
       const checked = rows.filter(r => r.querySelector('.market-select').checked);
@@ -482,7 +534,28 @@
           if (el) el.textContent = iByType[t.key] || 0;
         });
       }
-  
+      if (category === 'anomalies') {
+    let total = 0;
+    const byType = {};
+    (anomalieTypes||[]).forEach(t => byType[t] = 0);
+
+    const rows = Array.from(document.querySelectorAll('#markets-tbody tr'));
+    const checked = rows.filter(r => r.querySelector('.market-select').checked);
+
+    checked.forEach(r=>{
+      total += Number(r.dataset.amTotal || 0);
+      let rowTypes = {};
+      try { rowTypes = JSON.parse(decodeURIComponent(r.dataset.amBytype || '%7B%7D')); } catch(e){ rowTypes = {}; }
+      Object.entries(rowTypes).forEach(([k,v])=>{
+        byType[k] = (byType[k]||0) + (Number(v)||0);
+      });
+    });
+
+    const totalEl = document.getElementById('am-total');
+    if (totalEl) totalEl.textContent = total;
+    renderAnomalieBadges('am-types-sel', byType);
+  }
+
       if (category === 'incidents') {
         let total=0;
         const byType = {};
