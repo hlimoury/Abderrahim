@@ -23,25 +23,25 @@ function parseNumber(str) {
 }
 
 // ADD near the top of routes/supermarkets.js
-function denyStructureIfAnomaliesAccount(req, res, next) {
-  if (req.session && req.session.anomaliesOnly) {
-    return res.status(403).send('Action non autorisée pour ce compte');
-  }
-  next();
-}
+// function denyStructureIfAnomaliesAccount(req, res, next) {
+//   if (req.session && req.session.anomaliesOnly) {
+//     return res.status(403).send('Action non autorisée pour ce compte');
+//   }
+//   next();
+// }
 
 // IMPORTANT: Place these BEFORE your route handlers so they intercept first.
 // Supermarket structure: add/edit/delete
-router.use('/ajouter', denyStructureIfAnomaliesAccount);
-router.use('/editer/:id', denyStructureIfAnomaliesAccount);
-router.use('/:id/editer', denyStructureIfAnomaliesAccount);
-router.use('/supprimer/:id', denyStructureIfAnomaliesAccount);
-router.use('/:id/supprimer', denyStructureIfAnomaliesAccount);
+// router.use('/ajouter', denyStructureIfAnomaliesAccount);
+// router.use('/editer/:id', denyStructureIfAnomaliesAccount);
+// router.use('/:id/editer', denyStructureIfAnomaliesAccount);
+// router.use('/supprimer/:id', denyStructureIfAnomaliesAccount);
+// router.use('/:id/supprimer', denyStructureIfAnomaliesAccount);
 
-// Instance structure: add/edit/delete
-router.use('/:id/ajouter-instance', denyStructureIfAnomaliesAccount);
-router.use('/:id/instance/editer/:instanceId', denyStructureIfAnomaliesAccount);
-router.use('/:id/instance/supprimer/:instanceId', denyStructureIfAnomaliesAccount);
+// // Instance structure: add/edit/delete
+// router.use('/:id/ajouter-instance', denyStructureIfAnomaliesAccount);
+// router.use('/:id/instance/editer/:instanceId', denyStructureIfAnomaliesAccount);
+// router.use('/:id/instance/supprimer/:instanceId', denyStructureIfAnomaliesAccount);
 
 // If you have other structure routes (duplicate/copy/reset), add them here too.
 

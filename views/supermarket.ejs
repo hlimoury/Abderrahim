@@ -63,12 +63,13 @@
     
     <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/anomalies?fromPage=<%= fromPage || 1 %>" class="btn btn-outline-primary btn-sm">Anomalies Marché</a>
     <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/scoring?fromPage=<%= fromPage || 1 %>" class="btn btn-dark btn-sm">Scoring</a>
+    <% } else { %>
     <a href="/supermarkets/<%= supermarket._id %>/instance/editer/<%= instance._id %>?fromPage=<%= fromPage || 1 %>" class="btn btn-primary btn-sm">Modifier</a>
     <a href="/supermarkets/<%= supermarket._id %>/instance/supprimer/<%= instance._id %>?fromPage=<%= fromPage || 1 %>" class="btn btn-danger btn-sm"
       onclick="return confirm('Voulez-vous vraiment supprimer cette instance ?');">
       Supprimer
     </a>
-  <% } else { %>
+  
     
     <a href="/supermarkets/<%= supermarket._id %>/instance/<%= instance._id %>/anomalies?fromPage=<%= fromPage || 1 %>" class="btn btn-outline-primary btn-sm">Anomalies Marché</a>
   <% } %>
