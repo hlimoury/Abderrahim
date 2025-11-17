@@ -13,7 +13,30 @@
         /* Optional: make it stand out when stuck */
         .sticky-summary.stuck { box-shadow: 0 .25rem 1rem rgba(0,0,0,.08); }
       </style>
-
+<% 
+const qsParts = [];
+if (searchParams.nom)   qsParts.push('nom=' + encodeURIComponent(searchParams.nom));
+if (searchParams.ville) qsParts.push('ville=' + encodeURIComponent(searchParams.ville));
+if (searchParams.mois)  qsParts.push('mois=' + encodeURIComponent(searchParams.mois));
+if (searchParams.annee) qsParts.push('annee=' + encodeURIComponent(searchParams.annee));
+const baseQs = qsParts.join('&');
+const amOnlyUrl = '/stats/category/anomalies?amOnly=1' + (baseQs ? '&' + baseQs : '');
+const amTypePrefix = '/stats/category/anomalies?' + (baseQs ? baseQs + '&' : '') + 'amType=';
+%>
+<% if (amFilter && (amFilter.amOnly || amFilter.amType)) { %>
+  <div class="alert alert-info d-flex align-items-center justify-content-between">
+    <div>
+      <strong>Filtre appliqué:</strong>
+      <% if (amFilter.amType) { %>
+        Anomalie = "<%= amFilter.amType %>"
+      <% } else { %>
+        Magasins avec au moins une anomalie
+      <% } %>
+    </div>
+    <a class="btn btn-sm btn-outline-secondary"
+       href="/stats/category/anomalies<%= baseQs ? '?' + baseQs : '' %>">Effacer le filtre</a>
+  </div>
+<% } %>
 <nav class="p-3">
     <a href="/stats" class="btn btn-primary">Stats Accueil</a>
     <a href="/admin/archived" class="btn btn-secondary">Rapports Archivés</a>
@@ -245,7 +268,11 @@
     <div class="card h-100">
       <div class="card-header bg-dark text-white">Anomalies - Total (sélection)</div>
       <div class="card-body">
-        <h2 id="am-total"><%= selectedInit.anomaliesTotal %></h2>
+        <h2>
+  <a id="am-total-link" href="<%= amOnlyUrl %>" class="text-decoration-none">
+    <span id="am-total-number"><%= selectedInit.anomaliesTotal %></span>
+  </a>
+</h2>
         <div class="small mt-2" id="am-types-sel">
           <% (anomalieTypes||[]).forEach(t=>{ %>
             <span class="badge bg-light text-dark border me-1 mb-1"><%= t %>: <%= selectedInit.anomaliesByType[t] %></span>
@@ -258,12 +285,16 @@
     <div class="card h-100">
       <div class="card-header">Anomalies - Total (tous cochés)</div>
       <div class="card-body">
-        <h3><%= totalsAll.anomaliesTotal %></h3>
-        <div class="small text-muted">
-          <% (anomalieTypes||[]).forEach(t=>{ %>
-            <span class="badge bg-light text-dark border me-1 mb-1"><%= t %>: <%= totalsAll.anomaliesByType[t] %></span>
-          <% }) %>
-        </div>
+        <h3>
+  <a href="<%= amOnlyUrl %>" class="text-decoration-none"><%= totalsAll.anomaliesTotal %></a>
+</h3>
+<div class="small text-muted">
+  <% (anomalieTypes || []).forEach(t => { %>
+    <a href="<%= amTypePrefix + encodeURIComponent(t) %>" class="text-decoration-none">
+      <span class="badge bg-light text-dark border me-1 mb-1"><%= t %>: <%= totalsAll.anomaliesByType[t] %></span>
+    </a>
+  <% }) %>
+</div>
       </div>
     </div>
   </div>
@@ -442,9 +473,12 @@
   
   <script>
   (function(){
-    const category = '<%= category %>';
-    const incidentTypes = <%- JSON.stringify(incidentTypes) %>; 
-    const anomalieTypes = <%- JSON.stringify(anomalieTypes || []) %>;// [{key,label},...]
+  const category = '<%= category %>';
+  const incidentTypes = <%- JSON.stringify(incidentTypes) %>;
+  const anomalieTypes = <%- JSON.stringify(anomalieTypes || []) %>;
+  const AM_ONLY_URL = '<%- amOnlyUrl %>';
+  const AM_TYPE_PREFIX = '<%- amTypePrefix %>';
+
   
     const fmtKD = (v)=> (Number(v)||0).toFixed(3).replace('.',',');
   
@@ -459,9 +493,12 @@
     function renderAnomalieBadges(containerId, counts){
     const el = document.getElementById(containerId);
     if (!el) return;
-    const html = (anomalieTypes||[]).map(t =>
-      '<span class="badge bg-light text-dark border me-1 mb-1">'+t+': '+(counts[t]||0)+'</span>'
-    ).join(' ');
+    const html = (anomalieTypes||[]).map(t => {
+      const href = AM_TYPE_PREFIX + encodeURIComponent(t);
+      return '<a href="'+href+'" class="text-decoration-none">'
+           +   '<span class="badge bg-light text-dark border me-1 mb-1">'+t+': '+(counts[t]||0)+'</span>'
+           + '</a>';
+    }).join(' ');
     el.innerHTML = html;
   }
 
@@ -534,26 +571,28 @@
           if (el) el.textContent = iByType[t.key] || 0;
         });
       }
+   
       if (category === 'anomalies') {
-    let total = 0;
-    const byType = {};
-    (anomalieTypes||[]).forEach(t => byType[t] = 0);
+      let total = 0;
+      const byType = {};
+      (anomalieTypes||[]).forEach(t => byType[t] = 0);
 
-    const rows = Array.from(document.querySelectorAll('#markets-tbody tr'));
-    const checked = rows.filter(r => r.querySelector('.market-select').checked);
+      const rows = Array.from(document.querySelectorAll('#markets-tbody tr'));
+      const checked = rows.filter(r => r.querySelector('.market-select').checked);
 
-    checked.forEach(r=>{
-      total += Number(r.dataset.amTotal || 0);
-      let rowTypes = {};
-      try { rowTypes = JSON.parse(decodeURIComponent(r.dataset.amBytype || '%7B%7D')); } catch(e){ rowTypes = {}; }
-      Object.entries(rowTypes).forEach(([k,v])=>{
-        byType[k] = (byType[k]||0) + (Number(v)||0);
+      checked.forEach(r=>{
+        total += Number(r.dataset.amTotal || 0);
+        let rowTypes = {};
+        try { rowTypes = JSON.parse(decodeURIComponent(r.dataset.amBytype || '%7B%7D')); } catch(e){ rowTypes = {}; }
+        Object.entries(rowTypes).forEach(([k,v])=>{
+          byType[k] = (byType[k]||0) + (Number(v)||0);
+        });
       });
-    });
 
-    const totalEl = document.getElementById('am-total');
-    if (totalEl) totalEl.textContent = total;
-    renderAnomalieBadges('am-types-sel', byType);
+      const totalEl = document.getElementById('am-total-number');
+      if (totalEl) totalEl.textContent = total;
+      renderAnomalieBadges('am-types-sel', byType);
+    }
   }
 
       if (category === 'incidents') {

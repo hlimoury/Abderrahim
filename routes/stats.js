@@ -438,7 +438,7 @@ function zeroIncidentMap(){
 router.get('/stats/category/:category', ensureAdmin, async (req, res) => {
   try {
     const category = (req.params.category || '').toLowerCase();
-    const allowed = ['formation','accidents','incidents','interpellations','anomalies']; // + anomalies
+    const allowed = ['formation','accidents','incidents','interpellations','anomalies'];
     if (!allowed.includes(category)) return res.status(400).send('Catégorie invalide');
 
     const categoryLabel = {
@@ -446,16 +446,21 @@ router.get('/stats/category/:category', ensureAdmin, async (req, res) => {
       accidents:'Accidents',
       incidents:'Incidents',
       interpellations:'Interpellations',
-      anomalies:'Anomalies Marché' // NEW
+      anomalies:'Anomalies Marché'
     }[category];
 
-    // Filters
+    // Existing filters
     const searchParams = {
       nom   : req.query.nom   || '',
       ville : req.query.ville || '',
       mois  : req.query.mois  ? parseInt(req.query.mois)  : null,
       annee : req.query.annee ? parseInt(req.query.annee) : null
     };
+
+    // NEW: anomalies filters
+    const amOnly = ['1','true','yes'].includes(String(req.query.amOnly || '').toLowerCase());
+    const amTypeRaw = (req.query.amType || '').trim();
+    const amType = ANOMALIE_TYPES.includes(amTypeRaw) ? amTypeRaw : null;
 
     const adminFilter = getAdminRegionFilter(req);
     const supermarkets = await Supermarket.find(adminFilter);
@@ -469,7 +474,7 @@ router.get('/stats/category/:category', ensureAdmin, async (req, res) => {
       accidentByCause: {},
 
       incidentsTotal: 0,
-      incidentByType: INCIDENT_TYPES.reduce((acc,t)=>{ acc[t.key]=0; return acc; },{}),
+      incidentByType: { departFeu:0, agression:0, autorites:0, sinistreClient:0, acteSecurisation:0, autre:0 },
 
       interPersonnes: 0,
       interPoursuites: 0,
@@ -481,10 +486,10 @@ router.get('/stats/category/:category', ensureAdmin, async (req, res) => {
       },
 
       anomaliesTotal: 0,
-      anomaliesByType: ANOMALIE_TYPES.reduce((acc,t)=>{ acc[t]=0; return acc; },{}) // NEW
+      anomaliesByType: ANOMALIE_TYPES.reduce((acc,t)=>{ acc[t]=0; return acc; },{})
     };
 
-    const rows = [];
+    let rows = []; // CHANGED to let
 
     for (const m of supermarkets) {
       if (searchParams.nom && !m.nom.toLowerCase().includes(searchParams.nom.toLowerCase())) continue;
@@ -503,7 +508,7 @@ router.get('/stats/category/:category', ensureAdmin, async (req, res) => {
         aCauses: {},
 
         iTotal: 0,
-        iTypes: INCIDENT_TYPES.reduce((acc,t)=>{ acc[t.key]=0; return acc; },{}),
+        iTypes: { departFeu:0, agression:0, autorites:0, sinistreClient:0, acteSecurisation:0, autre:0 },
 
         itPersonnes: 0,
         itPoursuites: 0,
@@ -563,7 +568,7 @@ router.get('/stats/category/:category', ensureAdmin, async (req, res) => {
           totalsAll.interPersonnes += p;
           totalsAll.interPoursuites += pj;
           totalsAll.interValeur     += v;
-          if (INTER_TYPES.includes(it.typePersonne)) {
+          if (['Client','Personnel','Prestataire'].includes(it.typePersonne)) {
             per.itTypes[it.typePersonne].personnes += p;
             per.itTypes[it.typePersonne].poursuites += pj;
             per.itTypes[it.typePersonne].valeur     += v;
@@ -585,6 +590,25 @@ router.get('/stats/category/:category', ensureAdmin, async (req, res) => {
       rows.push(per);
     }
 
+    // APPLY FILTERS for anomalies
+    if (category === 'anomalies' && (amOnly || amType)) {
+      rows = rows.filter(r => {
+        if (amType) return (r.amByType[amType] || 0) > 0;
+        return (r.amTotal || 0) > 0;
+      });
+
+      // Recompute anomalies totals (for "Tous cochés" and initial selection)
+      const newByType = ANOMALIE_TYPES.reduce((acc,t)=>{ acc[t]=0; return acc; }, {});
+      let newTotal = 0;
+      rows.forEach(r => {
+        newTotal += r.amTotal || 0;
+        ANOMALIE_TYPES.forEach(t => newByType[t] += r.amByType[t] || 0);
+      });
+      totalsAll.anomaliesTotal = newTotal;
+      totalsAll.anomaliesByType = newByType;
+    }
+
+    // selectedInit
     let selectedInit = {};
     if (category === 'formation') {
       selectedInit = { formationTotal: totalsAll.formationTotal, formationByType: totalsAll.formationByType };
@@ -608,7 +632,8 @@ router.get('/stats/category/:category', ensureAdmin, async (req, res) => {
       selectedInit,
       availableRegions,
       incidentTypes: INCIDENT_TYPES,
-      anomalieTypes: ANOMALIE_TYPES
+      anomalieTypes: ANOMALIE_TYPES,
+      amFilter: { amOnly, amType }  // NEW: to show a banner/clear link
     });
   } catch(err) {
     console.error(err);
