@@ -1,0 +1,123 @@
+/* public/css/dashboard.css */
+
+:root{
+    --grad-a: #2f6fed;
+    --grad-b: #5f3dc4;
+    --card-bg: rgba(255,255,255,0.7);
+    --glass-border: rgba(255,255,255,0.45);
+    --shadow: 0 10px 30px rgba(23, 28, 33, 0.08);
+    --indigo: #5f3dc4;
+  }
+  
+  .text-gradient {
+    background: linear-gradient(90deg, var(--grad-a), var(--grad-b));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  
+  .sticky-actions{
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    background: rgba(255,255,255,0.9);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+  }
+  
+  .dashboard-header{
+    background: linear-gradient(135deg, var(--grad-a), var(--grad-b));
+    position: relative;
+    overflow: hidden;
+  }
+  .dashboard-header .gradient-blob{
+    position: absolute;
+    right: -10%;
+    top: -30%;
+    width: 60vw; height: 60vw;
+    min-width: 520px; min-height: 520px;
+    background: radial-gradient(closest-side, rgba(255,255,255,0.25), transparent 65%);
+    filter: blur(12px);
+    pointer-events: none;
+  }
+  
+  .glass-card{
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow);
+  }
+  
+  .kpi-card{
+    position: relative;
+    overflow: hidden;
+    background: #fff;
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(0,0,0,0.04);
+  }
+  .kpi-card .kpi-icon{
+    position: absolute; right: 12px; top: 10px;
+    font-size: 22px; opacity: 0.5;
+  }
+  .kpi-card .kpi-label{ font-size: 12px; color: #6c757d; text-transform: uppercase; letter-spacing: .04em;}
+  .kpi-card .kpi-value{ font-size: 28px; font-weight: 700; margin-top: 2px; }
+  .kpi-card .kpi-sub{ font-size: 12px; color: #6c757d; margin-top: 6px; }
+  
+  .kpi-primary .kpi-icon{ color: #2f6fed; }
+  .kpi-danger .kpi-icon{ color: #e03131; }
+  .kpi-warning .kpi-icon{ color: #fab005; }
+  .kpi-info .kpi-icon{ color: #15aabf; }
+  .kpi-indigo .kpi-icon{ color: var(--indigo); }
+  .badge.bg-indigo{ background-color: var(--indigo) !important; }
+  
+  .subcard{
+    background: rgba(255,255,255,0.6);
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 10px;
+    padding: 12px;
+  }
+  
+  .accordion-item.glass-card{
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(0,0,0,0.05);
+  }
+  .accordion-button{
+    background: rgba(255,255,255,0.7);
+  }
+  .accordion-button:not(.collapsed){
+    background: rgba(255,255,255,0.9);
+  }
+  
+  .toast-float{
+    position: fixed;
+    bottom: 14px; right: 14px;
+    background: #212529;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 8px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: .25s ease;
+    z-index: 2000;
+  }
+  .toast-float.show{
+    opacity: 1; transform: translateY(0);
+  }
+  
+  .export-hidden{
+    visibility: hidden !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border: 0 !important;
+  }
+  
+  body.compact .subcard table td,
+  body.compact .subcard table th{
+    padding-top: .25rem; padding-bottom: .25rem;
+  }
+  body.compact .accordion-button{
+    padding-top: .4rem; padding-bottom: .4rem;
+  }
+  

@@ -8,6 +8,7 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const morgan = require('morgan');
 const path = require('path');
+
 require('dotenv').config(); // optionnel si tu veux utiliser .env plus tard
 
 const app = express();
