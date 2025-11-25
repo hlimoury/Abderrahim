@@ -66,8 +66,7 @@
                 <input type="text" class="form-control form-control-sm" name="nom" placeholder="Ex: Alpha"
                        value="<%= searchParams.nom || '' %>">
               </div>
-              <div class="col-md-3">
-                <label class="form-label small text-muted mb-1">Ville</label>
+              <div class="col-md-2"> <label class="form-label small text-muted mb-1">Ville</label>
                 <select class="form-select form-select-sm" name="ville">
                   <option value="">Toutes</option>
                   <% (availableCities || []).forEach(v => { %>
@@ -75,6 +74,17 @@
                   <% }) %>
                 </select>
               </div>
+
+              <div class="col-md-3">
+                <label class="form-label small text-muted mb-1">Type Anomalie</label>
+                <select class="form-select form-select-sm" name="anomalieType">
+                    <option value="">Tous les types</option>
+                    <% (anomalieTypes || []).forEach(t => { %>
+                        <option value="<%= t %>" <%= t === (searchParams.anomalieType||'') ? 'selected' : '' %>><%= t %></option>
+                    <% }) %>
+                </select>
+              </div>
+
               <div class="col-md-2">
                 <label class="form-label small text-muted mb-1">Mois</label>
                 <input type="number" class="form-control form-control-sm" min="1" max="12" name="mois"
@@ -87,7 +97,6 @@
               </div>
             </div>
           
-            <!-- NEW: Tranche horaire -->
             <div class="row g-2 mt-2">
               <div class="col-6 col-md-3">
                 <label class="form-label small text-muted mb-1">Du (date)</label>
@@ -112,10 +121,12 @@
               <div class="col-12 col-md-2">
                 <label class="form-label small text-muted mb-1">Granularité</label>
                 <select class="form-select form-select-sm" name="groupBy">
-                  <option value="auto"  <%= (timeFilters && timeFilters.groupBy==='auto') ? 'selected' : '' %>>Auto</option>
-                  <option value="month" <%= (timeFilters && timeFilters.groupBy==='month') ? 'selected' : '' %>>Mois</option>
-                  <option value="day"   <%= (timeFilters && timeFilters.groupBy==='day')   ? 'selected' : '' %>>Jours</option>
-                  <option value="hour"  <%= (timeFilters && timeFilters.groupBy==='hour')  ? 'selected' : '' %>>Heures</option>
+                  <option value="auto"   <%= (timeFilters && timeFilters.groupBy==='auto') ? 'selected' : '' %>>Auto</option>
+                  <option value="month"  <%= (timeFilters && timeFilters.groupBy==='month') ? 'selected' : '' %>>Mois</option>
+                  <option value="week"   <%= (timeFilters && timeFilters.groupBy==='week')  ? 'selected' : '' %>>Semaines</option>
+                  <option value="day"    <%= (timeFilters && timeFilters.groupBy==='day')   ? 'selected' : '' %>>Jours</option>
+                  <option value="hour"   <%= (timeFilters && timeFilters.groupBy==='hour')  ? 'selected' : '' %>>Heures (détail)</option>
+                  <option value="period" <%= (timeFilters && timeFilters.groupBy==='period') ? 'selected' : '' %>>Créneaux (8-12-14-17-22)</option>
                 </select>
               </div>
             </div>
@@ -204,7 +215,9 @@
                 <h3 class="h6 m-0">
                   <i class="bi bi-graph-up"></i>
                   Évolution des anomalies dans le temps
-                  <small class="text-muted">(<%= timeFilters.groupBy === 'hour' ? 'Heures' : timeFilters.groupBy === 'day' ? 'Jours' : 'Mois' %>)</small>
+                  <small class="text-muted">
+                    (<%= timeFilters.groupBy === 'hour' ? 'Heures' : timeFilters.groupBy === 'day' ? 'Jours' : timeFilters.groupBy === 'week' ? 'Semaines' : 'Mois' %>)
+                  </small>
                 </h3>
               </div>
               <canvas id="chartEvoAnomalies" height="200"></canvas>
@@ -753,18 +766,24 @@
     if (!timeFilters || !timeFilters.active) return;
     const ctx = document.getElementById('chartEvoAnomalies');
     if (!ctx) return;
-    const palette = {
-      indigo: '#5f3dc4'
-    };
+    const palette = { indigo: '#5f3dc4' };
+
+    // NEW: Decide chart type
+    // If 'period', use a Bar chart. Otherwise use Line.
+    const isPeriod = (evo.groupBy === 'period');
+    const chartType = isPeriod ? 'bar' : 'line';
+
     new Chart(ctx, {
-      type: 'line',
+      type: chartType, 
       data: {
         labels: evo.labels || [],
         datasets: [{
           label: 'Anomalies',
           data: evo.anomalies || [],
           borderColor: palette.indigo,
-          backgroundColor: 'rgba(95,61,196,0.15)',
+          backgroundColor: isPeriod ? palette.indigo : 'rgba(95,61,196,0.15)', // Solid color for bars
+          borderWidth: isPeriod ? 0 : 2,
+          borderRadius: isPeriod ? 4 : 0,
           pointRadius: 2,
           tension: 0.25,
           fill: true
@@ -781,7 +800,7 @@
         }
       }
     });
-  })();
+})();
     // Timeseries (if available)
     (function(){
       if (!timeseries || !timeseries.hasYear) return;
