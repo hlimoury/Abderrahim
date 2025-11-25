@@ -48,100 +48,116 @@
   </div>
 
   <!-- Header -->
-  <header class="dashboard-header">
-    <div class="container-fluid py-4 position-relative">
-      <div class="gradient-blob"></div>
-      <div class="row align-items-end">
-        <div class="col-lg-8">
-          <h2 class="display-6 fw-bold text-white mb-1">
-            Vue globale des supermarchés
+  <header class="dashboard-header py-4 bg-white border-bottom mb-4">
+    <div class="container-fluid">
+      <div class="row align-items-center">
+        
+        <div class="col-lg-4 mb-3 mb-lg-0">
+          <h2 class="display-6 fw-bold text-dark mb-1">
+            Vue globale
           </h2>
-          <p class="lead text-white-50 mb-0"><%= filterSummary %></p>
+          <p class="lead text-secondary mb-0" style="font-size: 1rem;">
+            <%= filterSummary %>
+          </p>
         </div>
-        <div class="col-lg-4 mt-3 mt-lg-0">
-          <form class="glass-card p-3 rounded-3" action="/stats/dashboard" method="get" id="filter-form">
-            <div class="row g-2">
-              <div class="col-md-3">
-                <label class="form-label small text-muted mb-1">Nom</label>
-                <input type="text" class="form-control form-control-sm" name="nom" placeholder="Ex: Alpha"
-                       value="<%= searchParams.nom || '' %>">
-              </div>
-              <div class="col-md-2"> <label class="form-label small text-muted mb-1">Ville</label>
-                <select class="form-select form-select-sm" name="ville">
-                  <option value="">Toutes</option>
-                  <% (availableCities || []).forEach(v => { %>
-                    <option value="<%= v %>" <%= v === (searchParams.ville||'') ? 'selected' : '' %>><%= v %></option>
-                  <% }) %>
-                </select>
-              </div>
-
-              <div class="col-md-3">
-                <label class="form-label small text-muted mb-1">Type Anomalie</label>
-                <select class="form-select form-select-sm" name="anomalieType">
-                    <option value="">Tous les types</option>
-                    <% (anomalieTypes || []).forEach(t => { %>
-                        <option value="<%= t %>" <%= t === (searchParams.anomalieType||'') ? 'selected' : '' %>><%= t %></option>
-                    <% }) %>
-                </select>
-              </div>
-
-              <div class="col-md-2">
-                <label class="form-label small text-muted mb-1">Mois</label>
-                <input type="number" class="form-control form-control-sm" min="1" max="12" name="mois"
-                       value="<%= searchParams.mois || '' %>">
-              </div>
-              <div class="col-md-2">
-                <label class="form-label small text-muted mb-1">Année</label>
-                <input type="number" class="form-control form-control-sm" min="2000" max="2100" name="annee"
-                       value="<%= searchParams.annee || '' %>">
-              </div>
+  
+        <div class="col-lg-8">
+          <div class="card shadow-sm border-0 bg-light">
+            <div class="card-body p-3">
+              <form action="/stats/dashboard" method="get" id="filter-form">
+                
+                <div class="row g-2">
+                  <div class="col-md-3">
+                    <label class="form-label fw-bold small text-secondary text-uppercase mb-1">Nom</label>
+                    <input type="text" class="form-control form-control-sm border-secondary-subtle" name="nom" placeholder="Ex: Alpha"
+                           value="<%= searchParams.nom || '' %>">
+                  </div>
+                  <div class="col-md-2">
+                    <label class="form-label fw-bold small text-secondary text-uppercase mb-1">Ville</label>
+                    <select class="form-select form-select-sm border-secondary-subtle" name="ville">
+                      <option value="">Toutes</option>
+                      <% (availableCities || []).forEach(v => { %>
+                        <option value="<%= v %>" <%= v === (searchParams.ville||'') ? 'selected' : '' %>><%= v %></option>
+                      <% }) %>
+                    </select>
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label fw-bold small text-secondary text-uppercase mb-1">Type Anomalie</label>
+                    <select class="form-select form-select-sm border-secondary-subtle" name="anomalieType">
+                        <option value="">Tous les types</option>
+                        <% (anomalieTypes || []).forEach(t => { %>
+                            <option value="<%= t %>" <%= t === (searchParams.anomalieType||'') ? 'selected' : '' %>><%= t %></option>
+                        <% }) %>
+                    </select>
+                  </div>
+                  <div class="col-md-2">
+                    <label class="form-label fw-bold small text-secondary text-uppercase mb-1">Mois</label>
+                    <input type="number" class="form-control form-control-sm border-secondary-subtle" min="1" max="12" name="mois" placeholder="1-12"
+                           value="<%= searchParams.mois || '' %>">
+                  </div>
+                  <div class="col-md-2">
+                    <label class="form-label fw-bold small text-secondary text-uppercase mb-1">Année</label>
+                    <input type="number" class="form-control form-control-sm border-secondary-subtle" min="2000" max="2100" name="annee" placeholder="YYYY"
+                           value="<%= searchParams.annee || '' %>">
+                  </div>
+                </div>
+              
+                <div class="row g-2 mt-2">
+                  <div class="col-6 col-md-3">
+                    <label class="form-label fw-bold small text-secondary text-uppercase mb-1">Du (date)</label>
+                    <input type="date" class="form-control form-control-sm border-secondary-subtle" name="fromDate"
+                           value="<%= (timeFilters && timeFilters.raw && timeFilters.raw.fromDate) || '' %>">
+                  </div>
+                  <div class="col-6 col-md-3">
+                    <label class="form-label fw-bold small text-secondary text-uppercase mb-1">Au (date)</label>
+                    <input type="date" class="form-control form-control-sm border-secondary-subtle" name="toDate"
+                           value="<%= (timeFilters && timeFilters.raw && timeFilters.raw.toDate) || '' %>">
+                  </div>
+                  <div class="col-6 col-md-2">
+                    <label class="form-label fw-bold small text-secondary text-uppercase mb-1">H. Début</label>
+                    <input type="time" class="form-control form-control-sm border-secondary-subtle" name="fromTime"
+                           value="<%= (timeFilters && timeFilters.raw && timeFilters.raw.fromTime) || '' %>">
+                  </div>
+                  <div class="col-6 col-md-2">
+                    <label class="form-label fw-bold small text-secondary text-uppercase mb-1">H. Fin</label>
+                    <input type="time" class="form-control form-control-sm border-secondary-subtle" name="toTime"
+                           value="<%= (timeFilters && timeFilters.raw && timeFilters.raw.toTime) || '' %>">
+                  </div>
+                  <div class="col-12 col-md-2">
+                    <label class="form-label fw-bold small text-secondary text-uppercase mb-1">Granularité</label>
+                    <select class="form-select form-select-sm border-secondary-subtle bg-white" name="groupBy">
+                      <option value="auto"   <%= (timeFilters && timeFilters.groupBy==='auto') ? 'selected' : '' %>>Auto</option>
+                      <option value="month"  <%= (timeFilters && timeFilters.groupBy==='month') ? 'selected' : '' %>>Mois</option>
+                      <option value="week"   <%= (timeFilters && timeFilters.groupBy==='week')  ? 'selected' : '' %>>Semaines</option>
+                      <option value="day"    <%= (timeFilters && timeFilters.groupBy==='day')   ? 'selected' : '' %>>Jours</option>
+                      <option value="hour"   <%= (timeFilters && timeFilters.groupBy==='hour')  ? 'selected' : '' %>>Heures</option>
+                      <option value="period" <%= (timeFilters && timeFilters.groupBy==='period') ? 'selected' : '' %>>Créneaux (8-12-14-17-22)</option>
+                    </select>
+                  </div>
+                </div>
+              
+                <div class="d-flex gap-2 mt-3 pt-2 border-top border-secondary-subtle">
+                  <button class="btn btn-primary btn-sm px-4 fw-bold" type="submit">
+                    <i class="bi bi-funnel-fill"></i> Filtrer
+                  </button>
+                  <a class="btn btn-outline-secondary btn-sm" href="/stats/dashboard">
+                    <i class="bi bi-x-circle"></i> Réinitialiser
+                  </a>
+                  
+                  <% if (hasFilters || (timeFilters && timeFilters.active)) { %>
+                     <div class="ms-auto d-flex align-items-center">
+                       <span class="badge bg-info text-dark border border-info-subtle">
+                         <i class="bi bi-info-circle"></i> Filtres actifs
+                       </span>
+                     </div>
+                  <% } %>
+                </div>
+  
+              </form>
             </div>
-          
-            <div class="row g-2 mt-2">
-              <div class="col-6 col-md-3">
-                <label class="form-label small text-muted mb-1">Du (date)</label>
-                <input type="date" class="form-control form-control-sm" name="fromDate"
-                       value="<%= (timeFilters && timeFilters.raw && timeFilters.raw.fromDate) || '' %>">
-              </div>
-              <div class="col-6 col-md-3">
-                <label class="form-label small text-muted mb-1">Au (date)</label>
-                <input type="date" class="form-control form-control-sm" name="toDate"
-                       value="<%= (timeFilters && timeFilters.raw && timeFilters.raw.toDate) || '' %>">
-              </div>
-              <div class="col-6 col-md-2">
-                <label class="form-label small text-muted mb-1">Heure début</label>
-                <input type="time" class="form-control form-control-sm" name="fromTime"
-                       value="<%= (timeFilters && timeFilters.raw && timeFilters.raw.fromTime) || '' %>">
-              </div>
-              <div class="col-6 col-md-2">
-                <label class="form-label small text-muted mb-1">Heure fin</label>
-                <input type="time" class="form-control form-control-sm" name="toTime"
-                       value="<%= (timeFilters && timeFilters.raw && timeFilters.raw.toTime) || '' %>">
-              </div>
-              <div class="col-12 col-md-2">
-                <label class="form-label small text-muted mb-1">Granularité</label>
-                <select class="form-select form-select-sm" name="groupBy">
-                  <option value="auto"   <%= (timeFilters && timeFilters.groupBy==='auto') ? 'selected' : '' %>>Auto</option>
-                  <option value="month"  <%= (timeFilters && timeFilters.groupBy==='month') ? 'selected' : '' %>>Mois</option>
-                  <option value="week"   <%= (timeFilters && timeFilters.groupBy==='week')  ? 'selected' : '' %>>Semaines</option>
-                  <option value="day"    <%= (timeFilters && timeFilters.groupBy==='day')   ? 'selected' : '' %>>Jours</option>
-                  <option value="hour"   <%= (timeFilters && timeFilters.groupBy==='hour')  ? 'selected' : '' %>>Heures (détail)</option>
-                  <option value="period" <%= (timeFilters && timeFilters.groupBy==='period') ? 'selected' : '' %>>Créneaux (8-12-14-17-22)</option>
-                </select>
-              </div>
-            </div>
-          
-            <div class="d-flex gap-2 mt-2">
-              <button class="btn btn-primary btn-sm" type="submit"><i class="bi bi-filter"></i> Appliquer</button>
-              <a class="btn btn-outline-light btn-sm" href="/stats/dashboard">Réinitialiser</a>
-            </div>
-            <% if (hasFilters || (timeFilters && timeFilters.active)) { %>
-              <div class="small text-white-50 mt-1">
-                Astuce: l'export respecte les filtres appliqués (y compris la tranche horaire).
-              </div>
-            <% } %>
-          </form>
+          </div>
         </div>
+  
       </div>
     </div>
   </header>
