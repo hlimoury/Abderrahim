@@ -1,0 +1,59 @@
+
+<h1>Éditer Dispositifs de Sécurité et Sûreté</h1>
+<a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/equipements" class="btn btn-secondary mb-3">Retour</a>
+
+<form action="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/equipements/editer" method="POST">
+  <div class="form-group">
+    <label for="extincteurs">Extincteurs</label>
+    <input type="number" class="form-control" id="extincteurs" name="extincteurs" value="<%= equipement.extincteurs %>" required>
+  </div>
+  <div class="form-group">
+    <label for="ria">RIA</label>
+    <input type="number" class="form-control" id="ria" name="ria" value="<%= equipement.ria %>" required>
+  </div>
+  <div class="form-group">
+    <label for="portes">Portes coupe-feu</label>
+    <input type="number" class="form-control" id="portes" name="portes" value="<%= equipement.portes %>" required>
+  </div>
+  <div class="form-group">
+    <label for="issuesSecours">Issues de secours</label>
+    <input type="number" class="form-control" id="issuesSecours" name="issuesSecours" value="<%= equipement.issuesSecours %>" required>
+  </div>
+  <div class="form-group">
+    <label for="skydomes">Skydomes</label>
+    <input type="number" class="form-control" id="skydomes" name="skydomes" value="<%= equipement.skydomes %>" required>
+  </div>
+  <div class="form-group">
+    <label for="cameras">Cameras</label>
+    <input type="number" class="form-control" id="cameras" name="cameras" value="<%= equipement.cameras %>" required>
+  </div>
+  <div class="form-group">
+    <label for="nvr">NVR/DVR</label>
+    <input type="number" class="form-control" id="nvr" name="nvr" value="<%= equipement.nvr %>" required>
+  </div>
+  <div class="form-group">
+    <label for="ads">ADS</label>
+    <input type="text" class="form-control" id="ads" name="ads" value="<%= equipement.ads %>">
+  </div>
+  <div class="form-group">
+    <label for="superviseurSecurite">Superviseur de Sécurité (nombre)</label>
+    <input type="number" min="0" step="1" class="form-control" id="superviseurSecurite" name="superviseurSecurite" 
+           value="<%= Number.isFinite(+equipement.superviseurSecurite) ? equipement.superviseurSecurite : 0 %>">
+    <small class="form-text text-muted">Saisir le nombre de superviseurs de sécurité.</small>
+  </div>
+  
+  <div class="form-group">
+    <label for="renfortSecurite">Renfort Sécurité</label>
+    <input type="number" class="form-control" id="renfortSecurite" name="renfortSecurite" 
+           value="<%= equipement.renfortSecurite || 0 %>">
+  </div>
+  
+  <div class="form-group">
+    <label for="periodeRenfort">Période du Renfort (jours)</label>
+    <input type="number" class="form-control" id="periodeRenfort" name="periodeRenfort" 
+           value="<%= equipement.periodeRenfort || 0 %>" 
+           placeholder="Nombre de jours">
+    <small class="form-text text-muted">Combien de temps le renfort va rester (en jours)</small>
+  </div>
+  <button type="submit" class="btn btn-primary">Mettre à jour</button>
+</form>

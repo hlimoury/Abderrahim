@@ -1,0 +1,355 @@
+<% /* ──────────────────────────────────────────────────────────
+     Navbar
+   ────────────────────────────────────────────────────────── */ %>
+   <nav>
+    <a href="/stats" class="btn btn-primary">Stats Accueil</a>
+    <!-- Add this on your admin page (e.g., views/admin.ejs) -->
+<a href="/stats/dashboard" class="btn btn-lg btn-primary">
+  <i class="bi bi-speedometer2"></i> Ouvrir le tableau de bord
+</a>
+
+    <a href="/admin/reclamations" class="btn btn-info">Réclamations</a>
+    <a href="/admin/archived" class="btn btn-secondary">Rapports Archivés</a>
+    <a href="/adminlogout" class="btn btn-danger">Se Déconnecter</a>
+  </nav>
+  
+  <div class="container-fluid mt-4">
+    <% /* ───────────────────────── Recherche avancée ───────────────────────── */ %>
+    <!-- ───────────── Recherche Avancée (mise à jour) ───────────── -->
+<div class="card search-card">
+    <div class="card-header"><h4 class="mb-0">Recherche Avancée</h4></div>
+  
+    <div class="card-body">
+      <form action="/stats" method="GET" class="row g-3" id="search-form">
+  
+        <!-- Nom magasin (autocomplete JS existant) -->
+        <div class="col-md-3 position-relative">
+          <input type="text" class="form-control"
+                 name="nom" id="search-input"
+                 placeholder="Nom du magasin"
+                 value="<%= searchParams.nom || '' %>" autocomplete="off">
+        </div>
+  
+        <!-- Ville / Région : dropdown (le paramètre s’appelle toujours “ville”) -->
+        <div class="col-md-3">
+          <select class="form-select" name="ville">
+            <option value="">Toutes les régions</option>
+  
+            <% const regions = [
+                 'REGION CENTRE 02',
+                 'REGION SUD',
+                 'REGION ORIENT',
+                 'REGION CENTRE 1',
+                 'REGION NORD',
+                 'REGION CITY 1',   // NEW
+                 'REGION CITY 2'    // NEW
+               ];
+               regions.forEach(r => { %>
+              <option value="<%= r %>" <%= searchParams.ville===r ? 'selected' : '' %>>
+                <%= r %>
+              </option>
+            <% }); %>
+          </select>
+        </div>
+  
+        <!-- Mois -->
+        <div class="col-md-2">
+          <select class="form-select" name="mois">
+            <option value="">Tous les mois</option>
+            <% [...Array(12).keys()].forEach(i => { %>
+              <option value="<%= i+1 %>" <%= searchParams.mois==i+1?'selected':'' %>>
+                <%= new Date(0,i).toLocaleString('fr-FR',{month:'long'}) %>
+              </option>
+            <% }); %>
+          </select>
+        </div>
+  
+        <!-- Année -->
+        <div class="col-md-2">
+          <select class="form-select" name="annee">
+            <option value="">Toutes les années</option>
+            <% const currentYear = new Date().getFullYear();
+               for(let y=currentYear; y>=currentYear-5; y--){ %>
+              <option value="<%= y %>" <%= searchParams.annee==y ? 'selected':'' %>>
+                <%= y %>
+              </option>
+            <% } %>
+          </select>
+        </div>
+  
+        <!-- Boutons -->
+        <div class="col-md-1 d-grid">
+          <button type="submit" class="btn btn-primary">Filtrer</button>
+        </div>
+        <div class="col-md-1 d-grid">
+          <a href="/stats" class="btn btn-outline-secondary">Réinitialiser</a>
+        </div>
+  
+      </form>
+    </div>
+  </div>
+  
+  <!-- Script autocomplete du champ “Nom” -->
+  <script src="/js/searchOverlay.js"></script>
+  
+  
+    <% /* ───────────────────────── Badges filtres actifs ───────────────────────── */ %>
+    <% if (hasFilters) { %>
+      <div class="row mb-3">
+        <div class="col-12">
+          <div class="d-flex flex-wrap gap-2">
+            <% if (searchParams.nom)   { %><span class="badge bg-primary">Magasin: <%= searchParams.nom %></span><% } %>
+            <% if (searchParams.ville) { %><span class="badge bg-info">Ville: <%= searchParams.ville %></span><% } %>
+            <% if (searchParams.mois)  { %>
+              <span class="badge bg-success">
+                Mois: <%= new Date(0,searchParams.mois-1).toLocaleString('fr-FR',{month:'long'}) %>
+              </span>
+            <% } %>
+            <% if (searchParams.annee) { %><span class="badge bg-warning">Année: <%= searchParams.annee %></span><% } %>
+          </div>
+        </div>
+      </div>
+    <% } %>
+  
+    <% /* ───────────────────────── Cartes globales ───────────────────────── */ %>
+    
+<% const qs =
+  (searchParams.nom ? ('nom='+encodeURIComponent(searchParams.nom)+'&') : '') +
+  (searchParams.ville ? ('ville='+encodeURIComponent(searchParams.ville)+'&') : '') +
+  (searchParams.mois ? ('mois='+searchParams.mois+'&') : '') +
+  (searchParams.annee ? ('annee='+searchParams.annee+'&') : ''); %>
+
+<style>
+  .sticky-summary {
+    position: sticky;
+    top: 10px;      /* increase if you have a fixed navbar */
+    z-index: 1030;
+    background: #fff;
+    padding: .25rem 0;
+  }
+  .sticky-summary .card { box-shadow: 0 .25rem .5rem rgba(0,0,0,.05); }
+</style>
+
+<div class="sticky-summary mb-3">
+  <div class="row row-cols-1 row-cols-md-5 g-4"><!-- 5 columns now -->
+    <div class="col">
+      <a class="text-decoration-none" href="/stats/category/formation?<%= qs %>">
+        <div class="card h-100">
+          <div class="card-header bg-primary text-white"><h5 class="mb-0">Formation</h5></div>
+          <div class="card-body text-dark"><h2><%= globalTotals.formation %> P</h2></div>
+        </div>
+      </a>
+    </div>
+    <div class="col">
+      <a class="text-decoration-none" href="/stats/category/accidents?<%= qs %>">
+        <div class="card h-100">
+          <div class="card-header bg-danger text-white"><h5 class="mb-0">Accidents</h5></div>
+          <div class="card-body text-dark">
+            <h2><%= globalTotals.accidents.count %></h2>
+            <p class="text-muted mb-0"><%= globalTotals.accidents.jours %> jours d'arrêt</p>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col">
+      <a class="text-decoration-none" href="/stats/category/incidents?<%= qs %>">
+        <div class="card h-100">
+          <div class="card-header bg-warning text-dark"><h5 class="mb-0">Incidents</h5></div>
+          <div class="card-body text-dark"><h2><%= globalTotals.incidents %></h2></div>
+        </div>
+      </a>
+    </div>
+    <div class="col">
+      <a class="text-decoration-none" href="/stats/category/interpellations?<%= qs %>">
+        <div class="card h-100">
+          <div class="card-header bg-success text-white"><h5 class="mb-0">Interpellations</h5></div>
+          <div class="card-body text-dark">
+            <h2><%= globalTotals.interpellations.personnes %> P</h2>
+            <p class="text-muted mb-0">
+              <%= globalTotals.interpellations.poursuites %> PJ<br>
+              <%= globalTotals.interpellations.valeur.toFixed(3).replace('.',',') %> kDH
+            </p>
+          </div>
+        </div>
+      </a>
+    </div>
+    <!-- NEW: Anomalies Marché -->
+    <div class="col">
+      <a class="text-decoration-none" href="/stats/category/anomalies?<%= qs %>">
+        <div class="card h-100">
+          <div class="card-header bg-info text-white"><h5 class="mb-0">Anomalies Marché</h5></div>
+          <div class="card-body text-dark"><h2><%= globalTotals.anomalies || 0 %></h2></div>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+  
+    <% /* ───────────────────────── Répartition par type ───────────────────────── */ %>
+    <div class="row">
+      <div class="col-md-6 mb-4">
+        <div class="card h-100">
+          <div class="card-header"><h5>Interpellations par Type</h5></div>
+          <div class="card-body">
+            <% Object.entries(interpellationByType).forEach(([t,d])=>{ %>
+              <div class="mb-3">
+                <h6 class="text-primary"><%= t %></h6>
+                <div class="row">
+                  <div class="col-4"><span class="badge bg-primary"><%= d.personnes %> P</span></div>
+                  <div class="col-4"><span class="badge bg-info"><%= d.poursuites %> PJ</span></div>
+                  <div class="col-4"><span class="badge bg-success"><%= d.valeur.toFixed(3).replace('.',',') %> kDH</span></div>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 mb-4">
+        <div class="card h-100">
+          <div class="card-header"><h5>Formation par Type</h5></div>
+          <div class="card-body">
+            <% Object.entries(formationByType).forEach(([t,d])=>{ %>
+              <div class="mb-3">
+                <h6 class="text-success"><%= t %></h6>
+                <div class="progress" style="height:25px;">
+                  <div class="progress-bar bg-success" role="progressbar"
+                       style="width:<%= (d.total/globalTotals.formation*100)||0 %>%">
+                    <%= d.total %> P
+                  </div>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <% /* ───────────────────────── Tableau Détails par magasin ───────────────────────── */ %>
+    <div class="card mb-4">
+      <div class="card-header"><h5>Détails par Magasin</h5></div>
+      <div class="card-body">
+        <% if (details.length) { %>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Magasin</th><th>Ville</th><th>Formation</th>
+                  <th>Accidents</th><th>Incidents</th><th>Interpellations</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% details.forEach(m=>{ %>
+                    <tr class="market-row"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapse-<%= m.id %>"
+                        data-search="<%= (m.marketName + ' ' + m.marketVille).toLowerCase() %>"
+                        style="cursor:pointer">
+
+                    <td><i class="bi bi-caret-down-fill me-1"></i><%= m.marketName %></td>
+                    <td><%= m.marketVille %></td>
+                    <td><%= m.marketTotals.formation %> P</td>
+                    <td>
+                      <span class="badge bg-danger"><%= m.marketTotals.accidents.count %></span>
+                      <small class="text-muted">(<%= m.marketTotals.accidents.jours %> j)</small>
+                    </td>
+                    <td><span class="badge bg-warning"><%= m.marketTotals.incidents %></span></td>
+                    <td>
+                      <span class="badge bg-success"><%= m.marketTotals.interpellations.personnes %> P</span>
+                      <small class="text-muted">
+                        <%= m.marketTotals.interpellations.poursuites %> PJ<br>
+                        <%= m.marketTotals.interpellations.valeur.toFixed(3).replace('.',',') %> kDH
+                      </small>
+                    </td>
+                  </tr>
+  
+                  <% /* Tableau des instances (mois) */ %>
+                  <tr class="collapse bg-light" id="collapse-<%= m.id %>">
+                    <td colspan="6" class="p-3">
+                      <% if (m.instances.length) { %>
+                        <div class="table-responsive">
+                          
+<table class="table table-sm table-bordered mb-0">
+  <thead class="table-secondary">
+    <tr>
+      <th>Mois</th>
+      <th>Équipements</th>
+      <th>Form.</th>
+      <th>Acc.</th>
+      <th>Inc.</th>
+      <th>Interp.</th>
+      <th>Anom.</th> <!-- NEW -->
+      <th>Récl.</th>
+      <th>Scoring</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% m.instances.forEach(inst=>{ %>
+      <tr>
+        <td><strong><%= inst.moisName %> <%= inst.annee %></strong></td>
+        <td class="text-center">
+          <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/equipements" class="btn btn-outline-secondary btn-sm">Voir</a>
+        </td>
+        <td class="text-center">
+          <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/formation" class="btn btn-outline-primary btn-sm"><%= inst.counts.formation %></a>
+        </td>
+        <td class="text-center">
+          <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/accidents" class="btn btn-outline-danger btn-sm"><%= inst.counts.accidents %></a>
+        </td>
+        <td class="text-center">
+          <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/incidents" class="btn btn-outline-warning btn-sm"><%= inst.counts.incidents %></a>
+        </td>
+        <td class="text-center">
+          <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/interpellations" class="btn btn-outline-success btn-sm"><%= inst.counts.interpellations %></a>
+        </td>
+        <!-- NEW: Anomalies Marché -->
+        <td class="text-center">
+          <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/anomalies" class="btn btn-outline-info btn-sm"><%= inst.counts.anomalies || 0 %></a>
+        </td>
+        <td class="text-center">
+          <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/reclamations" class="btn btn-outline-dark btn-sm"><%= inst.counts.reclamations %></a>
+        </td>
+        <td class="text-center">
+          <a href="/supermarkets/<%= m.id %>/instance/<%= inst.id %>/scoring" class="btn btn-outline-info btn-sm">
+            <i class="bi bi-bar-chart-line"></i>
+          </a>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+
+                        </div>
+                      <% } else { %>
+                        <em>Aucune instance pour ce magasin.</em>
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <div class="alert alert-warning">Aucun résultat trouvé.</div>
+        <% } %>
+
+        
+      </div>
+    </div>
+  </div>
+  
+  <% /* ───────────────────────── Assets Bootstrap & JS ───────────────────────── */ %>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/filterSupermarkets.js"></script>
+
+  <script>
+  document.querySelectorAll('.market-row').forEach(row=>{
+    row.addEventListener('click',()=>{
+      const icon=row.querySelector('i.bi');
+      if(icon){ icon.classList.toggle('bi-caret-down-fill');
+                icon.classList.toggle('bi-caret-up-fill'); }
+    });
+  });
+  </script>
+  

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Générateur de Rapports</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <style>
+    .form-section {
+      margin-bottom: 2rem;
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      background-color: #f8f9fa;
+      box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    }
+    .report-options {
+      border-left: 4px solid #0d6efd;
+      padding-left: 1rem;
+      margin-top: 2rem;
+    }
+    .header-section {
+      background-color: #e9ecef;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    /* Just an example style to highlight the new section. */
+    #monthSection {
+      border: 1px dashed #0d6efd;
+      padding: 1rem;
+      border-radius: 0.25rem;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body class="container mt-4">
+  <div class="d-flex justify-content-between mb-4 header-section">
+    <div>
+      <h1>Générateur de Rapports</h1>
+      <p class="text-muted">Sélectionnez les paramètres pour générer votre rapport</p>
+    </div>
+    <div>
+      <a href="/totals" class="btn btn-secondary">
+        <i class="bi bi-bar-chart-fill"></i> Statistiques
+      </a>
+      <a href="/logout" class="btn btn-danger">
+        <i class="bi bi-box-arrow-right"></i> Déconnexion
+      </a>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <form id="reportForm" action="/reports/generate" method="POST">
+      <!-- Report Type Selection -->
+      <div class="mb-4">
+        <h4>Type de Rapport</h4>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="reportType" id="typeSupermarket" value="supermarket" checked>
+          <label class="form-check-label" for="typeSupermarket">Par Magasin</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="reportType" id="typeMonth" value="month">
+          <label class="form-check-label" for="typeMonth">Par Mois</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="reportType" id="typeAll" value="all">
+          <label class="form-check-label" for="typeAll">Rapport Général</label>
+        </div>
+      </div>
+
+      <!-- Supermarket Selection -->
+      <div class="mb-4" id="supermarketSection">
+        <label for="supermarketId" class="form-label">Sélectionner un Magasin</label>
+        <select class="form-select" id="supermarketId" name="supermarketId">
+          <% supermarkets.forEach(supermarket => { %>
+            <option value="<%= supermarket._id %>"><%= supermarket.nom %></option>
+          <% }); %>
+        </select>
+      </div>
+
+
+      <!-- carte d’infos (remplie en JS) -->
+<div id="reportStats" class="alert alert-info d-none"></div>
+
+      <!-- Month/Year Selection block - Now used for BOTH "supermarket" or "month" -->
+      <div class="mb-4 d-none" id="monthSection">
+        <h5>Période (mois de début à mois de fin, pour une année donnée)</h5>
+        <div class="row">
+          <div class="col-md-4">
+            <label for="moisDebut" class="form-label">Mois de début</label>
+            <select class="form-select" id="moisDebut" name="moisDebut">
+              <% months.forEach(month => { %>
+                <option value="<%= month.value %>"><%= month.name %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="moisFin" class="form-label">Mois de fin</label>
+            <select class="form-select" id="moisFin" name="moisFin">
+              <% months.forEach(month => { %>
+                <option value="<%= month.value %>"><%= month.name %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="annee" class="form-label">Année</label>
+            <select class="form-select" id="annee" name="annee">
+              <% years.forEach(year => { %>
+                <option value="<%= year %>"><%= year %></option>
+              <% }); %>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Report Content Options -->
+      <div class="report-options">
+        <h4>Contenu du Rapport</h4>
+        <p class="text-muted">Sélectionnez les éléments à inclure dans le rapport</p>
+        <div class="row">
+          <div class="col-md-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="includeFormation" name="includeFormation" checked>
+              <label class="form-check-label" for="includeFormation">
+                <i class="bi bi-mortarboard-fill"></i> Formations
+              </label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="includeAccidents" name="includeAccidents" checked>
+              <label class="form-check-label" for="includeAccidents">
+                <i class="bi bi-bandaid-fill"></i> Accidents
+              </label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="includeIncidents" name="includeIncidents" checked>
+              <label class="form-check-label" for="includeIncidents">
+                <i class="bi bi-exclamation-triangle-fill"></i> Incidents
+              </label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="includeInterpellations" name="includeInterpellations" checked>
+              <label class="form-check-label" for="includeInterpellations">
+                <i class="bi bi-shield-fill"></i> Interpellations
+              </label>
+            </div>
+          </div>
+        </div>
+        <!-- New options for Scoring and DRL -->
+        <div class="row mt-3">
+          <div class="col-md-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="includeScoring" name="includeScoring" checked>
+              <label class="form-check-label" for="includeScoring">
+                <i class="bi bi-graph-up"></i> Scoring
+              </label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="includeReclamations" name="includeReclamations" checked>
+              <label class="form-check-label" for="includeReclamations">
+                <i class="bi bi-chat-dots-fill"></i> Réclamations
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center mt-4">
+        <button type="submit" class="btn btn-primary btn-lg">
+          <i class="bi bi-file-earmark-text"></i> Générer le Rapport
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Au changement de type de rapport, on affiche ou non supermarketSection et monthSection
+    document.querySelectorAll('input[name="reportType"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        const supermarketSection = document.getElementById('supermarketSection');
+        const monthSection = document.getElementById('monthSection');
+
+        // Cache tout d'abord
+        supermarketSection.classList.add('d-none');
+        monthSection.classList.add('d-none');
+
+        // Si "supermarket", on affiche la sélection du supermarché + la période
+        if (this.value === 'supermarket') {
+          supermarketSection.classList.remove('d-none');
+          monthSection.classList.remove('d-none');
+        }
+        // Si "month", on affiche uniquement la sélection de la période
+        else if (this.value === 'month') {
+          monthSection.classList.remove('d-none');
+        }
+        // Sinon (Rapport Général), on ne montre ni supermarché ni mois
+      });
+    });
+
+    // Au chargement initial
+    document.addEventListener('DOMContentLoaded', function() {
+      const defaultType = document.querySelector('input[name="reportType"]:checked')?.value || 'supermarket';
+      const supermarketSection = document.getElementById('supermarketSection');
+      const monthSection = document.getElementById('monthSection');
+      supermarketSection.classList.add('d-none');
+      monthSection.classList.add('d-none');
+
+      if (defaultType === 'supermarket') {
+        supermarketSection.classList.remove('d-none');
+        monthSection.classList.remove('d-none');
+      } else if (defaultType === 'month') {
+        monthSection.classList.remove('d-none');
+      }
+    });
+
+
+
+
+    // / ----- Affiche le nb de rapports envoyés pour le magasin sélectionné -----
+    const statsDiv = document.getElementById('reportStats');
+  const select   = document.getElementById('supermarketId');
+
+  async function loadStats(id) {
+    if (!id) return statsDiv.classList.add('d-none');
+
+    try {
+      const res  = await fetch(`/reports/api/supermarket/${id}/stats`);
+      const data = await res.json();
+      if (!res.ok) throw new Error();
+
+      if (data.count === 0) {
+        statsDiv.innerHTML = 'Aucun rapport archivé pour ce magasin.';
+      } else {
+        let html = `<strong>${data.count}</strong> rapport(s) déjà envoyés :<ul class="mb-0">`;
+        data.reports.forEach(r => {
+          const date = new Date(r.date)
+                       .toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric' });
+          html += `<li>${date} — ${r.titre}</li>`;
+        });
+        html += '</ul>';
+        statsDiv.innerHTML = html;
+      }
+      statsDiv.classList.remove('d-none');
+    } catch {
+      statsDiv.classList.add('d-none');   // masque si erreur
+    }
+  }
+
+  /* Mise à jour lors du changement de magasin */
+  select.addEventListener('change', e => loadStats(e.target.value));
+
+  /* Mise à jour initiale */
+  document.addEventListener('DOMContentLoaded', () => loadStats(select.value));
+  </script>
+</body>
+</html>

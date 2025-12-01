@@ -1,0 +1,687 @@
+<!-- views/categoryDetails.ejs — CREATE or REPLACE this file -->
+<!-- views/categoryDetails.ejs — ADD this <style> anywhere in the file (top or bottom) -->
+    <style>
+        /* Sticky summary (totals) */
+        .sticky-summary {
+          position: sticky;
+          top: 10px;            /* adjust if you use a fixed navbar (e.g., 60px) */
+          z-index: 1030;        /* above table rows */
+          background: #fff;     /* prevent transparency on scroll */
+          padding: .25rem 0;
+        }
+        .sticky-summary .card { margin-bottom: 0; box-shadow: 0 .25rem .5rem rgba(0,0,0,.05); }
+        /* Optional: make it stand out when stuck */
+        .sticky-summary.stuck { box-shadow: 0 .25rem 1rem rgba(0,0,0,.08); }
+      </style>
+<% 
+const qsParts = [];
+if (searchParams.nom)   qsParts.push('nom=' + encodeURIComponent(searchParams.nom));
+if (searchParams.ville) qsParts.push('ville=' + encodeURIComponent(searchParams.ville));
+if (searchParams.mois)  qsParts.push('mois=' + encodeURIComponent(searchParams.mois));
+if (searchParams.annee) qsParts.push('annee=' + encodeURIComponent(searchParams.annee));
+const baseQs = qsParts.join('&');
+const amOnlyUrl = '/stats/category/anomalies?amOnly=1' + (baseQs ? '&' + baseQs : '');
+const amTypePrefix = '/stats/category/anomalies?' + (baseQs ? baseQs + '&' : '') + 'amType=';
+%>
+<% if (amFilter && (amFilter.amOnly || amFilter.amType)) { %>
+  <div class="alert alert-info d-flex align-items-center justify-content-between">
+    <div>
+      <strong>Filtre appliqué:</strong>
+      <% if (amFilter.amType) { %>
+        Anomalie = "<%= amFilter.amType %>"
+      <% } else { %>
+        Magasins avec au moins une anomalie
+      <% } %>
+    </div>
+    <a class="btn btn-sm btn-outline-secondary"
+       href="/stats/category/anomalies<%= baseQs ? '?' + baseQs : '' %>">Effacer le filtre</a>
+  </div>
+<% } %>
+<nav class="p-3">
+    <a href="/stats" class="btn btn-primary">Stats Accueil</a>
+    <a href="/admin/archived" class="btn btn-secondary">Rapports Archivés</a>
+    <a href="/adminlogout" class="btn btn-danger">Se Déconnecter</a>
+  </nav>
+  
+  <div class="container-fluid mt-3">
+    <h2 class="mb-3"><%= categoryLabel %> - Détails</h2>
+  
+    <!-- Filters -->
+    <div class="card mb-3">
+      <div class="card-header">Recherche Avancée</div>
+      <div class="card-body">
+        <form action="/stats/category/<%= category %>" method="GET" class="row g-3">
+          <div class="col-md-3">
+            <input class="form-control" type="text" name="nom" placeholder="Nom du magasin" value="<%= searchParams.nom || '' %>">
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" name="ville">
+              <option value="">Toutes les régions</option>
+              <% (availableRegions||[]).forEach(r=>{ %>
+                <option value="<%= r %>" <%= searchParams.ville===r ? 'selected':'' %>><%= r %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <select class="form-select" name="mois">
+              <option value="">Tous les mois</option>
+              <% for(let i=1;i<=12;i++){ %>
+                <option value="<%= i %>" <%= (searchParams.mois===i)?'selected':'' %>>
+                  <%= new Date(0, i-1).toLocaleString('fr-FR',{month:'long'}) %>
+                </option>
+              <% } %>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <select class="form-select" name="annee">
+              <option value="">Toutes les années</option>
+              <% const currentYear = new Date().getFullYear();
+                 for(let y=currentYear; y>=currentYear-5; y--) { %>
+                <option value="<%= y %>" <%= (searchParams.annee===y)?'selected':'' %>><%= y %></option>
+              <% } %>
+            </select>
+          </div>
+          <div class="col-md-1 d-grid">
+            <button class="btn btn-primary" type="submit">Filtrer</button>
+          </div>
+          <div class="col-md-1 d-grid">
+            <a class="btn btn-outline-secondary" href="/stats/category/<%= category %>">Réinitialiser</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  
+    <!-- Totals (Selection vs All) -->
+    <div class="sticky-summary mb-3" id="stickySummary">
+  <div class="row g-3">
+    <% if (category === 'formation') { %>
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-header bg-primary text-white">Total (sélection)</div>
+          <div class="card-body">
+            <h2 id="f-total"><%= selectedInit.formationTotal %> P</h2>
+            <div class="mt-2">
+              <span class="badge bg-success me-2">Incendie: <span id="f-incendie"><%= selectedInit.formationByType['Incendie'] %></span></span>
+              <span class="badge bg-info me-2">SST: <span id="f-sst"><%= selectedInit.formationByType['SST'] %></span></span>
+              <span class="badge bg-secondary">Intégration: <span id="f-integration"><%= selectedInit.formationByType['Intégration'] %></span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-header">Total (tous cochés)</div>
+          <div class="card-body">
+            <h3><%= totalsAll.formationTotal %> P</h3>
+            <div class="text-muted small">
+              Incendie <%= totalsAll.formationByType['Incendie'] %> •
+              SST <%= totalsAll.formationByType['SST'] %> •
+              Intégration <%= totalsAll.formationByType['Intégration'] %>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% } else if (category === 'accidents') { %>
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-header bg-danger text-white">Accidents - Total (sélection)</div>
+          <div class="card-body">
+            <h2><span id="a-count"><%= selectedInit.accidentsCount %></span></h2>
+            <div class="text-muted">Jours d'arrêt: <strong id="a-jours"><%= selectedInit.accidentsJours %></strong></div>
+            <hr>
+            <div>
+              <strong>Causes (sélection):</strong>
+              <div id="a-causes">
+                <% Object.entries(selectedInit.accidentByCause||{}).sort((a,b)=>b[1]-a[1]).forEach(([c,v])=>{ %>
+                  <span class="badge bg-light text-dark border me-1 mb-1"><%= c %>: <%= v %></span>
+                <% }) %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-header">Accidents - Total (tous cochés)</div>
+          <div class="card-body">
+            <h3><%= totalsAll.accidentsCount %></h3>
+            <div class="text-muted">Jours d'arrêt: <%= totalsAll.accidentsJours %></div>
+            <div class="small mt-2">
+              <% Object.entries(totalsAll.accidentByCause||{}).sort((a,b)=>b[1]-a[1]).forEach(([c,v])=>{ %>
+                <span class="badge bg-light text-dark border me-1 mb-1"><%= c %>: <%= v %></span>
+              <% }) %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header bg-warning">Autres Incidents - Répartition par type</div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6 mb-2">
+                <h5>Selection</h5>
+                <div class="small">
+                  <strong>Total:</strong> <span id="acc-i-total"><%= selectedInit.incidentsTotal %></span>
+                  <div class="mt-2">
+                    <% if (category === 'incidents') { %>
+  <% incidentTypes.forEach(t=>{ %>
+    <span class="badge bg-light text-dark border me-1 mb-1">
+      <%= t.label %>: <span id="acc-i-<%= t.key %>"><%= (selectedInit.incidentByType && selectedInit.incidentByType[t.key]) || 0 %></span>
+    </span>
+  <% }) %>
+<% } %>
+
+<% if (category === 'accidents') { %>
+  <% Object.entries(selectedInit.accidentByCause || {}).forEach(([cause, count]) => { %>
+    <span class="badge bg-light text-dark border me-1 mb-1">
+      <%= cause %>: <span><%= count %></span>
+    </span>
+  <% }) %>
+<% } %>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6 mb-2">
+                <h5>Tous cochés</h5>
+                <div class="small">
+                  <strong>Total:</strong> <%= totalsAll.incidentsTotal %>
+                  <div class="mt-2">
+                    <% incidentTypes.forEach(t=>{ %>
+                      <span class="badge bg-light text-dark border me-1 mb-1">
+                        <%= t.label %>: <%= totalsAll.incidentByType[t.key] %>
+                      </span>
+                    <% }) %>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% } else if (category === 'incidents') { %>
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-header bg-warning text-dark">Total (sélection)</div>
+          <div class="card-body">
+            <h2 id="i-total"><%= selectedInit.incidentsTotal %></h2>
+            <div class="small mt-2">
+              <% incidentTypes.forEach(t=>{ %>
+                <span class="badge bg-light text-dark border me-1">
+                  <%= t.label %>: <span id="i-<%= t.key %>"><%= selectedInit.incidentByType[t.key] %></span>
+                </span>
+              <% }) %>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-header">Total (tous cochés)</div>
+          <div class="card-body">
+            <h3><%= totalsAll.incidentsTotal %></h3>
+            <div class="small text-muted">
+              <% incidentTypes.forEach(t=>{ %>
+                <span class="badge bg-light text-dark border me-1"><%= t.label %>: <%= totalsAll.incidentByType[t.key] %></span>
+              <% }) %>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% } else if (category === 'interpellations') { %>
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-header bg-success text-white">Total (sélection)</div>
+          <div class="card-body">
+            <h2><span id="it-personnes"><%= selectedInit.interPersonnes %></span> P</h2>
+            <div class="text-muted mb-2">
+              <span id="it-poursuites"><%= selectedInit.interPoursuites %></span> PJ •
+              <span id="it-valeur"><%= (selectedInit.interValeur||0).toFixed(3).replace('.',',') %></span> kDH
+            </div>
+            <div class="small mt-2">
+              <% ['Client','Personnel','Prestataire'].forEach(t=>{ %>
+                <span class="badge bg-light text-dark border me-1">
+                  <%= t %>:
+                  <span id="it-<%= t %>-p"><%= selectedInit.interByType[t].personnes %></span>P /
+                  <span id="it-<%= t %>-pj"><%= selectedInit.interByType[t].poursuites %></span>PJ /
+                  <span id="it-<%= t %>-v"><%= selectedInit.interByType[t].valeur.toFixed(3).replace('.',',') %></span>kDH
+                </span>
+              <% }) %>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-header">Total (tous cochés)</div>
+          <div class="card-body">
+            <h3><%= totalsAll.interPersonnes %> P</h3>
+            <div class="text-muted mb-1">
+              <%= totalsAll.interPoursuites %> PJ • <%= totalsAll.interValeur.toFixed(3).replace('.',',') %> kDH
+            </div>
+            <div class="small text-muted">
+              <% ['Client','Personnel','Prestataire'].forEach(t=>{ %>
+                <span class="badge bg-light text-dark border me-1">
+                  <%= t %>:
+                  <%= totalsAll.interByType[t].personnes %>P /
+                  <%= totalsAll.interByType[t].poursuites %>PJ /
+                  <%= totalsAll.interByType[t].valeur.toFixed(3).replace('.',',') %>kDH
+                </span>
+              <% }) %>
+            </div>
+          </div>
+        </div>
+      </div>
+      <% } else if (category === 'anomalies') { %>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header bg-dark text-white">Anomalies - Total (sélection)</div>
+      <div class="card-body">
+        <h2>
+  <a id="am-total-link" href="<%= amOnlyUrl %>" class="text-decoration-none">
+    <span id="am-total-number"><%= selectedInit.anomaliesTotal %></span>
+  </a>
+</h2>
+        <div class="small mt-2" id="am-types-sel">
+          <% (anomalieTypes||[]).forEach(t=>{ %>
+            <span class="badge bg-light text-dark border me-1 mb-1"><%= t %>: <%= selectedInit.anomaliesByType[t] %></span>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">Anomalies - Total (tous cochés)</div>
+      <div class="card-body">
+        <h3>
+  <a href="<%= amOnlyUrl %>" class="text-decoration-none"><%= totalsAll.anomaliesTotal %></a>
+</h3>
+<div class="small text-muted">
+  <% (anomalieTypes || []).forEach(t => { %>
+    <a href="<%= amTypePrefix + encodeURIComponent(t) %>" class="text-decoration-none">
+      <span class="badge bg-light text-dark border me-1 mb-1"><%= t %>: <%= totalsAll.anomaliesByType[t] %></span>
+    </a>
+  <% }) %>
+</div>
+      </div>
+    </div>
+  </div>
+<% } %>
+
+  </div>
+</div>
+
+<script>
+  // Optional: add/remove a 'stuck' class when the summary hits the top
+  (function(){
+    const el = document.getElementById('stickySummary');
+    const observer = new IntersectionObserver(
+      ([e]) => el.classList.toggle('stuck', e.intersectionRatio < 1),
+      { threshold: [1] }
+    );
+    observer.observe(el);
+  })();
+</script>
+  
+    <!-- Selectors -->
+    <div class="d-flex gap-2 mb-2">
+      <button id="select-all" class="btn btn-sm btn-outline-primary">Tout cocher</button>
+      <button id="unselect-all" class="btn btn-sm btn-outline-secondary">Tout décocher</button>
+    </div>
+  
+    <!-- Markets table (no pagination) -->
+    <div class="card">
+      <div class="card-header">Magasins (cocher/décocher pour recalculer)</div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Inclure</th>
+                <th>Magasin</th>
+                <th>Ville</th>
+  
+                <% if (category === 'formation') { %>
+                  <th>Formation (P)</th>
+                  <th>Incendie</th>
+                  <th>SST</th>
+                  <th>Intégration</th>
+  
+                <% } else if (category === 'accidents') { %>
+                  <th>Accidents</th>
+                  <th>Jours d'arrêt</th>
+                  <th>Causes (compte)</th>
+                  <% incidentTypes.forEach(t=>{ %>
+                    <th><%= t.label %></th>
+                  <% }) %>
+  
+                <% } else if (category === 'incidents') { %>
+                  <th>Incidents</th>
+                  <% incidentTypes.forEach(t=>{ %>
+                    <th><%= t.label %></th>
+                  <% }) %>
+  
+                <% } else if (category === 'interpellations') { %>
+                  <th>Personnes</th>
+                  <th>PJ</th>
+                  <th>Valeur (kDH)</th>
+                  <th>Client (P/PJ/kDH)</th>
+                  <th>Personnel (P/PJ/kDH)</th>
+                  <th>Prestataire (P/PJ/kDH)</th>
+                  <% } else if (category === 'anomalies') { %>
+                  <th>Anomalies</th>
+                  <% (anomalieTypes||[]).forEach(t=>{ %>
+                    <th><%= t %></th>
+                  <% }) %>
+                <% } %>
+
+              </tr>
+            </thead>
+            <tbody id="markets-tbody">
+              <% rows.forEach(r=>{ %>
+                <tr
+                  data-f-total="<%= r.fTotal %>"
+                  data-f-incendie="<%= r.fTypes['Incendie'] %>"
+                  data-f-sst="<%= r.fTypes['SST'] %>"
+                  data-f-integration="<%= r.fTypes['Intégration'] %>"
+  
+                  data-a-count="<%= r.aCount %>"
+                  data-a-jours="<%= r.aJours %>"
+                  data-a-causes="<%= encodeURIComponent(JSON.stringify(r.aCauses||{})) %>"
+  
+                  data-i-total="<%= r.iTotal %>"
+                  data-i-departfeu="<%= r.iTypes['departFeu'] %>"
+                  data-i-agression="<%= r.iTypes['agression'] %>"
+                  data-i-autorites="<%= r.iTypes['autorites'] %>"
+                  data-i-sinistreclient="<%= r.iTypes['sinistreClient'] %>"
+                  data-i-actesecurisation="<%= r.iTypes['acteSecurisation'] %>"
+                  data-i-autre="<%= r.iTypes['autre'] %>"
+  
+                  data-it-personnes="<%= r.itPersonnes %>"
+                  data-it-poursuites="<%= r.itPoursuites %>"
+                  data-it-valeur="<%= r.itValeur %>"
+                  data-it-client-p="<%= r.itTypes.Client.personnes %>"
+                  data-it-client-pj="<%= r.itTypes.Client.poursuites %>"
+                  data-it-client-v="<%= r.itTypes.Client.valeur %>"
+                  data-it-personnel-p="<%= r.itTypes.Personnel.personnes %>"
+                  data-it-personnel-pj="<%= r.itTypes.Personnel.poursuites %>"
+                  data-it-personnel-v="<%= r.itTypes.Personnel.valeur %>"
+                  data-it-prestataire-p="<%= r.itTypes.Prestataire.personnes %>"
+                  data-it-prestataire-pj="<%= r.itTypes.Prestataire.poursuites %>"
+                  data-it-prestataire-v="<%= r.itTypes.Prestataire.valeur %>"
+                  data-am-total="<%= r.amTotal %>"
+                  data-am-bytype="<%= encodeURIComponent(JSON.stringify(r.amByType||{})) %>"
+
+                >
+                  <td>
+                    <input type="checkbox" class="form-check-input market-select" checked>
+                  </td>
+                  <td><%= r.nom %></td>
+                  <td><%= r.ville %></td>
+  
+                  <% if (category === 'formation') { %>
+                    <td><%= r.fTotal %></td>
+                    <td><%= r.fTypes['Incendie'] %></td>
+                    <td><%= r.fTypes['SST'] %></td>
+                    <td><%= r.fTypes['Intégration'] %></td>
+  
+                  <% } else if (category === 'accidents') { %>
+                    <td><%= r.aCount %></td>
+                    <td><%= r.aJours %></td>
+                    <td class="small">
+                      <% Object.entries(r.aCauses||{}).sort((a,b)=>b[1]-a[1]).forEach(([c,v],i)=>{ %>
+                        <span class="badge bg-light text-dark border me-1 mb-1"><%= c %>: <%= v %></span>
+                      <% }) %>
+                    </td>
+                    <% incidentTypes.forEach(t=>{ %>
+                      <td><%= r.iTypes[t.key] %></td>
+                    <% }) %>
+  
+                  <% } else if (category === 'incidents') { %>
+                    <td><%= r.iTotal %></td>
+                    <% incidentTypes.forEach(t=>{ %>
+                      <td><%= r.iTypes[t.key] %></td>
+                    <% }) %>
+  
+                  <% } else if (category === 'interpellations') { %>
+                    <td><%= r.itPersonnes %></td>
+                    <td><%= r.itPoursuites %></td>
+                    <td><%= r.itValeur.toFixed(3).replace('.',',') %></td>
+                    <td>
+                      <%= r.itTypes.Client.personnes %> / <%= r.itTypes.Client.poursuites %> /
+                      <%= r.itTypes.Client.valeur.toFixed(3).replace('.',',') %>
+                    </td>
+                    <td>
+                      <%= r.itTypes.Personnel.personnes %> / <%= r.itTypes.Personnel.poursuites %> /
+                      <%= r.itTypes.Personnel.valeur.toFixed(3).replace('.',',') %>
+                    </td>
+                    <td>
+                      <%= r.itTypes.Prestataire.personnes %> / <%= r.itTypes.Prestataire.poursuites %> /
+                      <%= r.itTypes.Prestataire.valeur.toFixed(3).replace('.',',') %>
+                    </td>
+                    <% } else if (category === 'anomalies') { %>
+                    <td><%= r.amTotal %></td>
+                    <% (anomalieTypes||[]).forEach(t=>{ %>
+                      <td><%= r.amByType[t] %></td>
+                    <% }) %>
+                  <% } %>
+
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script>
+  (function(){
+  const category = '<%= category %>';
+  const incidentTypes = <%- JSON.stringify(incidentTypes) %>;
+  const anomalieTypes = <%- JSON.stringify(anomalieTypes || []) %>;
+  const AM_ONLY_URL = '<%- amOnlyUrl %>';
+  const AM_TYPE_PREFIX = '<%- amTypePrefix %>';
+
+  
+    const fmtKD = (v)=> (Number(v)||0).toFixed(3).replace('.',',');
+  
+    function renderCauses(containerId, causesObj){
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      const pairs = Object.entries(causesObj||{}).sort((a,b)=>b[1]-a[1]);
+      el.innerHTML = pairs.map(([c,v])=>
+        '<span class="badge bg-light text-dark border me-1 mb-1">'+c+': '+v+'</span>'
+      ).join(' ');
+    }
+    function renderAnomalieBadges(containerId, counts){
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const html = (anomalieTypes||[]).map(t => {
+      const href = AM_TYPE_PREFIX + encodeURIComponent(t);
+      return '<a href="'+href+'" class="text-decoration-none">'
+           +   '<span class="badge bg-light text-dark border me-1 mb-1">'+t+': '+(counts[t]||0)+'</span>'
+           + '</a>';
+    }).join(' ');
+    el.innerHTML = html;
+  }
+
+    function compute() {
+      const rows = Array.from(document.querySelectorAll('#markets-tbody tr'));
+      const checked = rows.filter(r => r.querySelector('.market-select').checked);
+  
+      if (category === 'formation') {
+        let total=0, inc=0, sst=0, integ=0;
+        checked.forEach(r=>{
+          total += Number(r.dataset.fTotal||0);
+          inc   += Number(r.dataset.fIncendie||0);
+          sst   += Number(r.dataset.fSst||0);
+          integ += Number(r.dataset.fIntegration||0);
+        });
+        document.getElementById('f-total').textContent = total + ' P';
+        document.getElementById('f-incendie').textContent = inc;
+        document.getElementById('f-sst').textContent = sst;
+        document.getElementById('f-integration').textContent = integ;
+      }
+  
+      if (category === 'accidents') {
+        // Accidents totals
+        let c=0, j=0;
+        let causes = {};
+        // Also: incidents by type on this page
+        let iTotal = 0;
+        const iByType = {};
+        incidentTypes.forEach(t=> iByType[t.key]=0);
+  
+        checked.forEach(r=>{
+          c += Number(r.dataset.aCount||0);
+          j += Number(r.dataset.aJours||0);
+  
+          // Causes (JSON in data attribute, URI-encoded)
+          let rowCauses = {};
+          try { rowCauses = JSON.parse(decodeURIComponent(r.dataset.aCauses||'%7B%7D')); } catch(e){ rowCauses={}; }
+          Object.entries(rowCauses).forEach(([cause,val])=>{
+            causes[cause] = (causes[cause]||0) + (Number(val)||0);
+          });
+  
+          // Incidents on accidents page
+          iTotal += Number(r.dataset.iTotal||0);
+          incidentTypes.forEach(t=>{
+            const key = 'i'+ t.key.charAt(0).toUpperCase() + t.key.slice(1);
+            // dataset keys are camelCased from data-i-xxxx (e.g., data-i-departfeu -> iDepartfeu)
+            const camel = 'i' + t.key.replace(/-([a-z])/g,(m,p)=>p.toUpperCase());
+            const dsKey = 'i' + t.key.charAt(0).toUpperCase() + t.key.slice(1); // fallback
+            const v = Number(r.dataset['i'+t.key.charAt(0).toUpperCase()+t.key.slice(1)] || r.dataset['i'+t.key] || r.dataset['i'+t.key] || r.dataset['iDepartfeu'] || 0);
+          });
+  
+          // Better explicit mapping to avoid dataset camel-case quirks:
+          iByType['departFeu']       += Number(r.dataset.iDepartfeu||0);
+          iByType['agression']       += Number(r.dataset.iAgression||0);
+          iByType['autorites']       += Number(r.dataset.iAutorites||0);
+          iByType['sinistreClient']  += Number(r.dataset.iSinistreclient||0);
+          iByType['acteSecurisation']+= Number(r.dataset.iActesecurisation||0);
+          iByType['autre']           += Number(r.dataset.iAutre||0);
+        });
+  
+        document.getElementById('a-count').textContent = c;
+        document.getElementById('a-jours').textContent = j;
+        renderCauses('a-causes', causes);
+  
+        // Update incidents section on accidents page
+        const elTotal = document.getElementById('acc-i-total');
+        if (elTotal) elTotal.textContent = iTotal;
+        incidentTypes.forEach(t=>{
+          const el = document.getElementById('acc-i-'+t.key);
+          if (el) el.textContent = iByType[t.key] || 0;
+        });
+      }
+   
+      if (category === 'anomalies') {
+      let total = 0;
+      const byType = {};
+      (anomalieTypes||[]).forEach(t => byType[t] = 0);
+
+      const rows = Array.from(document.querySelectorAll('#markets-tbody tr'));
+      const checked = rows.filter(r => r.querySelector('.market-select').checked);
+
+      checked.forEach(r=>{
+        total += Number(r.dataset.amTotal || 0);
+        let rowTypes = {};
+        try { rowTypes = JSON.parse(decodeURIComponent(r.dataset.amBytype || '%7B%7D')); } catch(e){ rowTypes = {}; }
+        Object.entries(rowTypes).forEach(([k,v])=>{
+          byType[k] = (byType[k]||0) + (Number(v)||0);
+        });
+      });
+
+      const totalEl = document.getElementById('am-total-number');
+      if (totalEl) totalEl.textContent = total;
+      renderAnomalieBadges('am-types-sel', byType);
+    }
+  }
+
+      if (category === 'incidents') {
+        let total=0;
+        const byType = {};
+        incidentTypes.forEach(t=> byType[t.key]=0);
+  
+        checked.forEach(r=>{
+          total += Number(r.dataset.iTotal||0);
+          byType['departFeu']        += Number(r.dataset.iDepartfeu||0);
+          byType['agression']        += Number(r.dataset.iAgression||0);
+          byType['autorites']        += Number(r.dataset.iAutorites||0);
+          byType['sinistreClient']   += Number(r.dataset.iSinistreclient||0);
+          byType['acteSecurisation'] += Number(r.dataset.iActesecurisation||0);
+          byType['autre']            += Number(r.dataset.iAutre||0);
+        });
+  
+        document.getElementById('i-total').textContent = total;
+        incidentTypes.forEach(t=>{
+          const el = document.getElementById('i-'+t.key);
+          if (el) el.textContent = byType[t.key] || 0;
+        });
+      }
+  
+      if (category === 'interpellations') {
+        let p=0, pj=0, v=0;
+        let byType = {
+          Client:{p:0,pj:0,v:0},
+          Personnel:{p:0,pj:0,v:0},
+          Prestataire:{p:0,pj:0,v:0}
+        };
+        checked.forEach(r=>{
+          p  += Number(r.dataset.itPersonnes||0);
+          pj += Number(r.dataset.itPoursuites||0);
+          v  += Number(r.dataset.itValeur||0);
+          byType.Client.p       += Number(r.dataset.itClientP||0);
+          byType.Client.pj      += Number(r.dataset.itClientPj||0);
+          byType.Client.v       += Number(r.dataset.itClientV||0);
+          byType.Personnel.p    += Number(r.dataset.itPersonnelP||0);
+          byType.Personnel.pj   += Number(r.dataset.itPersonnelPj||0);
+          byType.Personnel.v    += Number(r.dataset.itPersonnelV||0);
+          byType.Prestataire.p  += Number(r.dataset.itPrestataireP||0);
+          byType.Prestataire.pj += Number(r.dataset.itPrestatairePj||0);
+          byType.Prestataire.v  += Number(r.dataset.itPrestataireV||0);
+        });
+        document.getElementById('it-personnes').textContent = p;
+        document.getElementById('it-poursuites').textContent = pj;
+        document.getElementById('it-valeur').textContent = fmtKD(v);
+  
+        function set(prefix, obj){
+          const pEl = document.getElementById(prefix+'-p');
+          const pjEl= document.getElementById(prefix+'-pj');
+          const vEl = document.getElementById(prefix+'-v');
+          if(pEl) pEl.textContent = obj.p;
+          if(pjEl) pjEl.textContent = obj.pj;
+          if(vEl) vEl.textContent = fmtKD(obj.v);
+        }
+        set('it-Client', byType.Client);
+        set('it-Personnel', byType.Personnel);
+        set('it-Prestataire', byType.Prestataire);
+      }
+    }
+  
+    document.querySelectorAll('.market-select').forEach(cb=>{
+      cb.addEventListener('change', compute);
+    });
+  
+    document.getElementById('select-all').addEventListener('click', function(e){
+      e.preventDefault();
+      document.querySelectorAll('.market-select').forEach(cb=> cb.checked = true);
+      compute();
+    });
+  
+    document.getElementById('unselect-all').addEventListener('click', function(e){
+      e.preventDefault();
+      document.querySelectorAll('.market-select').forEach(cb=> cb.checked = false);
+      compute();
+    });
+  
+    compute();
+  })();
+  </script>

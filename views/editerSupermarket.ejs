@@ -1,0 +1,44 @@
+
+<h1>Modifier le Supermarché</h1>
+<form action="/supermarkets/<%= supermarket._id %>/editer" method="POST">
+  <div class="form-group">
+    <label for="nom">Nom du Supermarché</label>
+    <input 
+      type="text" 
+      class="form-control" 
+      id="nom" 
+      name="nom" 
+      value="<%= supermarket.nom %>" 
+      required
+    >
+  </div>
+  
+  <% if (session.region === 'ALL') { %>
+    <!-- For the main account, allow region to be changed via a dropdown -->
+    <div class="form-group">
+      <label for="region">Région</label>
+      <select class="form-control" id="region" name="region" required>
+        <option value="REGION CENTRE 02" <%= supermarket.ville === 'REGION CENTRE 02' ? 'selected' : '' %>>REGION CENTRE 02</option>
+        <option value="REGION SUD" <%= supermarket.ville === 'REGION SUD' ? 'selected' : '' %>>REGION SUD</option>
+        <option value="REGION ORIENT" <%= supermarket.ville === 'REGION ORIENT' ? 'selected' : '' %>>REGION ORIENT</option>
+        <option value="REGION CENTRE 1" <%= supermarket.ville === 'REGION CENTRE 1' ? 'selected' : '' %>>REGION CENTRE 1</option>
+        <option value="REGION NORD" <%= supermarket.ville === 'REGION NORD' ? 'selected' : '' %>>REGION NORD</option>
+      </select>
+    </div>
+  <% } else { %>
+    <!-- For other accounts, display region (using the 'ville' field) as read-only -->
+    <div class="form-group">
+      <label for="region">Région</label>
+      <input 
+        type="text" 
+        class="form-control" 
+        id="region" 
+        name="region" 
+        value="<%= session.region %>" 
+        readonly
+      >
+    </div>
+  <% } %>
+  
+  <button type="submit" class="btn btn-primary">Mettre à jour</button>
+</form>

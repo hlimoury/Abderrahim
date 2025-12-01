@@ -1,0 +1,75 @@
+
+<h1>Accidents de Travail - Instance du Mois</h1>
+<a href="/supermarkets/<%= supermarketId %>?fromPage=<%= fromPage || 1 %>" class="btn btn-secondary mb-3">Retour</a>
+
+<h2>Ajouter un Accident de Travail</h2>
+<form action="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/accidents/ajouter" method="POST">
+  <div class="form-group">
+    <label for="nombreAccidents">Nombre d'accidents</label>
+    <input type="number" class="form-control" id="nombreAccidents" name="nombreAccidents" required>
+  </div>
+  <div class="form-group">
+    <label for="joursArret">Nombre de jours d'arrêt de travail</label>
+    <input type="number" class="form-control" id="joursArret" name="joursArret" required>
+  </div>
+  <div class="form-check">
+    <input type="checkbox" class="form-check-input" id="accidentDeclare" name="accidentDeclare">
+    <label class="form-check-label" for="accidentDeclare">Accident déclaré ?</label>
+  </div>
+  
+  <!-- Cause dropdown -->
+  <div class="form-group">
+    <label for="cause">Cause</label>
+    <select class="form-control" id="cause" name="cause" required>
+      <option value="" disabled selected>-- Sélectionnez la cause --</option>
+      <option value="Chutes et glissades">Chutes et glissades</option>
+      <option value="Manutention manuelle">Manutention manuelle</option>
+      <option value="Hachoirs">Hachoirs</option>
+      <option value="trancheuse">trancheuse</option>
+      <option value="Scie Électrique boucherie">Scie Électrique boucherie</option>
+      <option value="Outils tranchants">Outils tranchants</option>
+      <option value="Chutes d’objets">Chutes d’objets</option>
+      <option value="Agressions et violences">Agressions et violences</option>
+      <option value="Autres">Autres</option>
+    </select>
+  </div>
+  
+  <div class="form-group">
+    <label for="date">Date</label>
+    <input type="date" class="form-control" id="date" name="date" required>
+  </div>
+  <button type="submit" class="btn btn-primary">Ajouter</button>
+</form>
+
+<h2 class="mt-4">Liste des Accidents</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Nombre d'accidents</th>
+      <th>Jours d'arrêt</th>
+      <th>Accident déclaré</th>
+      <th>Cause</th>
+      <th>Date</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% accidents.forEach(function(a) { %>
+      <tr>
+        <td><%= a.nombreAccidents %></td>
+        <td><%= a.joursArret %></td>
+        <td><%= a.accidentDeclare ? 'Oui' : 'Non' %></td>
+        <td><%= a.cause %></td>
+        <td><%= a.date ? a.date.toISOString().split('T')[0] : '' %></td>
+        <td>
+          <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/accidents/editer/<%= a._id %>" class="btn btn-warning btn-sm">
+            Modifier
+          </a>
+          <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/accidents/supprimer/<%= a._id %>" class="btn btn-danger btn-sm" onclick="return confirm('Voulez-vous vraiment supprimer cet accident ?');">
+            Supprimer
+          </a>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>

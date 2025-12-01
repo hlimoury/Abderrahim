@@ -1,0 +1,39 @@
+
+<h1>Éditer Interpellation</h1>
+<form action="/supermarkets/<%= supermarketId %>/instance/<%= instanceId %>/interpellations/editer/<%= interpellationItem._id %>" method="POST">
+  <div class="form-group">
+    <label for="typePersonne">Type de personne</label>
+    <select class="form-control" id="typePersonne" name="typePersonne">
+      <option value="Client" <%= interpellationItem.typePersonne === 'Client' ? 'selected' : '' %>>Client</option>
+      <option value="Personnel" <%= interpellationItem.typePersonne === 'Personnel' ? 'selected' : '' %>>Personnel</option>
+      <option value="Prestataire" <%= interpellationItem.typePersonne === 'Prestataire' ? 'selected' : '' %>>Prestataire</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="nombrePersonnes">Nombre de personnes</label>
+    <input type="number" class="form-control" id="nombrePersonnes" name="nombrePersonnes" value="<%= interpellationItem.nombrePersonnes %>" required>
+  </div>
+  <div class="form-group">
+    <label for="poursuites">Poursuites judiciaires (nombre)</label>
+    <input type="number" class="form-control" id="poursuites" name="poursuites" value="<%= interpellationItem.poursuites %>" required>
+  </div>
+  <div class="form-group">
+    <label for="valeurMarchandise">Valeur marchandise récupérée (KDH)</label>
+    <input 
+      type="text" 
+      class="form-control" 
+      id="valeurMarchandise" 
+      name="valeurMarchandise" 
+      value="<%= interpellationItem.valeurMarchandise != null ? interpellationItem.valeurMarchandise.toFixed(3).replace('.', ',') : '' %>" 
+      required>
+  </div>
+  <div class="form-group">
+    <label for="rayon">Rayon concerné</label>
+    <input type="text" class="form-control" id="rayon" name="rayon" value="<%= interpellationItem.rayon %>">
+  </div>
+  <div class="form-group">
+    <label for="date">Date de l'interpellation</label>
+    <input type="date" class="form-control" id="date" name="date" value="<%= interpellationItem.date.toISOString().substring(0,10) %>" required>
+  </div>
+  <button type="submit" class="btn btn-primary">Mettre à jour</button>
+</form>

@@ -1,0 +1,812 @@
+<!-- views/adminDashboard.ejs -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Tableau de bord Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <!-- Dashboard custom CSS -->
+  <link href="/css/dashboard.css" rel="stylesheet">
+  <style>
+    /* Fallback if /css/dashboard.css is not served */
+  </style>
+</head>
+<body class="bg-body-tertiary">
+  <!-- Sticky top actions -->
+  <div class="sticky-actions shadow-sm" data-export-hide>
+    <div class="container-fluid d-flex flex-wrap align-items-center gap-2 py-2">
+      <h1 class="h5 m-0 me-auto d-flex align-items-center gap-2">
+        <i class="bi bi-speedometer2 text-gradient"></i>
+        Tableau de bord Admin
+      </h1>
+
+      <button class="btn btn-outline-secondary btn-sm" id="btn-compact" type="button" data-export-hide>
+        <i class="bi bi-arrows-angle-contract"></i> Mode compact
+      </button>
+
+      <button class="btn btn-outline-dark btn-sm" id="btn-expand" type="button" data-export-hide>
+        <i class="bi bi-arrows-angle-expand"></i> Déplier tout
+      </button>
+
+      <button class="btn btn-outline-primary btn-sm" id="btn-share" type="button" data-export-hide>
+        <i class="bi bi-link-45deg"></i> Copier le lien
+      </button>
+
+      <div class="vr"></div>
+
+      <button class="btn btn-success btn-sm" id="btn-export-pdf" type="button" data-export-hide>
+        <i class="bi bi-filetype-pdf"></i> Exporter PDF
+      </button>
+      <button class="btn btn-outline-success btn-sm" id="btn-export-png" type="button" data-export-hide>
+        <i class="bi bi-image"></i> Exporter PNG
+      </button>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="dashboard-header">
+    <div class="container-fluid py-4 position-relative">
+      <div class="gradient-blob"></div>
+      <div class="row align-items-end">
+        <div class="col-lg-8">
+          <h2 class="display-6 fw-bold text-white mb-1">
+            Vue globale des supermarchés
+          </h2>
+          <p class="lead text-white-50 mb-0"><%= filterSummary %></p>
+        </div>
+        <div class="col-lg-4 mt-3 mt-lg-0">
+          <form class="glass-card p-3 rounded-3" action="/stats/dashboard" method="get" id="filter-form">
+            <div class="row g-2">
+              <div class="col-md-3">
+                <label class="form-label small text-muted mb-1">Nom</label>
+                <input type="text" class="form-control form-control-sm" name="nom" placeholder="Ex: Alpha"
+                       value="<%= searchParams.nom || '' %>">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small text-muted mb-1">Ville</label>
+                <select class="form-select form-select-sm" name="ville">
+                  <option value="">Toutes</option>
+                  <% (availableCities || []).forEach(v => { %>
+                    <option value="<%= v %>" <%= v === (searchParams.ville||'') ? 'selected' : '' %>><%= v %></option>
+                  <% }) %>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small text-muted mb-1">Mois</label>
+                <input type="number" class="form-control form-control-sm" min="1" max="12" name="mois"
+                       value="<%= searchParams.mois || '' %>">
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small text-muted mb-1">Année</label>
+                <input type="number" class="form-control form-control-sm" min="2000" max="2100" name="annee"
+                       value="<%= searchParams.annee || '' %>">
+              </div>
+            </div>
+          
+            <!-- NEW: Tranche horaire -->
+            <div class="row g-2 mt-2">
+              <div class="col-6 col-md-3">
+                <label class="form-label small text-muted mb-1">Du (date)</label>
+                <input type="date" class="form-control form-control-sm" name="fromDate"
+                       value="<%= (timeFilters && timeFilters.raw && timeFilters.raw.fromDate) || '' %>">
+              </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label small text-muted mb-1">Au (date)</label>
+                <input type="date" class="form-control form-control-sm" name="toDate"
+                       value="<%= (timeFilters && timeFilters.raw && timeFilters.raw.toDate) || '' %>">
+              </div>
+              <div class="col-6 col-md-2">
+                <label class="form-label small text-muted mb-1">Heure début</label>
+                <input type="time" class="form-control form-control-sm" name="fromTime"
+                       value="<%= (timeFilters && timeFilters.raw && timeFilters.raw.fromTime) || '' %>">
+              </div>
+              <div class="col-6 col-md-2">
+                <label class="form-label small text-muted mb-1">Heure fin</label>
+                <input type="time" class="form-control form-control-sm" name="toTime"
+                       value="<%= (timeFilters && timeFilters.raw && timeFilters.raw.toTime) || '' %>">
+              </div>
+              <div class="col-12 col-md-2">
+                <label class="form-label small text-muted mb-1">Granularité</label>
+                <select class="form-select form-select-sm" name="groupBy">
+                  <option value="auto"  <%= (timeFilters && timeFilters.groupBy==='auto') ? 'selected' : '' %>>Auto</option>
+                  <option value="month" <%= (timeFilters && timeFilters.groupBy==='month') ? 'selected' : '' %>>Mois</option>
+                  <option value="day"   <%= (timeFilters && timeFilters.groupBy==='day')   ? 'selected' : '' %>>Jours</option>
+                  <option value="hour"  <%= (timeFilters && timeFilters.groupBy==='hour')  ? 'selected' : '' %>>Heures</option>
+                </select>
+              </div>
+            </div>
+          
+            <div class="d-flex gap-2 mt-2">
+              <button class="btn btn-primary btn-sm" type="submit"><i class="bi bi-filter"></i> Appliquer</button>
+              <a class="btn btn-outline-light btn-sm" href="/stats/dashboard">Réinitialiser</a>
+            </div>
+            <% if (hasFilters || (timeFilters && timeFilters.active)) { %>
+              <div class="small text-white-50 mt-1">
+                Astuce: l'export respecte les filtres appliqués (y compris la tranche horaire).
+              </div>
+            <% } %>
+          </form>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main content capture area -->
+  <main id="dashboard-capture" class="container-fluid my-4">
+    <!-- KPI Cards -->
+    <section class="mb-4">
+      <div class="row g-3">
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="kpi-card kpi-primary">
+            <div class="kpi-icon"><i class="bi bi-mortarboard"></i></div>
+            <div class="kpi-label">Formations</div>
+            <div class="kpi-value"><%= (totals.formation.total || 0).toLocaleString('fr-FR') %></div>
+            <div class="kpi-sub">
+              Incendie <%= totals.formation.byType.Incendie %> · SST <%= totals.formation.byType.SST %> · Intégration <%= totals.formation.byType["Intégration"] %>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="kpi-card kpi-danger">
+            <div class="kpi-icon"><i class="bi bi-activity"></i></div>
+            <div class="kpi-label">Accidents</div>
+            <div class="kpi-value"><%= (totals.accidents.count || 0).toLocaleString('fr-FR') %></div>
+            <div class="kpi-sub">
+              Jours d'arrêt <%= (totals.accidents.jours || 0).toLocaleString('fr-FR') %>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="kpi-card kpi-warning">
+            <div class="kpi-icon"><i class="bi bi-exclamation-triangle"></i></div>
+            <div class="kpi-label">Incidents</div>
+            <div class="kpi-value"><%= (totals.incidents.total || 0).toLocaleString('fr-FR') %></div>
+            <div class="kpi-sub">
+              <% (incidentTypes || []).forEach(t => { %>
+                <span class="badge bg-light text-dark border me-1"><%= t.label %>: <%= totals.incidents.byType[t.key] || 0 %></span>
+              <% }) %>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-3">
+          <div class="kpi-card kpi-info">
+            <div class="kpi-icon"><i class="bi bi-person-arrest"></i></div>
+            <div class="kpi-label">Interpellations</div>
+            <div class="kpi-value">
+              <%= (totals.interpellations.personnes || 0).toLocaleString('fr-FR') %> pers.
+            </div>
+            <div class="kpi-sub d-flex flex-wrap gap-2">
+              <span>Poursuites <%= (totals.interpellations.poursuites || 0).toLocaleString('fr-FR') %></span>
+              <span>· Valeur € <%= (totals.interpellations.valeur || 0).toLocaleString('fr-FR') %></span>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-3">
+          <div class="kpi-card kpi-indigo">
+            <div class="kpi-icon"><i class="bi bi-bug"></i></div>
+            <div class="kpi-label">Anomalies Marché</div>
+            <div class="kpi-value"><%= (totals.anomalies.total || 0).toLocaleString('fr-FR') %></div>
+            <div class="kpi-sub">
+              <% (anomalieTypes || []).forEach(t => { %>
+                <span class="badge bg-light text-dark border me-1 mb-1"><%= t %>: <%= totals.anomalies.byType[t] || 0 %></span>
+              <% }) %>
+            </div>
+          </div>
+        </div>
+        <% if (timeFilters && timeFilters.active) { %>
+          <div class="col-12">
+            <div class="glass-card p-3 h-100">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <h3 class="h6 m-0">
+                  <i class="bi bi-graph-up"></i>
+                  Évolution des anomalies dans le temps
+                  <small class="text-muted">(<%= timeFilters.groupBy === 'hour' ? 'Heures' : timeFilters.groupBy === 'day' ? 'Jours' : 'Mois' %>)</small>
+                </h3>
+              </div>
+              <canvas id="chartEvoAnomalies" height="200"></canvas>
+            </div>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+    <!-- Charts -->
+    <section class="mb-4">
+      <div class="row g-3">
+        <div class="col-12 col-xl-6">
+          <div class="glass-card p-3 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h3 class="h6 m-0"><i class="bi bi-bar-chart"></i> Anomalies par type</h3>
+            </div>
+            <canvas id="chartAnomalies" height="180"></canvas>
+          </div>
+        </div>
+        <div class="col-12 col-xl-6">
+          <div class="glass-card p-3 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h3 class="h6 m-0"><i class="bi bi-bar-chart-steps"></i> Incidents par type</h3>
+            </div>
+            <canvas id="chartIncidents" height="180"></canvas>
+          </div>
+        </div>
+        <div class="col-12 col-xl-6">
+          <div class="glass-card p-3 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h3 class="h6 m-0"><i class="bi bi-graph-up"></i> Accidents & jours d'arrêt</h3>
+            </div>
+            <canvas id="chartAccidents" height="180"></canvas>
+          </div>
+        </div>
+        <div class="col-12 col-xl-6">
+          <div class="glass-card p-3 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h3 class="h6 m-0"><i class="bi bi-pie-chart"></i> Interpellations par type</h3>
+            </div>
+            <canvas id="chartInterpellations" height="180"></canvas>
+          </div>
+        </div>
+        <% if (timeseries && timeseries.hasYear) { %>
+        <div class="col-12">
+          <div class="glass-card p-3">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h3 class="h6 m-0"><i class="bi bi-activity"></i> Séries mensuelles (<%= searchParams.annee %>)</h3>
+            </div>
+            <canvas id="chartTimeseries" height="200"></canvas>
+          </div>
+        </div>
+        <% } %>
+      </div>
+    </section>
+
+    <!-- Top lists -->
+    <section class="mb-4">
+      <div class="row g-3">
+        <div class="col-12 col-xl-4">
+          <div class="glass-card p-3 h-100">
+            <h3 class="h6"><i class="bi bi-bug"></i> Top anomalies</h3>
+            <ol class="mb-0">
+              <% (topAnomalies || []).forEach(s => { %>
+                <li class="mb-1">
+                  <strong><%= s.nom %></strong> — <span class="text-muted"><%= s.ville %></span>
+                  <span class="badge bg-indigo ms-2"><%= s.total %></span>
+                </li>
+              <% }) %>
+              <% if (!topAnomalies || topAnomalies.length === 0) { %><li class="text-muted">Aucune donnée</li><% } %>
+            </ol>
+          </div>
+        </div>
+        <div class="col-12 col-xl-4">
+          <div class="glass-card p-3 h-100">
+            <h3 class="h6"><i class="bi bi-activity"></i> Top accidents</h3>
+            <ol class="mb-0">
+              <% (topAccidents || []).forEach(s => { %>
+                <li class="mb-1">
+                  <strong><%= s.nom %></strong> — <span class="text-muted"><%= s.ville %></span>
+                  <span class="badge bg-danger ms-2"><%= s.count %></span>
+                  <small class="text-muted ms-1">(<%= s.jours %> j)</small>
+                </li>
+              <% }) %>
+              <% if (!topAccidents || topAccidents.length === 0) { %><li class="text-muted">Aucune donnée</li><% } %>
+            </ol>
+          </div>
+        </div>
+        <div class="col-12 col-xl-4">
+          <div class="glass-card p-3 h-100">
+            <h3 class="h6"><i class="bi bi-cash-coin"></i> Top valeur interpellations (€)</h3>
+            <ol class="mb-0">
+              <% (topInterValeur || []).forEach(s => { %>
+                <li class="mb-1">
+                  <strong><%= s.nom %></strong> — <span class="text-muted"><%= s.ville %></span>
+                  <span class="badge bg-info ms-2">€ <%= (s.valeur || 0).toLocaleString('fr-FR') %></span>
+                </li>
+              <% }) %>
+              <% if (!topInterValeur || topInterValeur.length === 0) { %><li class="text-muted">Aucune donnée</li><% } %>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Details per supermarket -->
+    <section class="mb-5">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <h3 class="h6 m-0"><i class="bi bi-building"></i> Détails par supermarché</h3>
+        <small class="text-muted">Astuce: cliquez pour déplier/replier</small>
+      </div>
+      <div class="accordion" id="storesAccordion">
+        <% (stores || []).forEach((s, idx) => { %>
+          <div class="accordion-item glass-card mb-2">
+            <h2 class="accordion-header" id="heading-<%= idx %>">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                      data-bs-target="#collapse-<%= idx %>">
+                <div class="d-flex align-items-center w-100">
+                  <div class="me-auto">
+                    <strong><%= s.nom %></strong>
+                    <span class="text-muted ms-2"><i class="bi bi-geo-alt"></i> <%= s.ville %></span>
+                  </div>
+                  <div class="d-flex flex-wrap gap-2 small">
+                    <span class="badge rounded-pill text-bg-primary">Form <%= s.formation.total %></span>
+                    <span class="badge rounded-pill text-bg-danger">Acc <%= s.accidents.count %></span>
+                    <span class="badge rounded-pill text-bg-warning text-dark">Inc <%= s.incidents.total %></span>
+                    <span class="badge rounded-pill text-bg-info">Int <%= s.interpellations.personnes %></span>
+                    <span class="badge rounded-pill text-bg-indigo">Ano <%= s.anomalies.total %></span>
+                  </div>
+                </div>
+              </button>
+            </h2>
+            <div id="collapse-<%= idx %>" class="accordion-collapse collapse" data-bs-parent="#storesAccordion">
+              <div class="accordion-body">
+                <div class="row g-3">
+                  <div class="col-12 col-xl-6">
+                    <div class="subcard">
+                      <h4 class="h6 mb-2"><i class="bi bi-mortarboard"></i> Formation</h4>
+                      <div class="small mb-2">
+                        Incendie <span class="badge bg-light text-dark border"><%= s.formation.byType.Incendie %></span>
+                        · SST <span class="badge bg-light text-dark border"><%= s.formation.byType.SST %></span>
+                        · Intégration <span class="badge bg-light text-dark border"><%= s.formation.byType["Intégration"] %></span>
+                      </div>
+                      <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                          <thead><tr><th>Type</th><th class="text-end">Pers.</th><th>Mois</th><th>Année</th></tr></thead>
+                          <tbody>
+                            <% s.formation.list.forEach(e => { %>
+                              <tr>
+                                <td><%= e.type %></td>
+                                <td class="text-end"><%= e.nombrePersonnes %></td>
+                                <td><%= e.mois || '-' %></td>
+                                <td><%= e.annee || '-' %></td>
+                              </tr>
+                            <% }) %>
+                            <% if (s.formation.list.length === 0) { %>
+                              <tr><td colspan="4" class="text-muted">Aucune formation</td></tr>
+                            <% } %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-12 col-xl-6">
+                    <div class="subcard">
+                      <h4 class="h6 mb-2"><i class="bi bi-activity"></i> Accidents</h4>
+                      <div class="small mb-2">
+                        Jours d'arrêt <span class="badge bg-light text-dark border"><%= s.accidents.jours %></span>
+                        · Principales causes:
+                        <% Object.entries(s.accidents.byCause || {}).slice(0,4).forEach(([c,n]) => { %>
+                          <span class="badge bg-light text-dark border me-1"><%= c %>: <%= n %></span>
+                        <% }) %>
+                      </div>
+                      <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                          <thead><tr><th>Cause</th><th class="text-end">Acc.</th><th class="text-end">Jours</th><th>Mois</th><th>Année</th></tr></thead>
+                          <tbody>
+                            <% s.accidents.list.forEach(e => { %>
+                              <tr>
+                                <td><%= e.cause %></td>
+                                <td class="text-end"><%= e.nombreAccidents %></td>
+                                <td class="text-end"><%= e.joursArret %></td>
+                                <td><%= e.mois || '-' %></td>
+                                <td><%= e.annee || '-' %></td>
+                              </tr>
+                            <% }) %>
+                            <% if (s.accidents.list.length === 0) { %>
+                              <tr><td colspan="5" class="text-muted">Aucun accident</td></tr>
+                            <% } %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-12 col-xl-6">
+                    <div class="subcard">
+                      <h4 class="h6 mb-2"><i class="bi bi-exclamation-triangle"></i> Incidents</h4>
+                      <div class="small mb-2">
+                        <% (incidentTypes || []).forEach(t => { %>
+                          <span class="badge bg-light text-dark border me-1"><%= t.label %>: <%= s.incidents.byType[t.key] || 0 %></span>
+                        <% }) %>
+                      </div>
+                      <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                          <thead><tr><th>Type</th><th class="text-end">Nbre</th><th>Détail</th><th>Mois</th><th>Année</th></tr></thead>
+                          <tbody>
+                            <% s.incidents.list.forEach(e => { %>
+                              <tr>
+                                <td>
+                                  <% var tt = (incidentTypes||[]).find(x => x.key === e.type); %>
+                                  <%= tt ? tt.label : e.type %>
+                                </td>
+                                <td class="text-end"><%= e.nombreIncidents %></td>
+                                <td class="text-truncate" style="max-width:240px;" title="<%= e.detail %>"><%= e.detail %></td>
+                                <td><%= e.mois || '-' %></td>
+                                <td><%= e.annee || '-' %></td>
+                              </tr>
+                            <% }) %>
+                            <% if (s.incidents.list.length === 0) { %>
+                              <tr><td colspan="5" class="text-muted">Aucun incident</td></tr>
+                            <% } %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-12 col-xl-6">
+                    <div class="subcard">
+                      <h4 class="h6 mb-2"><i class="bi bi-person-arrest"></i> Interpellations</h4>
+                      <div class="small mb-2">
+                        Clients: <span class="badge bg-light text-dark border"><%= s.interpellations.byType.Client.personnes %></span>
+                        · Personnel: <span class="badge bg-light text-dark border"><%= s.interpellations.byType.Personnel.personnes %></span>
+                        · Prestataire: <span class="badge bg-light text-dark border"><%= s.interpellations.byType.Prestataire.personnes %></span>
+                      </div>
+                      <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                          <thead><tr><th>Type</th><th class="text-end">Pers.</th><th class="text-end">Poursuites</th><th class="text-end">Valeur</th><th>Produit</th><th>Mois</th><th>Année</th></tr></thead>
+                          <tbody>
+                            <% s.interpellations.list.forEach(e => { %>
+                              <tr>
+                                <td><%= e.typePersonne %></td>
+                                <td class="text-end"><%= e.nombrePersonnes %></td>
+                                <td class="text-end"><%= e.poursuites %></td>
+                                <td class="text-end">€ <%= (e.valeurMarchandise || 0).toLocaleString('fr-FR') %></td>
+                                <td class="text-truncate" style="max-width:220px;" title="<%= e.produit %>"><%= e.produit %></td>
+                                <td><%= e.mois || '-' %></td>
+                                <td><%= e.annee || '-' %></td>
+                              </tr>
+                            <% }) %>
+                            <% if (s.interpellations.list.length === 0) { %>
+                              <tr><td colspan="7" class="text-muted">Aucune interpellation</td></tr>
+                            <% } %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-12">
+                    <div class="subcard">
+                      <h4 class="h6 mb-2"><i class="bi bi-bug"></i> Anomalies Marché</h4>
+                      <div class="small mb-2">
+                        <% (anomalieTypes || []).forEach(t => { %>
+                          <span class="badge bg-light text-dark border me-1 mb-1"><%= t %>: <%= s.anomalies.byType[t] || 0 %></span>
+                        <% }) %>
+                      </div>
+                      <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                          <thead><tr><th>Type</th><th>Action/Commentaire</th><th>Mois</th><th>Année</th></tr></thead>
+                          <tbody>
+                            <% s.anomalies.list.forEach(e => { %>
+                              <tr>
+                                <td><%= e.anomalieDetectee %></td>
+                                <td class="text-truncate" style="max-width:520px;" title="<%= (e.action || e.commentaire) %>">
+                                  <%= e.action || e.commentaire || '-' %>
+                                </td>
+                                <td><%= e.mois || '-' %></td>
+                                <td><%= e.annee || '-' %></td>
+                              </tr>
+                            <% }) %>
+                            <% if (s.anomalies.list.length === 0) { %>
+                              <tr><td colspan="4" class="text-muted">Aucune anomalie</td></tr>
+                            <% } %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                </div> <!-- row -->
+              </div>
+            </div>
+          </div>
+        <% }) %>
+        <% if (!stores || stores.length === 0) { %>
+          <div class="alert alert-light border text-center">Aucun supermarché pour les filtres sélectionnés.</div>
+        <% } %>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="py-4 text-center text-muted small">
+    Tableau de bord — généré le <%= new Date().toLocaleString('fr-FR') %>
+  </footer>
+
+  <!-- Libs -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+  <!-- Dashboard JS -->
+  <script>
+    const totals = <%- JSON.stringify(totals) %>;
+    const anomalieTypes = <%- JSON.stringify(anomalieTypes || []) %>;
+    const incidentTypes = <%- JSON.stringify(incidentTypes || []) %>;
+    const timeseries = <%- JSON.stringify(timeseries || {}) %>;
+    const baseQs = '<%- baseQs || '' %>';
+    const timeFilters = <%- JSON.stringify(timeFilters || {}) %>;
+  const evo = <%- JSON.stringify(evo || {}) %>;
+
+    // Compact mode
+    document.getElementById('btn-compact')?.addEventListener('click', () => {
+      document.body.classList.toggle('compact');
+    });
+
+    // Expand all
+    document.getElementById('btn-expand')?.addEventListener('click', () => {
+      document.querySelectorAll('#storesAccordion .accordion-collapse').forEach(el => {
+        const bsCollapse = bootstrap.Collapse.getOrCreateInstance(el, { toggle: false });
+        bsCollapse.show();
+      });
+    });
+
+    // Share URL
+    document.getElementById('btn-share')?.addEventListener('click', async () => {
+      const url = location.origin + location.pathname + (baseQs ? ('?' + baseQs) : '');
+      try {
+        await navigator.clipboard.writeText(url);
+        toast('Lien copié dans le presse-papiers.');
+      } catch(e) {
+        alert('Lien: ' + url);
+      }
+    });
+
+    // Toast helper
+    function toast(msg) {
+      const el = document.createElement('div');
+      el.className = 'toast-float';
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => el.classList.add('show'), 10);
+      setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 2200);
+    }
+
+    // Export PNG
+    document.getElementById('btn-export-png')?.addEventListener('click', async () => {
+      await exportAsImage();
+    });
+
+    // Export PDF
+    document.getElementById('btn-export-pdf')?.addEventListener('click', async () => {
+      await exportAsPDF();
+    });
+
+    function hideExportControls(hide) {
+      document.querySelectorAll('[data-export-hide]').forEach(el => {
+        if (hide) el.classList.add('export-hidden');
+        else el.classList.remove('export-hidden');
+      });
+    }
+
+    async function exportAsImage() {
+      const node = document.getElementById('dashboard-capture');
+      hideExportControls(true);
+      await new Promise(r => setTimeout(r, 200)); // allow reflow
+      const canvas = await html2canvas(node, { scale: 2, useCORS: true, windowWidth: document.documentElement.scrollWidth });
+      hideExportControls(false);
+      const dataUrl = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = 'tableau-de-bord.png';
+      a.click();
+    }
+
+    async function exportAsPDF() {
+      const node = document.getElementById('dashboard-capture');
+      hideExportControls(true);
+      await new Promise(r => setTimeout(r, 200));
+      const canvas = await html2canvas(node, { scale: 2, useCORS: true, windowWidth: document.documentElement.scrollWidth });
+      hideExportControls(false);
+
+      const imgData = canvas.toDataURL('image/png');
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+
+      const imgW = pageW;
+      const imgH = canvas.height * imgW / canvas.width;
+
+      let heightLeft = imgH;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgW, imgH);
+      heightLeft -= pageH;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgH;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgW, imgH);
+        heightLeft -= pageH;
+      }
+
+      const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+      pdf.save(`tableau-de-bord-${stamp}.pdf`);
+    }
+
+    // Charts
+    const palette = {
+      primary: '#2f6fed',
+      danger: '#e03131',
+      warning: '#fab005',
+      info: '#15aabf',
+      indigo: '#5f3dc4',
+      gray: '#868e96',
+      green: '#37b24d',
+      pink: '#e64980',
+      cyan: '#12b886'
+    };
+
+    // Anomalies by type
+    (function() {
+      const ctx = document.getElementById('chartAnomalies');
+      if (!ctx) return;
+      const labels = anomalieTypes;
+      const data = labels.map(l => (totals.anomalies.byType[l] || 0));
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Anomalies',
+            data,
+            backgroundColor: labels.map((_,i)=> [palette.indigo, palette.primary, palette.info, palette.cyan, palette.green, palette.pink, palette.warning, palette.danger, palette.gray][i%9]),
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display:false } },
+          scales: { y: { beginAtZero: true, ticks: { precision:0 } } }
+        }
+      });
+    })();
+
+    // Incidents by type
+    (function(){
+      const ctx = document.getElementById('chartIncidents');
+      if (!ctx) return;
+      const labels = incidentTypes.map(t => t.label);
+      const data = incidentTypes.map(t => totals.incidents.byType[t.key] || 0);
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Incidents',
+            data,
+            backgroundColor: labels.map((_,i)=> [palette.warning, palette.danger, palette.gray, palette.info, palette.primary, palette.green][i%6]),
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display:false } },
+          indexAxis: 'y',
+          scales: { x: { beginAtZero:true, ticks:{ precision:0 } } }
+        }
+      });
+    })();
+
+    // Accidents (count + jours)
+    (function(){
+      const ctx = document.getElementById('chartAccidents');
+      if (!ctx) return;
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Accidents', 'Jours d’arrêt'],
+          datasets: [{
+            type: 'bar',
+            label: 'Accidents',
+            data: [totals.accidents.count || 0, 0],
+            backgroundColor: palette.danger,
+            borderRadius: 6,
+            order: 1
+          },{
+            type: 'bar',
+            label: 'Jours d’arrêt',
+            data: [0, totals.accidents.jours || 0],
+            backgroundColor: palette.gray,
+            borderRadius: 6,
+            order: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom' } },
+          scales: {
+            y: { beginAtZero:true, ticks:{ precision:0 } }
+          }
+        }
+      });
+    })();
+
+    // Interpellations by type (doughnut)
+    (function(){
+      const ctx = document.getElementById('chartInterpellations');
+      if (!ctx) return;
+      const labels = ['Client','Personnel','Prestataire'];
+      const data = labels.map(k => totals.interpellations.byType[k]?.personnes || 0);
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: [palette.primary, palette.info, palette.indigo]
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom' } },
+          cutout: '60%'
+        }
+      });
+    })();
+// Evolution chart for anomalies (hour/day/month)
+(function(){
+    if (!timeFilters || !timeFilters.active) return;
+    const ctx = document.getElementById('chartEvoAnomalies');
+    if (!ctx) return;
+    const palette = {
+      indigo: '#5f3dc4'
+    };
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: evo.labels || [],
+        datasets: [{
+          label: 'Anomalies',
+          data: evo.anomalies || [],
+          borderColor: palette.indigo,
+          backgroundColor: 'rgba(95,61,196,0.15)',
+          pointRadius: 2,
+          tension: 0.25,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: { mode: 'index', intersect: false }
+        },
+        scales: {
+          y: { beginAtZero: true, ticks: { precision: 0 } }
+        }
+      }
+    });
+  })();
+    // Timeseries (if available)
+    (function(){
+      if (!timeseries || !timeseries.hasYear) return;
+      const ctx = document.getElementById('chartTimeseries');
+      if (!ctx) return;
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: timeseries.labels,
+          datasets: [
+            { label: 'Formations', data: timeseries.formation, borderColor: palette.primary, backgroundColor: 'rgba(47,111,237,0.15)', tension: 0.3, fill: true },
+            { label: 'Accidents', data: timeseries.accidentsCount, borderColor: palette.danger, backgroundColor: 'rgba(224,49,49,0.15)', tension: 0.3, fill: true },
+            { label: "Jours d'arrêt", data: timeseries.accidentsJours, borderColor: palette.gray, backgroundColor: 'rgba(134,142,150,0.15)', tension: 0.3, fill: true },
+            { label: 'Incidents', data: timeseries.incidentsTotal, borderColor: palette.warning, backgroundColor: 'rgba(250,176,5,0.15)', tension: 0.3, fill: true },
+            { label: 'Interpellations (pers.)', data: timeseries.interPersonnes, borderColor: palette.info, backgroundColor: 'rgba(21,170,191,0.15)', tension: 0.3, fill: true },
+            { label: 'Anomalies', data: timeseries.anomaliesTotal, borderColor: palette.indigo, backgroundColor: 'rgba(95,61,196,0.15)', tension: 0.3, fill: true }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom' } },
+          scales: { y: { beginAtZero:true, ticks:{ precision:0 } } }
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<h1>Modifier Incident</h1>
+<a href="/supermarkets/<%= supermarketId %>/instance/<%= instanceId %>/incidents" class="btn btn-secondary mb-3">Retour</a>
+
+<form action="/supermarkets/<%= supermarketId %>/instance/<%= instanceId %>/incidents/editer/<%= incidentItem._id %>" method="POST">
+  <div class="form-group">
+    <label for="nombreIncidents">Nombre d'incidents</label>
+    <input type="number" class="form-control" id="nombreIncidents" name="nombreIncidents" value="<%= incidentItem.nombreIncidents %>" required>
+  </div>
+  <div class="form-group">
+    <label for="typeIncident">Type d'incident</label>
+    <select class="form-control" id="typeIncident" name="typeIncident" onchange="toggleSousTypeFeu()">
+      <option value="Départ de feu" <%= incidentItem.typeIncident === 'Départ de feu' ? 'selected' : '' %>>Départ de feu</option>
+      <option value="Agression envers le personnel" <%= incidentItem.typeIncident === 'Agression envers le personnel' ? 'selected' : '' %>>Agression envers le personnel</option>
+      <option value="Passage des autorités" <%= incidentItem.typeIncident === 'Passage des autorités' ? 'selected' : '' %>>Passage des autorités</option>
+      <option value="Sinistre déclaré par un client" <%= incidentItem.typeIncident === 'Sinistre déclaré par un client' ? 'selected' : '' %>>Sinistre déclaré par un client</option>
+      <option value="Acte de sécurisation" <%= incidentItem.typeIncident === 'Acte de sécurisation' ? 'selected' : '' %>>Acte de sécurisation</option>
+      <option value="Autre" <%= incidentItem.typeIncident === 'Autre' ? 'selected' : '' %>>Autre</option>
+    </select>
+  </div>
+  
+  <!-- Nouveau champ pour le sous-type de feu -->
+  <div class="form-group" id="sousTypeFeuGroup" style="display: <%= incidentItem.typeIncident === 'Départ de feu' ? 'block' : 'none' %>;">
+    <label for="sousTypeFeu">Type de départ de feu</label>
+    <select class="form-control" id="sousTypeFeu" name="sousTypeFeu">
+      <option value="Défauts électriques" <%= incidentItem.sousTypeFeu === 'Défauts électriques' ? 'selected' : '' %>>Défauts électriques</option>
+      <option value="Équipements de froid" <%= incidentItem.sousTypeFeu === 'Équipements de froid' ? 'selected' : '' %>>Équipements de froid</option>
+      <option value="Équipement de cuisson" <%= incidentItem.sousTypeFeu === 'Équipement de cuisson' ? 'selected' : '' %>>Équipement de cuisson</option>
+      <option value="Actes de malveillance" <%= incidentItem.sousTypeFeu === 'Actes de malveillance' ? 'selected' : '' %>>Actes de malveillance</option>
+      <option value="Accumulation de déchets" <%= incidentItem.sousTypeFeu === 'Accumulation de déchets' ? 'selected' : '' %>>Accumulation de déchets</option>
+      <option value="Travaux par point chaud" <%= incidentItem.sousTypeFeu === 'Travaux par point chaud' ? 'selected' : '' %>>Travaux par point chaud</option>
+      <option value="Autres" <%= incidentItem.sousTypeFeu === 'Autres' ? 'selected' : '' %>>Autres</option>
+    </select>
+  </div>
+  
+  <div class="form-group">
+    <label for="date">Date</label>
+    <input type="date" class="form-control" id="date" name="date" value="<%= incidentItem.date ? incidentItem.date.toISOString().split('T')[0] : '' %>" required>
+  </div>
+  <div class="form-group">
+    <label for="detail">Détail</label>
+    <input type="text" class="form-control" id="detail" name="detail" value="<%= incidentItem.detail %>">
+  </div>
+  <button type="submit" class="btn btn-primary">Mettre à jour</button>
+</form>
+
+<!-- Script JavaScript pour afficher/masquer le champ sous-type -->
+<script>
+function toggleSousTypeFeu() {
+  const typeIncident = document.getElementById('typeIncident').value;
+  const sousTypeFeuGroup = document.getElementById('sousTypeFeuGroup');
+  
+  if (typeIncident === 'Départ de feu') {
+    sousTypeFeuGroup.style.display = 'block';
+  } else {
+    sousTypeFeuGroup.style.display = 'none';
+  }
+}
+
+// Exécuter au chargement de la page pour gérer l'état initial
+document.addEventListener('DOMContentLoaded', function() {
+  toggleSousTypeFeu();
+});
+</script>

@@ -1,0 +1,75 @@
+
+
+<!-- Sign In / Sign Out Buttons at the Top Right -->
+<div class="d-flex justify-content-end mb-3">
+  <% if (session.user || session.isAdmin) { %>
+    <a href="/logout" class="btn btn-danger">Sign Out</a>
+  <% } else { %>
+    <a href="/login" class="btn btn-primary">Sign In</a>
+  <% } %>
+</div>
+
+<h1>Liste des Magasins</h1>
+
+<!-- Search form -->
+<form action="/" method="GET" class="mb-3">
+  <div class="form-group">
+    <input type="text" name="search" class="form-control" placeholder="Rechercher par nom ou région" value="<%= searchQuery %>">
+  </div>
+  <button type="submit" class="btn btn-primary">Rechercher</button>
+</form>
+
+<!-- Add this line in index.ejs -->
+<% if (!anomaliesOnly) { %>
+<a href="/totals" class="btn btn-success mb-3">Voir les Totaux de ma Région</a>
+
+<a href="/ajouter" class="btn btn-primary mb-3">Ajouter un Magasin</a>
+<% } %>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Nom</th>
+      <th>Région</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+   <!-- In your index.ejs file, update the links to markets: -->
+<% supermarkets.forEach(function(market) { %>
+  <tr>
+    <td><%= market.nom %></td>
+    <td><%= market.ville %></td>
+    <td>
+      <!-- Pass the current page as a query parameter -->
+      <a href="/supermarkets/<%= market._id %>?fromPage=<%= currentPage %><%= searchQuery ? '&search=' + searchQuery : '' %>" 
+         class="btn btn-info btn-sm">Voir</a>
+         <% if (!anomaliesOnly) { %>
+      <a href="/supermarkets/<%= market._id %>/editer" class="btn btn-warning btn-sm">Modifier</a>
+      <a href="/supermarkets/<%= market._id %>/supprimer" 
+         class="btn btn-danger btn-sm" 
+         onclick="return confirm('Voulez-vous vraiment supprimer ce supermarché ?');">
+        Supprimer
+      </a>
+      <% } %>
+    </td>
+  </tr>
+<% }); %>
+  </tbody>
+</table>
+
+<!-- Pagination -->
+<% if (totalPages > 1) { %>
+  <ul class="pagination">
+    <% 
+      for (let i = 1; i <= totalPages; i++) { 
+        let pageUrl = '?page=' + i;
+        if (searchQuery) {
+          pageUrl += '&search=' + encodeURIComponent(searchQuery);
+        }
+    %>
+      <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+        <a class="page-link" href="<%= pageUrl %>"><%= i %></a>
+      </li>
+    <% } %>
+  </ul>
+<% } %>

@@ -1,0 +1,66 @@
+
+<h1>Dispositifs de Sécurité et Sûreté</h1>
+<a href="/supermarkets/<%= supermarketId %>?fromPage=<%= fromPage || 1 %>" class="btn btn-secondary mb-3">Retour</a>
+
+<div class="card">
+  <div class="card-body">
+    <h3>Dispositifs Actuel</h3>
+    <table class="table">
+      <tr>
+        <th>Extincteurs</th>
+        <td><%= instance.equipements.extincteurs %></td>
+      </tr>
+      <tr>
+        <th>RIA</th>
+        <td><%= instance.equipements.ria %></td>
+      </tr>
+      <tr>
+        <th>Portes coupe-feu</th>
+        <td><%= instance.equipements.portes %></td>
+      </tr>
+      <tr>
+        <th>Issues de secours</th>
+        <td><%= instance.equipements.issuesSecours %></td>
+      </tr>
+      <tr>
+        <th>Skydomes</th>
+        <td><%= instance.equipements.skydomes %></td>
+      </tr>
+      <tr>
+        <th>Cameras</th>
+        <td><%= instance.equipements.cameras %></td>
+      </tr>
+      <tr>
+        <th>NVR/DVR</th>
+        <td><%= instance.equipements.nvr %></td>
+      </tr>
+      <tr>
+        <th>ADS</th>
+        <td><%= instance.equipements.ads %></td>
+      </tr>
+      <tr>
+        <th>Superviseur(s) de Sécurité</th>
+        <td><%= (instance.equipements.superviseurSecurite ?? 0) %></td>
+      </tr>
+      <tr>
+        <th>Renfort Sécurité</th>
+        <td><%= instance.equipements.renfortSecurite || 0 %></td>
+      </tr>
+      <tr>
+        <th>Période du Renfort</th>
+        <td><%= instance.equipements.periodeRenfort || 0 %> jours</td>
+      </tr>
+    </table>
+
+    <div class="mt-3">
+      <!-- Button to go to the edit form -->
+      <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/equipements/editer" class="btn btn-warning">
+        Éditer
+      </a>
+      <!-- Button to reset (delete) equipment values -->
+      <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/equipements/supprimer" class="btn btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir réinitialiser les équipements ?');">
+        Réinitialiser
+      </a>
+    </div>
+  </div>
+</div>

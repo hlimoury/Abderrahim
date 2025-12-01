@@ -1,0 +1,207 @@
+<!-- //routes : this is total.ejs( -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Totaux par Région</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .stat-card { border-left: 4px solid; margin-bottom: 1.5rem; }
+        .stat-card.formation { border-color: #0d6efd; }
+        .stat-card.accidents { border-color: #dc3545; }
+        .stat-card.incidents { border-color: #ffc107; }
+        .stat-card.interpellations { border-color: #198754; }
+        .type-card { border: 1px solid #dee2e6; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem; }
+    </style>
+</head>
+<body class="container mt-4">
+    <div class="d-flex justify-content-between mb-4">
+        <h1>Statistiques pour <%= region %></h1>
+        <div>
+            <a href="/" class="btn btn-secondary">Retour</a>
+            <a href="/logout" class="btn btn-danger">Déconnexion</a>
+        </div>
+    </div>
+
+    <!-- Main Stats Row -->
+    <div class="row g-4">
+        <!-- Formation -->
+        <div class="col-md-3">
+            <div class="stat-card formation p-3 bg-light">
+                <h5 class="text-primary">Formation</h5>
+                <h2 class="fw-bold"><%= totals.formation %> P</h2>
+            </div>
+        </div>
+
+        <!-- Accidents -->
+        <div class="col-md-3">
+            <div class="stat-card accidents p-3 bg-light">
+                <h5 class="text-danger">Accidents</h5>
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h2 class="fw-bold"><%= totals.accidents.count %></h2>
+                        
+                    </div>
+                    
+                    <span class="text-muted"><h3 class="text-danger"><%= totals.accidents.jours %></h3>jours d'arrêt</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Incidents -->
+        <div class="col-md-3">
+            <div class="stat-card incidents p-3 bg-light">
+                <h5 class="text-warning">Incidents</h5>
+                <h2 class="fw-bold"><%= totals.incidents %></h2>
+            </div>
+        </div>
+
+        <!-- Interpellations -->
+        <div class="col-md-3">
+            <div class="stat-card interpellations p-3 bg-light">
+                <h5 class="text-success">Interpellations</h5>
+                <div class="d-flex flex-column gap-2">
+                    <div>
+                        <span class="fs-5 fw-bold"><%= totals.interpellations.personnes %> P</span>
+                    </div>
+                    <div>
+                        <span class="fs-5 fw-bold"><%= totals.interpellations.poursuites %> PJ</span>
+                    </div>
+                    <div>
+                        <span class="fs-5 fw-bold text-success">
+                            <%= totals.interpellations.valeur.toFixed(3).replace('.', ',') %> kDH
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card p-3 bg-light" style="border-left: 4px solid #6f42c1;">
+                <h5 class="text-purple">Réclamations</h5>
+                <h2 class="fw-bold"><%= totals.reclamations.total %></h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interpellations par Type -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <h4 class="mb-3">Répartition des Interpellations</h4>
+            <div class="row g-3">
+                <% Object.entries(totals.interpellations.parType).forEach(([type, data]) => { %>
+                <div class="col-md-4">
+                    <div class="type-card">
+                        <h5 class="mb-3"><%= type %></h5>
+                        <div class="d-flex flex-column gap-2">
+                            <div>
+                                <span class="fw-bold"><%= data.personnes %> P</span>
+                            </div>
+                            <div>
+                                <span class="fw-bold"><%= data.poursuites %> PJ</span>
+                            </div>
+                            <div>
+                                <span class="fw-bold text-success">
+                                    <%= data.valeur.toFixed(3).replace('.', ',') %> kDH
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <% }) %>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formation par Type -->
+    
+    <% if (formationByType) { %>
+    <!-- Formation par Type -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <h4 class="mb-3">Répartition de la Formation</h4>
+            <div class="row g-3">
+                <% Object.entries(formationByType).forEach(([type, data]) => { %>
+                <div class="col-md-4">
+                    <div class="type-card">
+                        <h5><%= type %></h5>
+                        <h3 class="fw-bold text-primary"><%= data.total %> P</h3>
+                    </div>
+                </div>
+                <% }) %>
+            </div>
+        </div>
+    </div>
+    <% } %>
+    <% if (totals.reclamations.parMotif && Object.keys(totals.reclamations.parMotif).length > 0) { %>
+        <div class="row mt-4">
+            <div class="col-12">
+                <h4 class="mb-3">Répartition des Réclamations</h4>
+                <div class="row g-3">
+                    <% Object.entries(totals.reclamations.parMotif).forEach(([motif, count]) => { %>
+                    <div class="col-md-4">
+                        <div class="type-card">
+                            <h5><%= motif %></h5>
+                            <h3 class="fw-bold" style="color: #6f42c1;"><%= count %></h3>
+                        </div>
+                    </div>
+                    <% }) %>
+                </div>
+            </div>
+        </div>
+        <% } %>
+
+    <!-- Liens vers les listes détaillées -->
+<div class="row mt-4">
+    <div class="col-12">
+        <h4>Listes détaillées</h4>
+        <div class="row g-3">
+            <div class="col-md-3">
+                <a href="/totals/details/accidents" class="btn btn-outline-danger w-100">
+                    Liste des accidents (<%= totals.accidents.count %>)
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="/totals/details/incidents" class="btn btn-outline-warning w-100">
+                    Liste des incidents (<%= totals.incidents %>)
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="/totals/details/interpellations" class="btn btn-outline-success w-100">
+                    Liste des interpellations (<%= totals.interpellations.personnes %>)
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="/totals/details/formation" class="btn btn-outline-primary w-100">
+                    Liste des formations (<%= totals.formation %>)
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="/totals/details/reclamations" class="btn btn-outline-secondary w-100" style="border-color: #6f42c1; color: #6f42c1;">
+                    Liste des réclamations (<%= totals.reclamations.total %>)
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rapports Section -->
+<div class="row mt-4">
+    <div class="col-12">
+        <h4>Rapports</h4>
+        <div class="row g-3">
+            <div class="col-md-12">
+                <a href="/reports" class="btn btn-outline-dark w-100">
+                    <i class="bi bi-file-earmark-text"></i> Générateur de Rapports
+                </a>
+                <p class="text-muted mt-2">
+                    Créez des rapports personnalisés par supermarché ou par mois. Téléchargez en PDF ou envoyez par email.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

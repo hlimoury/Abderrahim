@@ -1,0 +1,14 @@
+
+<h1>Ajouter un Supermarché</h1>
+<form action="/ajouter" method="POST">
+  <div class="form-group">
+    <label for="nom">Nom du Supermarché</label>
+    <input type="text" class="form-control" id="nom" name="nom" required>
+  </div>
+  <div class="form-group">
+    <label for="region">Région</label>
+    <!-- Display the region from session (stored in the "ville" field) as read-only -->
+    <input type="text" class="form-control" id="region" name="region" value="<%= session.region %>" readonly>
+  </div>
+  <button type="submit" class="btn btn-primary">Ajouter</button>
+</form>

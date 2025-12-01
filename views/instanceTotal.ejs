@@ -1,0 +1,57 @@
+
+<h1>Totaux des Instances pour <%= supermarket.nom %></h1>
+<a href="/supermarkets/<%= supermarket._id %>" class="btn btn-secondary mb-3">Retour</a>
+
+<div class="card">
+  <div class="card-body">
+    <h3>Formation</h3>
+    <p>Total Formation: <%= totals.formation %> personnes</p>
+  </div>
+</div>
+
+<div class="card mt-3">
+  <div class="card-body">
+    <h3>Accidents de Travail</h3>
+    <p>Total Accidents: <%= totals.accidents.count %> accidents</p>
+    <p>Total Jours d'arrêt: <%= totals.accidents.jours %> jours</p>
+  </div>
+</div>
+
+<div class="card mt-3">
+  <div class="card-body">
+    <h3>Autres Incidents</h3>
+    <p>Total Incidents: <%= totals.incidents %></p>
+  </div>
+</div>
+
+<div class="card mt-3">
+  <div class="card-body">
+    <h3>Interpellations Globales</h3>
+    <p>
+      Total Interpellations: <%= totals.interpellations.personnes %> personnes, 
+      <%= totals.interpellations.poursuites %> poursuites, 
+      <%= totals.interpellations.valeur %> KDH récupérés
+    </p>
+  </div>
+</div>
+
+<div class="card mt-3">
+  <div class="card-body">
+    <h3>Interpellations par Type</h3>
+    <p>
+      Clients: <%= interByType.Client.personnes %> personnes, 
+      <%= interByType.Client.poursuites %> poursuites, 
+      <%= interByType.Client.valeur %> KDH récupérés
+    </p>
+    <p>
+      Personnels: <%= interByType.Personnel.personnes %> personnes, 
+      <%= interByType.Personnel.poursuites %> poursuites, 
+      <%= interByType.Personnel.valeur %> KDH récupérés
+    </p>
+    <p>
+      Prestataires: <%= interByType.Prestataire.personnes %> personnes, 
+      <%= interByType.Prestataire.poursuites %> poursuites, 
+      <%= interByType.Prestataire.valeur %> KDH récupérés
+    </p>
+  </div>
+</div>

@@ -1,0 +1,166 @@
+<!-- views/reclamation.ejs -->
+<!-- REPLACE the entire file with this version (adds dynamic Sous-motif from parentheses) -->
+<h1>Réclamations - Instance du Mois</h1>
+<a href="/supermarkets/<%= supermarketId %>?fromPage=<%= fromPage || 1 %>" class="btn btn-secondary mb-3">Retour</a>
+
+<h2>Ajouter une Réclamation</h2>
+<form action="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/reclamations/ajouter" method="POST" class="mb-4">
+  <div class="form-group mb-2">
+    <label>Motif de la réclamation</label>
+    <select class="form-control" name="motif" id="motifSelect" required>
+      <option value="">-- Sélectionner un motif --</option>
+      <option>Produit périmé</option>
+      <option>Produit impropre (abîmé, moisi, odeur suspecte, rupture de la chaîne du froid)</option>
+      <option>Produits endommagés (emballage déchiré, boîte cabossée, etc.)</option>
+      <option>Produits non conformes (étiquette, poids indiqué, etc.)</option>
+      <option>Produit manquant dans un pack ou une boîte</option>
+      <option>Erreur de prix en caisse (écart entre prix affiché et facturé)</option>
+      <option>Promotions non appliquées ou mal expliquées</option>
+      <option>Attente trop longue aux caisses</option>
+      <option>Erreur de rendu monnaie</option>
+      <option>Problème avec les moyens de paiement (CB, chèques, bons d’achat, cartes de fidélité…)</option>
+      <option>Double facturation ou oubli d’annulation d’un article</option>
+      <option>Manque d’accueil (courtoisie, indifférence)</option>
+      <option>Comportement inapproprié d’un employé ou agent de sécurité</option>
+      <option>Manque de disponibilité du personnel pour aider</option>
+      <option>Hygiène insuffisante (sol, odeurs, toilettes, etc.)</option>
+      <option>Hygiène et nuisibles (présence de cafards, moucherons, charançons, rats, souris)</option>
+      <option>Sécurité du magasin (vols, sentiment d’insécurité)</option>
+      <option>Problèmes de stationnement (parking plein, sécurité, produits manquants)</option>
+      <option>Nuisances sonores (musique trop forte, annonces trop fréquentes)</option>
+    </select>
+  </div>
+
+  <!-- Sous-motif (auto from parentheses) -->
+  <div class="form-group mb-2" id="sousMotifGroup" style="display:none;">
+    <label>Détail</label>
+    <select class="form-control" name="sousMotif" id="sousMotifSelect"></select>
+  </div>
+
+  <div class="form-group mb-2">
+    <label>Désignation du produit (optionnel)</label>
+    <input type="text" class="form-control" name="designationProduit" placeholder="Ex: Yaourt, Boîte de conserve..." />
+  </div>
+
+  <div class="form-group mb-2">
+    <label>Date et heure de la réclamation</label>
+    <input type="datetime-local" class="form-control" name="dateHeure" required />
+  </div>
+
+  <div class="form-group mb-2">
+    <label>Action entreprise</label>
+    <textarea class="form-control" name="action" rows="2" placeholder="Action entreprise (échange, remboursement, etc.)"></textarea>
+  </div>
+
+  <div class="form-group mb-3">
+    <label>Statut</label>
+    <select class="form-control" name="statut" required>
+      <option value="Non traité">Non traité</option>
+      <option value="En cours">En cours</option>
+      <option value="Traité">Traité</option>
+    </select>
+  </div>
+
+  <button class="btn btn-primary">Ajouter</button>
+</form>
+
+<h2>Liste des Réclamations</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Date & Heure</th>
+      <th>Motif</th>
+      <th>Détail</th>
+      <th>Désignation Produit</th>
+      <th>Action</th>
+      <th>Statut</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% (instance.reclamations || []).forEach(function(r) { %>
+      <tr>
+        <td><%= r.dateHeure ? new Date(r.dateHeure).toLocaleString('fr-FR') : '—' %></td>
+        <td><%= r.motif %></td>
+        <td><%= r.sousMotif || '—' %></td>
+        <td><%= r.designationProduit || '—' %></td>
+        <td class="small"><%= r.action || '—' %></td>
+        <td>
+          <% if (r.statut === 'Traité') { %>
+            <span class="badge bg-success"><%= r.statut %></span>
+          <% } else if (r.statut === 'En cours') { %>
+            <span class="badge bg-info text-dark"><%= r.statut %></span>
+          <% } else { %>
+            <span class="badge bg-warning text-dark"><%= r.statut %></span>
+          <% } %>
+        </td>
+        <td>
+          <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/reclamations/editer/<%= r._id %>" class="btn btn-warning btn-sm">Éditer</a>
+          <a href="/supermarkets/<%= supermarketId %>/instance/<%= instance._id %>/reclamations/supprimer/<%= r._id %>" class="btn btn-danger btn-sm" onclick="return confirm('Supprimer cette réclamation ?');">Supprimer</a>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script>
+  // Mapping: motif -> sous-motifs (from parentheses)
+  const SUB_MOTIFS = {
+    'Produit impropre (abîmé, moisi, odeur suspecte, rupture de la chaîne du froid)': [
+      'Abîmé', 'Moisi', 'Odeur suspecte', 'Rupture de la chaîne du froid', 'Autre'
+    ],
+    'Produits endommagés (emballage déchiré, boîte cabossée, etc.)': [
+      'Emballage déchiré', 'Boîte cabossée', 'Scellé endommagé', 'Autre'
+    ],
+    'Produits non conformes (étiquette, poids indiqué, etc.)': [
+      'Étiquette', 'Poids indiqué', 'Autre'
+    ],
+    'Problème avec les moyens de paiement (CB, chèques, bons d’achat, cartes de fidélité…)': [
+      'Carte bancaire (CB)', 'Chèque', 'Bon d’achat', 'Carte de fidélité', 'Autre'
+    ],
+    'Hygiène insuffisante (sol, odeurs, toilettes, etc.)': [
+      'Sol', 'Odeurs', 'Toilettes', 'Autre'
+    ],
+    'Hygiène et nuisibles (présence de cafards, moucherons, charançons, rats, souris)': [
+      'Cafards', 'Moucherons', 'Charançons', 'Rats', 'Souris', 'Autre'
+    ],
+    'Problèmes de stationnement (parking plein, sécurité, produits manquants)': [
+      'Parking plein', 'Sécurité du parking', 'Signalisation', 'Autre'
+    ],
+    'Nuisances sonores (musique trop forte, annonces trop fréquentes)': [
+      'Musique trop forte', 'Annonces trop fréquentes', 'Autre'
+    ],
+    'Manque d’accueil (courtoisie, indifférence)': [
+      'Courtoisie', 'Indifférence', 'Autre'
+    ],
+    'Sécurité du magasin (vols, sentiment d’insécurité)': [
+      'vols', 'sentiment d’insécurité', 'Autre'
+    ],
+    'Erreur de prix en caisse (écart entre prix affiché et facturé)': [
+      'Écart entre prix affiché et facturé'
+    ]
+  };
+
+  const motifSelect = document.getElementById('motifSelect');
+  const sousGroup = document.getElementById('sousMotifGroup');
+  const sousSelect = document.getElementById('sousMotifSelect');
+
+  function populateSousMotifs() {
+    const motif = motifSelect.value;
+    const list = SUB_MOTIFS[motif] || null;
+    sousSelect.innerHTML = '';
+    if (list && list.length) {
+      list.forEach(v=>{
+        const o=document.createElement('option');
+        o.value=v; o.textContent=v;
+        sousSelect.appendChild(o);
+      });
+      sousGroup.style.display = '';
+    } else {
+      sousGroup.style.display = 'none';
+    }
+  }
+
+  motifSelect.addEventListener('change', populateSousMotifs);
+</script>
