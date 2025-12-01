@@ -120,4 +120,22 @@
   body.compact .accordion-button{
     padding-top: .4rem; padding-bottom: .4rem;
   }
-  
+  /* Make inputs pop out more */
+.form-control-sm, .form-select-sm {
+  background-color: #fff;
+  border: 1px solid #ced4da; /* Standard gray border */
+  color: #212529;
+}
+
+/* Make focused inputs very clear */
+.form-control-sm:focus, .form-select-sm:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  background-color: #fff;
+}
+
+/* Style the labels */
+.form-label {
+  font-size: 0.75rem; /* 12px */
+  letter-spacing: 0.5px;
+}

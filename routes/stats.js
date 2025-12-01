@@ -106,7 +106,6 @@ function buildTimeAxis(start, end, groupBy) {
   const keys = [];
   const keyToIndex = new Map();
   let idx = 0;
-
   if (groupBy === 'period') {
     const periods = [
       { key: '08-12', label: '08h - 12h' },
@@ -124,7 +123,6 @@ function buildTimeAxis(start, end, groupBy) {
 
     return { labels, keys, keyToIndex, groupBy };
   }
-
   if (groupBy === 'month') {
     let cursor = startOfMonth(start);
     const last = endOfMonth(end);
@@ -198,7 +196,6 @@ function bucketKeyForDate(dt, groupBy) {
 
   return `${y}-${m}-${d} ${h}`; // hour
 }
-
 // Parse URL time filters + decide groupBy
 function parseTimeFilters(q, searchParams) {
   const fromDateStr = (q.fromDate || '').trim();
@@ -935,7 +932,6 @@ function uniqueSorted(arr) {
   return [...new Set(arr)].filter(Boolean).sort((a, b) => ('' + a).localeCompare('' + b));
 }
 
-
 function buildBaseQs(searchParams) {
   const parts = [];
   if (searchParams.nom) parts.push('nom=' + encodeURIComponent(searchParams.nom));
@@ -946,7 +942,6 @@ function buildBaseQs(searchParams) {
   if (searchParams.anomalieType) parts.push('anomalieType=' + encodeURIComponent(searchParams.anomalieType));
   return parts.join('&');
 }
-
 
 function summarizeFilters(searchParams) {
   const seg = [];
@@ -1209,7 +1204,11 @@ router.get('/stats/dashboard', ensureAdmin, async (req, res) => {
         // ANOMALIES (filter by time if active) + build evolution buckets
         (inst.anomaliesMarche || []).forEach(a => {
           const evt = getAnomalyDate(a);
+          
+          // Time Filter
           if (timeActive && !eventInRange(evt, { start: timeFilters.start, end: timeFilters.end }, timeFilters.timeWindow)) return;
+          
+          // NEW: Type Filter
           if (searchParams.anomalieType && a.anomalieDetectee !== searchParams.anomalieType) return;
 
           const t = a.anomalieDetectee && ANOMALIE_TYPES.includes(a.anomalieDetectee) ? a.anomalieDetectee : null;

@@ -165,11 +165,21 @@ const amTypePrefix = '/stats/category/anomalies?' + (baseQs ? baseQs + '&' : '')
                 <div class="small">
                   <strong>Total:</strong> <span id="acc-i-total"><%= selectedInit.incidentsTotal %></span>
                   <div class="mt-2">
-                    <% incidentTypes.forEach(t=>{ %>
-                      <span class="badge bg-light text-dark border me-1 mb-1">
-                        <%= t.label %>: <span id="acc-i-<%= t.key %>"><%= selectedInit.incidentByType[t.key] %></span>
-                      </span>
-                    <% }) %>
+                    <% if (category === 'incidents') { %>
+  <% incidentTypes.forEach(t=>{ %>
+    <span class="badge bg-light text-dark border me-1 mb-1">
+      <%= t.label %>: <span id="acc-i-<%= t.key %>"><%= (selectedInit.incidentByType && selectedInit.incidentByType[t.key]) || 0 %></span>
+    </span>
+  <% }) %>
+<% } %>
+
+<% if (category === 'accidents') { %>
+  <% Object.entries(selectedInit.accidentByCause || {}).forEach(([cause, count]) => { %>
+    <span class="badge bg-light text-dark border me-1 mb-1">
+      <%= cause %>: <span><%= count %></span>
+    </span>
+  <% }) %>
+<% } %>
                   </div>
                 </div>
               </div>
