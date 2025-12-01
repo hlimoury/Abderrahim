@@ -27,7 +27,29 @@ function getAdminRegionFilter(req) {
   if (Array.isArray(allowed)) return { ville: { $in: allowed } };
   return {};
 }
+<<<<<<< HEAD
 
+=======
+// Helper to get ISO week number and year
+function getISOWeek(d) {
+  const date = new Date(d.getTime());
+  date.setHours(0, 0, 0, 0);
+  // Thursday in current week decides the year.
+  date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+  const week1 = new Date(date.getFullYear(), 0, 4);
+  return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+}
+
+// Helper to get start of a week (Monday)
+function startOfWeek(d) {
+  const date = new Date(d);
+  const day = date.getDay();
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+  date.setDate(diff);
+  date.setHours(0,0,0,0);
+  return date;
+}
+>>>>>>> 2714f1e015e7aff7d3b79c06e5301ea2f8c82046
 // routes/stats.js — TIME FILTER HELPERS (ADD THIS BLOCK NEAR THE TOP)
 
 // Safe date parsing
@@ -89,6 +111,27 @@ function buildTimeAxis(start, end, groupBy) {
   const keyToIndex = new Map();
   let idx = 0;
 
+<<<<<<< HEAD
+=======
+  if (groupBy === 'period') {
+    const periods = [
+      { key: '08-12', label: '08h - 12h' },
+      { key: '12-14', label: '12h - 14h' },
+      { key: '14-17', label: '14h - 17h' },
+      { key: '17-22', label: '17h - 22h' },
+      { key: 'other', label: 'Hors créneau' } // Optional: for times outside 8-22
+    ];
+
+    periods.forEach(p => {
+      labels.push(p.label);
+      keys.push(p.key);
+      keyToIndex.set(p.key, idx++);
+    });
+
+    return { labels, keys, keyToIndex, groupBy };
+  }
+
+>>>>>>> 2714f1e015e7aff7d3b79c06e5301ea2f8c82046
   if (groupBy === 'month') {
     let cursor = startOfMonth(start);
     const last = endOfMonth(end);
@@ -100,6 +143,24 @@ function buildTimeAxis(start, end, groupBy) {
       keyToIndex.set(key, idx++);
       cursor = addMonths(cursor, 1);
     }
+<<<<<<< HEAD
+=======
+  } else if (groupBy === 'week') {
+    // NEW: Week Logic
+    let cursor = startOfWeek(start);
+    const last = endOfDay(end);
+    while (cursor <= last) {
+        const w = getISOWeek(cursor);
+        const y = cursor.getFullYear();
+        // Handle end of year edge case for ISO weeks
+        const key = `${y}-W${pad2(w)}`; 
+        const label = `Sem ${w} (${cursor.getDate()}/${cursor.getMonth()+1})`;
+        labels.push(label);
+        keys.push(key);
+        keyToIndex.set(key, idx++);
+        cursor.setDate(cursor.getDate() + 7);
+    }
+>>>>>>> 2714f1e015e7aff7d3b79c06e5301ea2f8c82046
   } else if (groupBy === 'day') {
     let cursor = startOfDay(start);
     const last = startOfDay(end);
@@ -130,8 +191,26 @@ function buildTimeAxis(start, end, groupBy) {
 
 function bucketKeyForDate(dt, groupBy) {
   const y = dt.getFullYear(), m = pad2(dt.getMonth()+1), d = pad2(dt.getDate()), h = pad2(dt.getHours());
+<<<<<<< HEAD
   if (groupBy === 'month') return `${y}-${m}`;
   if (groupBy === 'day') return `${y}-${m}-${d}`;
+=======
+  
+  if (groupBy === 'month') return `${y}-${m}`;
+  if (groupBy === 'week')  return `${y}-W${pad2(getISOWeek(dt))}`; // Assuming you added the week helper
+  if (groupBy === 'day')   return `${y}-${m}-${d}`;
+  
+  // NEW: Period Logic
+  if (groupBy === 'period') {
+    const hour = dt.getHours();
+    if (hour >= 8  && hour < 12) return '08-12';
+    if (hour >= 12 && hour < 14) return '12-14';
+    if (hour >= 14 && hour < 17) return '14-17';
+    if (hour >= 17 && hour < 22) return '17-22';
+    return 'other';
+  }
+
+>>>>>>> 2714f1e015e7aff7d3b79c06e5301ea2f8c82046
   return `${y}-${m}-${d} ${h}`; // hour
 }
 
@@ -185,11 +264,23 @@ function parseTimeFilters(q, searchParams) {
   // groupBy selection
   let groupBy = (q.groupBy || 'auto').toLowerCase();
   const daysSpan = Math.max(1, Math.ceil((end - start) / 86400000));
+<<<<<<< HEAD
   if (groupBy === 'auto') {
     if (daysSpan > 92) groupBy = 'month';
     else if (daysSpan > 1) groupBy = 'day';
     else groupBy = 'hour';
   } else if (!['month','day','hour'].includes(groupBy)) {
+=======
+  
+  if (groupBy === 'auto') {
+    if (daysSpan > 92) groupBy = 'month';
+    else if (daysSpan > 31) groupBy = 'week';
+    else if (daysSpan > 1) groupBy = 'day';
+    else groupBy = 'hour';
+  } 
+  // ADD 'period' to this list
+  else if (!['month','week','day','hour','period'].includes(groupBy)) { 
+>>>>>>> 2714f1e015e7aff7d3b79c06e5301ea2f8c82046
     groupBy = 'day';
   }
 
@@ -867,19 +958,36 @@ function uniqueSorted(arr) {
   return [...new Set(arr)].filter(Boolean).sort((a, b) => ('' + a).localeCompare('' + b));
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 2714f1e015e7aff7d3b79c06e5301ea2f8c82046
 function buildBaseQs(searchParams) {
   const parts = [];
   if (searchParams.nom) parts.push('nom=' + encodeURIComponent(searchParams.nom));
   if (searchParams.ville) parts.push('ville=' + encodeURIComponent(searchParams.ville));
   if (searchParams.mois) parts.push('mois=' + encodeURIComponent(searchParams.mois));
   if (searchParams.annee) parts.push('annee=' + encodeURIComponent(searchParams.annee));
+<<<<<<< HEAD
   return parts.join('&');
 }
 
+=======
+  // NEW
+  if (searchParams.anomalieType) parts.push('anomalieType=' + encodeURIComponent(searchParams.anomalieType));
+  return parts.join('&');
+}
+
+
+>>>>>>> 2714f1e015e7aff7d3b79c06e5301ea2f8c82046
 function summarizeFilters(searchParams) {
   const seg = [];
   if (searchParams.nom) seg.push(`Nom contient "${searchParams.nom}"`);
   if (searchParams.ville) seg.push(`Ville = ${searchParams.ville}`);
+<<<<<<< HEAD
+=======
+  if (searchParams.anomalieType) seg.push(`Type = ${searchParams.anomalieType}`); // NEW
+>>>>>>> 2714f1e015e7aff7d3b79c06e5301ea2f8c82046
   if (searchParams.mois) seg.push(`Mois = ${searchParams.mois}`);
   if (searchParams.annee) seg.push(`Année = ${searchParams.annee}`);
   return seg.length ? 'Filtre: ' + seg.join(' · ') : 'Aucun filtre';
@@ -895,7 +1003,13 @@ router.get('/stats/dashboard', ensureAdmin, async (req, res) => {
       nom: (req.query.nom || '').trim(),
       ville: (req.query.ville || '').trim(),
       mois: req.query.mois ? parseInt(req.query.mois, 10) : null,
+<<<<<<< HEAD
       annee: req.query.annee ? parseInt(req.query.annee, 10) : null
+=======
+      annee: req.query.annee ? parseInt(req.query.annee, 10) : null,
+      // NEW: Catch the anomaly filter
+      anomalieType: (req.query.anomalieType || '').trim() 
+>>>>>>> 2714f1e015e7aff7d3b79c06e5301ea2f8c82046
     };
 
     // NEW: Parse time filters (tranche horaire) and groupBy for evolution chart
@@ -1135,6 +1249,10 @@ router.get('/stats/dashboard', ensureAdmin, async (req, res) => {
         (inst.anomaliesMarche || []).forEach(a => {
           const evt = getAnomalyDate(a);
           if (timeActive && !eventInRange(evt, { start: timeFilters.start, end: timeFilters.end }, timeFilters.timeWindow)) return;
+<<<<<<< HEAD
+=======
+          if (searchParams.anomalieType && a.anomalieDetectee !== searchParams.anomalieType) return;
+>>>>>>> 2714f1e015e7aff7d3b79c06e5301ea2f8c82046
 
           const t = a.anomalieDetectee && ANOMALIE_TYPES.includes(a.anomalieDetectee) ? a.anomalieDetectee : null;
           per.anomalies.total += 1;
